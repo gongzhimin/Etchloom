@@ -1,8 +1,8 @@
 {
-  "name": "ke-jian-digital-printmaking",
+  "name": "etchloom",
   "version": "0.1.0",
   "private": true,
-  "description": "Local-first image-to-engraving and virtual printmaking experiment.",
+  "description": "A local-first generative digital printmaking studio.",
   "scripts": {
     "start": "node scripts/serve.cjs",
     "test": "node --test tests/*.test.cjs",

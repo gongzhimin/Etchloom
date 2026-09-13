@@ -9,7 +9,8 @@ class GenerationClient{
     this.cancel();const id=this.serial;
     // Workers run from the local HTTP origin; no image data leaves the device.
     const url=new URL('src/workers/generation-worker.js',document.baseURI);
-    if(url.protocol==='file:')return new Promise((resolve,reject)=>{
+    const captureMode=typeof location!=='undefined'&&new URLSearchParams(location.search).get('capture')==='1';
+    if(url.protocol==='file:'||captureMode)return new Promise((resolve,reject)=>{
       this.pending={resolve,reject};const started=performance.now(),results=[];let index=0;
       const step=()=>{if(id!==this.serial)return;try{
         if(index>=recipes.length){const sourceBytes=recipes.reduce((sum,r)=>sum+(r.image?r.image.pixels.length*8:0),0),pointBytes=results.reduce((sum,r)=>sum+r.paths.reduce((s,p)=>s+p.points.length*32,0),0);this.pending=null;this.timer=null;resolve({id,type:'result',results,elapsed:performance.now()-started,estimatedBytes:sourceBytes*5+pointBytes*2});return;}

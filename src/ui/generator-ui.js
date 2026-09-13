@@ -52,7 +52,7 @@ async function runGeneration(draft,nextSelected,indices=draft.map((_,i)=>i)){
 }
 $('cancelGeneration').onclick=()=>{generationClient.cancel();};
 
-const storageKey = 'kejian-design-favorites-v1';
+const storageKey = 'etchloom-design-favorites-v1';
 function freshSeed() { return crypto.getRandomValues(new Uint32Array(1))[0]; }
 function readParams() { return { ...Object.fromEntries(Object.entries(controlIds).map(([key, id]) => [key, Number($(id).value)])), mazeAlgorithm: $('mazeAlgorithm').value, finish: $('designFinish').value }; }
 function message(text) { $('genMessage').textContent = text; }
@@ -166,7 +166,7 @@ function refreshFavorites() {
   favorites.forEach((r, i) => $('favorites').add(new Option(`${i + 1}. ${modeNames[r.mode]} / ${r.seed} / V${r.variation}`, String(i))));
   $('restoreFavorite').disabled = !favorites.length;
 }
-try { const saved = JSON.parse(localStorage.getItem(storageKey) || '[]'); if (Array.isArray(saved)) favorites = saved.filter(generator.validRecipe).slice(-40); } catch { /* File origins may disallow storage; exports remain available. */ }
+try { const saved = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem('kejian-design-favorites-v1') || '[]'); if (Array.isArray(saved)) favorites = saved.filter(generator.validRecipe).slice(-40); } catch { /* File origins may disallow storage; exports remain available. */ }
 refreshFavorites();
 $('favoriteDesign').onclick = async () => {
   await flushUpdate(); const r = cloneRecipe(currentRecipe());
@@ -176,14 +176,14 @@ $('favoriteDesign').onclick = async () => {
   catch { message('已暂存到本次会话；浏览器无法保存收藏，请导出方案文件。'); }
 };
 $('restoreFavorite').onclick = async () => { const r = favorites[Number($('favorites').value)]; if (r) { if(await restoreRecipe(r))message('已恢复收藏的种子、参数与构图。'); } };
-$('exportDesign').onclick = async () => { await flushUpdate(); download(new Blob([JSON.stringify({ type: 'kejian-design', recipe: currentRecipe() }, null, 2)], { type: 'application/json' }), `刻间-方案-${currentRecipe().seed}.json`); message('方案已导出。'); };
+$('exportDesign').onclick = async () => { await flushUpdate(); download(new Blob([JSON.stringify({ type: 'etchloom-design', recipe: currentRecipe() }, null, 2)], { type: 'application/json' }), `Etchloom-design-${currentRecipe().seed}.json`); message('方案已导出。'); };
 $('importDesign').onclick = () => $('designFile').click();
 $('designFile').onchange = async e => {
   try {
     const file = e.target.files[0]; if (!file) return;
     if (file.size > 6000000) throw new Error('方案文件过大');
     const data = JSON.parse(await file.text());
-    if (data.type !== 'kejian-design') throw new Error('请选择导出的图案方案文件');
+    if (!['etchloom-design','kejian-design'].includes(data.type)) throw new Error('请选择 Etchloom 导出的图案方案文件');
     if(await restoreRecipe(data.recipe))message('方案已恢复。');
   } catch (err) { message('打开失败：' + err.message); }
   e.target.value = '';
@@ -219,10 +219,10 @@ function paintSource(source){
   source.pixels.forEach((v,i)=>{im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=v;im.data[i*4+3]=255;});context.putImageData(im,0,0);
 }
 $('uploadPhoto').onclick=()=>$('photoFile').click();
-$('photoFile').onchange=async e=>{
+async function loadPhoto(file){
   let bitmap;
   try{
-    const file=e.target.files[0];if(!file)return;
+    if(!file)return;
     if(!['image/jpeg','image/png'].includes(file.type))throw Error('请选择 JPG 或 PNG 图片');
     if(file.size>20*1024*1024)throw Error('图片请控制在 20 MB 以内');
     $('uploadPhoto').disabled=true;message('正在读取图片并生成刻线…');
@@ -238,6 +238,8 @@ $('photoFile').onchange=async e=>{
     $('photoInfo').textContent=`已载入 ${bitmap.width} × ${bitmap.height} 图片 · 本机处理 · 透明区域按白纸处理`;
     recipes=[];results=[];selected=0;$('genMode').value='photo';if(await generateFour())message(results.some(r=>r.paths.length)?'刻线稿已生成。可调参数、生成变奏或进入制版。':'图片很浅，当前没有可刻线区域。请调整明暗或使用“自动展开明暗”。');
   }catch(error){message('图片读取失败：'+error.message);}
-  finally{bitmap?.close();$('uploadPhoto').disabled=false;e.target.value='';}
-};
+  finally{bitmap?.close();$('uploadPhoto').disabled=false;}
+}
+$('photoFile').onchange=async e=>{await loadPhoto(e.target.files[0]);e.target.value='';};
+window.addEventListener('load',async()=>{if(new URLSearchParams(location.search).get('demo')==='1'&&location.protocol!=='file:'){try{const response=await fetch('examples/photo-fixture.png');await loadPhoto(await response.blob());}catch(error){message('演示样片载入失败：'+error.message);}}},{once:true});
 setTimeout(()=>{showWorkspace(true);const c=$('designCanvas'),cx=c.getContext('2d');cx.fillStyle='#f1ead6';cx.fillRect(0,0,c.width,c.height);setBusy(false);},0);
