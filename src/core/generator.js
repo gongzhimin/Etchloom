@@ -138,7 +138,8 @@
     for (const path of result.paths) {
       // Smooth width modulation follows the whole stroke rather than independent pixel noise.
       for (let start = 0; start < path.points.length - 1; start += 12) {
-        context.beginPath(); context.lineWidth = path.width * strokeScale * (path.taper ? .18 + .82 * Math.pow(Math.sin(Math.PI * (start+6)/(path.points.length+12)), .45) : .85 + .15 * Math.sin(start / path.points.length * Math.PI));
+        const progress=(start+6)/(path.points.length+12),modulation=path.taper==='tip' ? .16+.84*Math.pow(1-progress,.58) : path.taper ? .18+.82*Math.pow(Math.sin(Math.PI*progress),.45) : .85+.15*Math.sin(start/path.points.length*Math.PI);
+        context.beginPath(); context.lineWidth = path.width * strokeScale * modulation;
         const end = Math.min(path.points.length - 1, start + 12);
         context.moveTo(...path.points[start]);
         for (let i = start + 1; i <= end; i++) context.lineTo(...path.points[i]);
@@ -360,6 +361,17 @@
     return image && ((image.width===225 && image.height===165)||(image.width===450&&image.height===330)||(image.width===900&&image.height===660)) && Array.isArray(image.pixels)
       && image.pixels.length===image.width*image.height && image.pixels.every(v=>Number.isInteger(v)&&v>=0&&v<=255);
   }
+  function filamentRidges(tone,w,h,params={}){
+    const n=w*h,score=new Float32Array(n),nxField=new Float32Array(n),nyField=new Float32Array(n),scaleField=new Uint8Array(n),detail=params.detail??65;
+    const blur=radius=>{const integral=new Float64Array((w+1)*(h+1)),out=new Float32Array(n);for(let y=0;y<h;y++){let row=0;for(let x=0;x<w;x++){row+=tone[y*w+x];integral[(y+1)*(w+1)+x+1]=integral[y*(w+1)+x+1]+row;}}for(let y=0;y<h;y++)for(let x=0;x<w;x++){const l=Math.max(0,x-radius),r=Math.min(w,x+radius+1),t=Math.max(0,y-radius),b=Math.min(h,y+radius+1);out[y*w+x]=(integral[b*(w+1)+r]-integral[t*(w+1)+r]-integral[b*(w+1)+l]+integral[t*(w+1)+l])/((r-l)*(b-t));}return out;};
+    for(const radius of [1,2,3]){const a=blur(radius),far=radius*2+2;for(let y=far+1;y<h-far-1;y++)for(let x=far+1;x<w-far-1;x++){const i=y*w+x,dxx=a[i+1]-2*a[i]+a[i-1],dyy=a[i+w]-2*a[i]+a[i-w],dxy=(a[i+w+1]-a[i+w-1]-a[i-w+1]+a[i-w-1])*.25,tr=dxx+dyy,disc=Math.sqrt((dxx-dyy)**2+4*dxy*dxy),large=(tr+disc)*.5,small=(tr-disc)*.5;if(large<=0||large<Math.abs(small)*1.45)continue;let nx=dxy,ny=large-dxx;if(Math.abs(nx)+Math.abs(ny)<1e-8){nx=large===dxx?1:0;ny=large===dxx?0:1;}const length=Math.hypot(nx,ny);nx/=length;ny/=length;const at=(px,py)=>a[Math.round(py)*w+Math.round(px)],sideA=at(x+nx*far,y+ny*far)-a[i],sideB=at(x-nx*far,y-ny*far)-a[i],contrast=(sideA+sideB)*.5,minSide=.032+(100-detail)*.0003;if(sideA<minSide||sideB<minSide)continue;const value=large*radius*radius*contrast;if(value>score[i]){score[i]=value;nxField[i]=nx;nyField[i]=ny;scaleField[i]=radius;}}}
+    const ridge=new Uint8Array(n),used=new Uint8Array(n),seeds=[],threshold=.0015+(100-detail)*.000018;for(let y=6;y<h-6;y++)for(let x=6;x<w-6;x++){const i=y*w+x;if(score[i]<threshold)continue;const ox=Math.round(nxField[i]),oy=Math.round(nyField[i]),o=oy*w+ox;if(score[i]>=score[i-o]&&score[i]>score[i+o]){ridge[i]=1;seeds.push(i);}}
+    seeds.sort((a,b)=>score[b]-score[a]);const paths=[];function follow(start){const out=[];let i=start;for(let k=0;k<1800;k++){let best=-1,bestScore=-1;const ix=i%w,iy=Math.floor(i/w),nx=nxField[i],ny=nyField[i];for(const o of [-w-1,-w,-w+1,-1,1,w-1,w,w+1]){const j=i+o;if(!ridge[j]||used[j])continue;const dx=j%w-ix,dy=Math.floor(j/w)-iy,normalMatch=Math.abs(nx*nxField[j]+ny*nyField[j]);if(normalMatch<.55||Math.abs(dx*nx+dy*ny)>.92)continue;const candidate=score[j]*normalMatch;if(candidate>bestScore){best=j;bestScore=candidate;}}if(best<0)break;used[best]=1;out.push([best%w,Math.floor(best/w)]);i=best;}return out;}
+    const support=q=>{const radius=6;let sum=0,count=0;for(let y=-radius;y<=radius;y+=2)for(let x=-radius;x<=radius;x+=2)if(x*x+y*y<=radius*radius){sum+=1-tone[Math.max(0,Math.min(h-1,q[1]+y))*w+Math.max(0,Math.min(w-1,q[0]+x))];count++;}return sum/count;};
+    const centerGrid=new Map(),centerCell=4,nearCenter=q=>{const gx=Math.floor(q[0]/centerCell),gy=Math.floor(q[1]/centerCell);for(let y=gy-1;y<=gy+1;y++)for(let x=gx-1;x<=gx+1;x++){const bucket=centerGrid.get(y*2048+x);if(bucket&&bucket.some(p=>(p[0]-q[0])**2+(p[1]-q[1])**2<20.25))return true;}return false;},remember=points=>{for(const q of points){const key=Math.floor(q[1]/centerCell)*2048+Math.floor(q[0]/centerCell);if(!centerGrid.has(key))centerGrid.set(key,[]);centerGrid.get(key).push(q);}};
+    for(const seed of seeds){if(used[seed])continue;used[seed]=1;const points=follow(seed).reverse().concat([[seed%w,Math.floor(seed/w)]],follow(seed));if(points.length<Math.max(8,Math.round(w/120))||points.filter(nearCenter).length>points.length*.35)continue;if(support(points.at(-1))>support(points[0]))points.reverse();const meanScale=points.reduce((sum,q)=>sum+scaleField[q[1]*w+q[0]],0)/points.length,meanScore=points.reduce((sum,q)=>sum+score[q[1]*w+q[0]],0)/points.length;remember(points);paths.push({points,width:.17+Math.min(.18,meanScore*2.8),sourceWidth:meanScale*2+1,role:'filament',mark:'ridge-filament',taper:'tip',root:'start'});}
+    return paths;
+  }
   function photo(recipe) {
     const p={...algorithmDefaults,...recipe.params}, w=recipe.image.width,h=recipe.image.height,n=w*h,hd=w>=450;
     const rng=random((recipe.seed^Math.imul(recipe.variation+1,1597334677))>>>0), phase=rng()*Math.PI*2;
@@ -455,6 +467,7 @@
       const filamentGrid=new Map(),filamentCell=2;
       const filamentNear=(x,y)=>{const gx=Math.floor(x/filamentCell),gy=Math.floor(y/filamentCell);for(let yy=gy-1;yy<=gy+1;yy++)for(let xx=gx-1;xx<=gx+1;xx++){const bucket=filamentGrid.get(yy*2048+xx);if(bucket&&bucket.some(q=>(q[0]-x)**2+(q[1]-y)**2<4))return true;}return false;};
       const rememberFilament=points=>{for(const q of points){const key=Math.floor(q[1]/filamentCell)*2048+Math.floor(q[0]/filamentCell);if(!filamentGrid.has(key))filamentGrid.set(key,[]);filamentGrid.get(key).push(q);}};
+      for(const ridgePath of filamentRidges(tone,w,h,p)){rememberFilament(ridgePath.points);paths.push({...ridgePath,points:ridgePath.points.map(q=>[q[0]*900/w,q[1]*660/h]),width:ridgePath.width*p.fidelity/100});contours++;}
       for(const i of seeds){
         if(used[i])continue;used[i]=1;
         const a=follow(i),b=follow(i),points=b.reverse().concat([[i%w,Math.floor(i/w)]],a);
@@ -471,7 +484,7 @@
     const filaments=paths.filter(path=>path.role==='filament').length;
     return {paths,recipe:JSON.parse(JSON.stringify(recipe)),layout:{width:w,height:h},stats:{algorithm:'photo',primary,cross:crossCount,contours,filaments}};
   }
-  const api = { defaults, algorithmDefaults, generate, draw, layout, validRecipe, validImage };
+  const api = { defaults, algorithmDefaults, generate, draw, layout, validRecipe, validImage, filamentRidges };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PrintGenerator = api;
 })(globalThis);

@@ -120,7 +120,7 @@ Etchloom 可以导出带物理 DPI 的 PNG、可缩放 SVG 刻线路径、可复
 ## 开发
 
 ```bash
-npm test          # 运行全部 35 项测试
+npm test          # 运行全部 38 项测试
 npm run benchmark # 更新 BENCHMARK.json
 npm start         # 启动本地工作台
 ```

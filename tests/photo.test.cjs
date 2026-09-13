@@ -41,6 +41,24 @@ test('thin high-contrast whiskers become tapered filaments below silhouette weig
     return whisker?10:face?95:245;
   })};
   const r=recipe(image);Object.assign(r.params,{detail:100,fidelity:100,density:0});const result=G.generate(r),filaments=result.paths.filter(p=>p.role==='filament'),contours=result.paths.filter(p=>p.role==='contour');
-  assert.ok(filaments.length>=3);assert.ok(filaments.every(p=>p.taper&&p.mark==='fine-filament'));
+  assert.ok(filaments.length>=3);assert.ok(filaments.every(p=>p.taper&&['fine-filament','ridge-filament'].includes(p.mark)));
+  assert.ok(filaments.filter(p=>p.mark==='ridge-filament').every(p=>p.taper==='tip'&&p.root==='start'&&p.sourceWidth>=3));
   assert.ok(Math.max(...filaments.map(p=>p.width))<Math.min(...contours.map(p=>p.width))*.6);
+});
+test('multi-scale ridges retain low-contrast filaments but reject a single silhouette edge',()=>{
+  const width=900,height=660,field=fn=>Float32Array.from({length:width*height},(_,i)=>fn(i%width,Math.floor(i/width)));
+  const line=G.filamentRidges(field((x,y)=>x>80&&x<820&&Math.abs(y-330)<1.5?150/255:225/255),width,height,{detail:100});
+  const edge=G.filamentRidges(field(x=>x<450?70/255:225/255),width,height,{detail:100});
+  assert.equal(line.length,1);assert.ok(line[0].points.length>700);assert.equal(line[0].mark,'ridge-filament');
+  assert.equal(edge.length,0);
+});
+test('ridge filament roots face the attached dark region and taper toward the free tip',()=>{
+  const width=900,height=660,tone=Float32Array.from({length:width*height},(_,i)=>{const x=i%width,y=Math.floor(i/width),face=((x-380)/170)**2+((y-330)/210)**2<1,line=x>510&&x<840&&Math.abs(y-330)<1.2;return(line?10:face?95:245)/255;});
+  const filament=G.filamentRidges(tone,width,height,{detail:100}).sort((a,b)=>b.points.length-a.points.length)[0];
+  assert.ok(filament.points.length>250);assert.ok(filament.points[0][0]<filament.points.at(-1)[0]);assert.equal(filament.taper,'tip');assert.equal(filament.root,'start');
+});
+test('tip taper renders the root stronger than the free endpoint',()=>{
+  const widths=[],context={canvas:{width:900,height:660},save(){},restore(){},clearRect(){},fillRect(){},scale(){},beginPath(){},moveTo(){},lineTo(){},stroke(){widths.push(this.lineWidth);}};
+  G.draw(context,{paths:[{points:Array.from({length:40},(_,i)=>[100+i*5,200]),width:1,taper:'tip'}]});
+  assert.ok(widths.length>2);assert.ok(widths[0]>widths.at(-1)*1.8);
 });
