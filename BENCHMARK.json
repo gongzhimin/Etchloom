@@ -1,0 +1,20 @@
+{
+  "fixture": "synthetic gradient vessel; not a user photograph",
+  "node": "v24.14.1",
+  "analysis": [
+    900,
+    660
+  ],
+  "seed": 77,
+  "paths": 7187,
+  "layers": {
+    "bundles": 1757,
+    "microDetails": 678,
+    "background": 0,
+    "darkMasses": 0,
+    "brightGaps": 0
+  },
+  "elapsedMs": 319,
+  "processPeakRSSMiB": 197.6,
+  "note": "Node process peak RSS; not browser memory. Browser UI reports a working-set estimate."
+}
