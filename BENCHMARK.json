@@ -6,15 +6,15 @@
     660
   ],
   "seed": 77,
-  "paths": 7543,
+  "paths": 7628,
   "layers": {
-    "bundles": 1763,
+    "bundles": 1742,
     "microDetails": 1019,
     "background": 0,
     "darkMasses": 0,
-    "brightGaps": 2
+    "brightGaps": 1
   },
-  "elapsedMs": 685,
-  "processPeakRSSMiB": 257,
+  "elapsedMs": 630,
+  "processPeakRSSMiB": 279.7,
   "note": "Node process peak RSS; not browser memory. Browser UI reports a working-set estimate."
 }

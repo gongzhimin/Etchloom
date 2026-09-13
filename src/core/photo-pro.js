@@ -39,8 +39,12 @@
     return{...image,pixels:Array.from(src,v=>Math.round(v)),noiseLevel:estimated,cleanupStrength:adaptive};
   }
   function sketchStructure(image,amount=45){
-    amount=Math.max(0,Math.min(100,amount));if(amount===0)return{...image,pixels:image.pixels.slice(),sketchStrength:0};const fine=blur(image,1).pixels,broad=blur(image,3).pixels,mix=amount/100,out=new Array(image.pixels.length);
-    for(let i=0;i<out.length;i++){const simplified=image.pixels[i]*(1-mix*.28)+broad[i]*mix*.28,darkStroke=Math.max(0,broad[i]-fine[i]-1.5),softInk=darkStroke/(darkStroke+7);out[i]=Math.round(Math.max(0,Math.min(255,simplified-softInk*72*mix)));}return{...image,pixels:out,sketchStrength:mix};
+    amount=Math.max(0,Math.min(100,amount));if(amount===0)return{...image,pixels:image.pixels.slice(),sketchStrength:0};const {width:w,height:h}=image,fine=blur(image,1).pixels,broad=blur(image,4).pixels,mix=amount/100,response=new Float32Array(image.pixels.length),keep=new Uint8Array(image.pixels.length),out=new Array(image.pixels.length),low=2.8-mix*1.2,high=11-mix*3;
+    for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x,dog=Math.max(0,broad[i]-fine[i]),gx=(broad[i+1]-broad[i-1])*.5,gy=(broad[i+w]-broad[i-w])*.5,gradient=Math.hypot(gx,gy),coherent=Math.max(dog,gradient*.42);response[i]=coherent;if(coherent>low)keep[i]=1;}
+    // A structural stroke must have neighboring support. This removes isolated
+    // photographic grain while retaining thin, connected contours.
+    for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x;if(!keep[i])continue;let neighbors=0;for(const o of [-w-1,-w,-w+1,-1,1,w-1,w,w+1])neighbors+=keep[i+o];if(neighbors<2)keep[i]=0;}
+    for(let i=0;i<out.length;i++){const t=keep[i]?Math.max(0,Math.min(1,(response[i]-low)/(high-low))):0,ink=t*t*(3-2*t),shadow=Math.max(0,(82-broad[i])/82)*22*mix;out[i]=Math.round(Math.max(0,255-ink*(185+45*mix)-shadow));}return{...image,pixels:out,sketchStrength:mix};
   }
   function sample(image,x,y){return image.pixels[Math.min(image.height-1,Math.max(0,Math.floor(y*image.height/660)))*image.width+Math.min(image.width-1,Math.max(0,Math.floor(x*image.width/900)))];}
   function hash(x,y,seed){let n=(Math.imul((x|0)+101,374761393)^Math.imul((y|0)+47,668265263)^seed)>>>0;n=Math.imul(n^(n>>>13),1274126177)>>>0;return(n>>>0)/4294967295;}
