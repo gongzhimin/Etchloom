@@ -28,6 +28,8 @@ Etchloom translates a photograph into an editable language of engraved marks. Re
 ## Highlights
 
 - **Image-aware engraving** — contours, tone, local texture, and structural direction drive every mark.
+- **Structure-aware cleanup** — adaptive edge-preserving diffusion removes photographic grain before cross-scale detail confidence selects engraving marks.
+- **Sketch structure pass** — an XDoG-inspired map clarifies meaningful strokes while the cleaned photograph continues to control tone.
 - **Multi-scale detail** — broad tonal masses, coherent hatch bundles, and fine needle marks work together.
 - **Filament-aware contours** — whiskers, antennae, and similar narrow structures become tapered centerlines instead of doubled heavy edges.
 - **Editable line fields** — guide direction, recover white, or protect a finished region.
@@ -120,14 +122,14 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 ## Development
 
 ```bash
-npm test          # Run all 38 tests
+npm test          # Run all 43 tests
 npm run benchmark # Update BENCHMARK.json
 npm start         # Start the local studio
 ```
 
 The core remains compatible with browsers and Node tests. The suite covers deterministic generation, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
 
-Read the [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), the [filament research note](docs/FILAMENT_RESEARCH.md), the [refinement record](docs/REFINEMENT_PLAN.md), or [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
+Read the [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), [image cleanup pipeline](docs/IMAGE_CLEANUP.md), [sketch structure pipeline](docs/SKETCH_PIPELINE.md), [filament research note](docs/FILAMENT_RESEARCH.md), [refinement record](docs/REFINEMENT_PLAN.md), or [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
 
 ## Material calibration
 

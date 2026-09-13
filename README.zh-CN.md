@@ -28,6 +28,8 @@ Etchloom 将照片重新组织成可编辑的版画刻线。区域排线跟随�
 ## 核心能力
 
 - **图片驱动的刻线**：轮廓、明暗、局部纹理与结构方向共同决定线条。
+- **结构感知净化**：先用自适应保边扩散清理照片颗粒，再以跨尺度可信度挑选可刻细节。
+- **素描结构层**：用 XDoG 思路提炼有意义的笔触，同时仍由净化灰度图控制版画明暗。
 - **多尺度细节**：大明暗块、中尺度线束和微细针痕共同刻画图像。
 - **细丝轮廓识别**：胡须、触角等窄结构会收束为渐隐中心线，避免双边缘叠成粗黑线。
 - **可编辑线场**：引导局部方向、恢复留白或保护已经完成的区域。
@@ -120,14 +122,14 @@ Etchloom 可以导出带物理 DPI 的 PNG、可缩放 SVG 刻线路径、可复
 ## 开发
 
 ```bash
-npm test          # 运行全部 38 项测试
+npm test          # 运行全部 43 项测试
 npm run benchmark # 更新 BENCHMARK.json
 npm start         # 启动本地工作台
 ```
 
 核心代码同时兼容浏览器和 Node 测试。自动测试覆盖生成复现、细节保留、区域刻线语法、虚拟版保存、物理线宽换算、Worker 取消和直接文件运行。
 
-进一步阅读：[刻线纹理计划](docs/LINE_TEXTURE_PLAN.md)、[细丝算法调研](docs/FILAMENT_RESEARCH.md)、[精进记录](docs/REFINEMENT_PLAN.md)和[贡献指南](CONTRIBUTING.md)。
+进一步阅读：[刻线纹理计划](docs/LINE_TEXTURE_PLAN.md)、[图像净化管线](docs/IMAGE_CLEANUP.md)、[素描结构管线](docs/SKETCH_PIPELINE.md)、[细丝算法调研](docs/FILAMENT_RESEARCH.md)、[精进记录](docs/REFINEMENT_PLAN.md)和[贡献指南](CONTRIBUTING.md)。
 
 ## 实物标定
 

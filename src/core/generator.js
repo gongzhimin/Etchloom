@@ -375,16 +375,16 @@
   function photo(recipe) {
     const p={...algorithmDefaults,...recipe.params}, w=recipe.image.width,h=recipe.image.height,n=w*h,hd=w>=450;
     const rng=random((recipe.seed^Math.imul(recipe.variation+1,1597334677))>>>0), phase=rng()*Math.PI*2;
-    let tone=Float32Array.from(recipe.image.pixels,v=>v/255);
+    let tone=Float32Array.from(recipe.image.pixels,v=>v/255),structureTone=recipe.structureImage&&validImage(recipe.structureImage)?Float32Array.from(recipe.structureImage.pixels,v=>v/255):tone;
     // Smoothing suppresses camera noise before direction and edge estimation.
     for(let pass=0;pass<Math.round((100-p.detail)/22);pass++) {
-      const next=tone.slice();
+      const next=tone.slice(),structureNext=structureTone===tone?next:structureTone.slice();
       for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;next[i]=(tone[i]*4+tone[i-1]+tone[i+1]+tone[i-w]+tone[i+w])/8;}
-      tone=next;
+      if(structureTone!==tone)for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;structureNext[i]=(structureTone[i]*4+structureTone[i-1]+structureTone[i+1]+structureTone[i-w]+structureTone[i+w])/8;}tone=next;structureTone=structureNext;
     }
     const tx=new Float32Array(n),ty=new Float32Array(n),gxField=new Float32Array(n),gyField=new Float32Array(n),edge=new Float32Array(n),normal=new Uint8Array(n);
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
-      const i=y*w+x,gx=(tone[i+1]-tone[i-1])*.5,gy=(tone[i+w]-tone[i-w])*.5;
+      const i=y*w+x,gx=(structureTone[i+1]-structureTone[i-1])*.5,gy=(structureTone[i+w]-structureTone[i-w])*.5;
       gxField[i]=gx;gyField[i]=gy;tx[i]=gx*gx-gy*gy;ty[i]=2*gx*gy;edge[i]=Math.hypot(gx,gy);
       const a=(Math.atan2(gy,gx)*180/Math.PI+180)%180;
       normal[i]=a<22.5||a>=157.5?0:a<67.5?1:a<112.5?2:3;
@@ -467,6 +467,8 @@
       const filamentGrid=new Map(),filamentCell=2;
       const filamentNear=(x,y)=>{const gx=Math.floor(x/filamentCell),gy=Math.floor(y/filamentCell);for(let yy=gy-1;yy<=gy+1;yy++)for(let xx=gx-1;xx<=gx+1;xx++){const bucket=filamentGrid.get(yy*2048+xx);if(bucket&&bucket.some(q=>(q[0]-x)**2+(q[1]-y)**2<4))return true;}return false;};
       const rememberFilament=points=>{for(const q of points){const key=Math.floor(q[1]/filamentCell)*2048+Math.floor(q[0]/filamentCell);if(!filamentGrid.has(key))filamentGrid.set(key,[]);filamentGrid.get(key).push(q);}};
+      // Filament width and polarity come from the cleaned tone; the sketch map may
+      // exaggerate broad boundaries into artificial narrow ridges.
       for(const ridgePath of filamentRidges(tone,w,h,p)){rememberFilament(ridgePath.points);paths.push({...ridgePath,points:ridgePath.points.map(q=>[q[0]*900/w,q[1]*660/h]),width:ridgePath.width*p.fidelity/100});contours++;}
       for(const i of seeds){
         if(used[i])continue;used[i]=1;
@@ -476,7 +478,7 @@
         const thin=rawThin.map((_,k)=>{let votes=0,total=0;for(let j=Math.max(0,k-2);j<=Math.min(rawThin.length-1,k+2);j++){votes+=rawThin[j]?1:0;total++;}return votes>=Math.ceil(total*.6);});
         const runs=[];let run=[points[0]],kind=thin[0];for(let k=1;k<points.length;k++){if(thin[k]===kind)run.push(points[k]);else{runs.push([kind,run]);kind=thin[k];run=[points[k]];}}runs.push([kind,run]);
         for(const [isThin,segment]of runs){
-          if(isThin&&segment.length>=Math.max(10,Math.round(w/90))){const centered=segment.map(q=>{const j=q[1]*w+q[0],e=edge[j];if(e<.0001)return q;const nx=-gxField[j]/e,ny=-gyField[j]/e;let best=q,bestTone=tone[j];for(let s=.5;s<=4;s+=.5){const x=Math.max(1,Math.min(w-2,q[0]+nx*s)),y=Math.max(1,Math.min(h-2,q[1]+ny*s)),v=tone[Math.round(y)*w+Math.round(x)];if(v<bestTone){bestTone=v;best=[x,y];}}return best;}),fine=segment.reduce((sum,q)=>sum+edge[q[1]*w+q[0]],0)/segment.length;if(centered.filter(q=>filamentNear(q[0],q[1])).length/centered.length>.35)continue;rememberFilament(centered);paths.push({points:centered.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.16+Math.min(.24,fine*.38))*p.fidelity/100,role:'filament',mark:'fine-filament',taper:true});contours++;
+          if(isThin&&!recipe.structureImage&&segment.length>=Math.max(10,Math.round(w/90))){const centered=segment.map(q=>{const j=q[1]*w+q[0],e=edge[j];if(e<.0001)return q;const nx=-gxField[j]/e,ny=-gyField[j]/e;let best=q,bestTone=tone[j];for(let s=.5;s<=4;s+=.5){const x=Math.max(1,Math.min(w-2,q[0]+nx*s)),y=Math.max(1,Math.min(h-2,q[1]+ny*s)),v=tone[Math.round(y)*w+Math.round(x)];if(v<bestTone){bestTone=v;best=[x,y];}}return best;}),fine=segment.reduce((sum,q)=>sum+edge[q[1]*w+q[0]],0)/segment.length;if(centered.filter(q=>filamentNear(q[0],q[1])).length/centered.length>.35)continue;rememberFilament(centered);paths.push({points:centered.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.16+Math.min(.24,fine*.38))*p.fidelity/100,role:'filament',mark:'fine-filament',taper:true});contours++;
           }else if(segment.length>=3){const strength=segment.reduce((m,q)=>Math.max(m,edge[q[1]*w+q[0]]),0);paths.push({points:segment.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.3+Math.min(.65,strength*2))*p.fidelity/100,role:'contour'});contours++;}
         }
       }

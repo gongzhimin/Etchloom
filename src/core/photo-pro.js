@@ -1,7 +1,7 @@
 /* Photo refinement pipeline. No DOM; usable in a worker and in node tests. */
 (function(root){
   'use strict';
-  const defaults={exposure:50,blackPoint:0,whitePoint:100,shadows:20,contour:85,hatch:100,maze:0,cross:65,contourSeed:1,hatchSeed:1,mazeSeed:1};
+  const defaults={exposure:50,blackPoint:0,whitePoint:100,shadows:20,cleanup:55,sketch:45,contour:85,hatch:100,maze:0,cross:65,contourSeed:1,hatchSeed:1,mazeSeed:1};
   const clone=x=>JSON.parse(JSON.stringify(x));
   function random(seed){let s=seed>>>0;return()=>{s+=0x6D2B79F5;let t=Math.imul(s^s>>>15,1|s);t^=t+Math.imul(t^t>>>7,61|t);return((t^t>>>14)>>>0)/4294967296;};}
   function valid(pro){
@@ -28,6 +28,19 @@
       const l=Math.max(0,x-radius),r=Math.min(w,x+radius+1),t=Math.max(0,y-radius),b=Math.min(h,y+radius+1);
       out[y*w+x]=Math.round((integral[b*(w+1)+r]-integral[t*(w+1)+r]-integral[b*(w+1)+l]+integral[t*(w+1)+l])/((r-l)*(b-t)));
     }return {width:w,height:h,pixels:out};
+  }
+  function noiseEstimate(image){
+    const {width:w,height:h,pixels}=image,samples=[];for(let y=2;y<h-2;y+=3)for(let x=2;x<w-2;x+=3){const i=y*w+x,residual=Math.abs(pixels[i]*4-pixels[i-1]-pixels[i+1]-pixels[i-w]-pixels[i+w])/4;samples.push(residual);}if(!samples.length)return 0;samples.sort((a,b)=>a-b);return Math.min(1,samples[Math.floor(samples.length*.5)]/32);
+  }
+  function cleanImage(image,amount=55,estimated=noiseEstimate(image)){
+    amount=Math.max(0,Math.min(100,amount));if(amount===0)return{...image,pixels:image.pixels.slice(),noiseLevel:estimated,cleanupStrength:0};
+    const {width:w,height:h}=image,n=w*h,adaptive=amount/100*(.42+Math.min(1,estimated)*.58),iterations=Math.max(1,Math.round(adaptive*6)),threshold=9+amount*.19;let src=Float32Array.from(image.pixels);
+    for(let pass=0;pass<iterations;pass++){const out=src.slice();for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x,c=src[i];let flow=0;for(const j of [i-1,i+1,i-w,i+w]){const d=src[j]-c,conduct=1/(1+(d/threshold)**2);flow+=conduct*d;}out[i]=Math.max(0,Math.min(255,c+flow*.2));}src=out;}
+    return{...image,pixels:Array.from(src,v=>Math.round(v)),noiseLevel:estimated,cleanupStrength:adaptive};
+  }
+  function sketchStructure(image,amount=45){
+    amount=Math.max(0,Math.min(100,amount));if(amount===0)return{...image,pixels:image.pixels.slice(),sketchStrength:0};const fine=blur(image,1).pixels,broad=blur(image,3).pixels,mix=amount/100,out=new Array(image.pixels.length);
+    for(let i=0;i<out.length;i++){const simplified=image.pixels[i]*(1-mix*.28)+broad[i]*mix*.28,darkStroke=Math.max(0,broad[i]-fine[i]-1.5),softInk=darkStroke/(darkStroke+7);out[i]=Math.round(Math.max(0,Math.min(255,simplified-softInk*72*mix)));}return{...image,pixels:out,sketchStrength:mix};
   }
   function sample(image,x,y){return image.pixels[Math.min(image.height-1,Math.max(0,Math.floor(y*image.height/660)))*image.width+Math.min(image.width-1,Math.max(0,Math.floor(x*image.width/900)))];}
   function hash(x,y,seed){let n=(Math.imul((x|0)+101,374761393)^Math.imul((y|0)+47,668265263)^seed)>>>0;n=Math.imul(n^(n>>>13),1274126177)>>>0;return(n>>>0)/4294967295;}
@@ -78,12 +91,11 @@
     }return{paths:out,stats};
   }
   function microDetails(image,seed,params={}){
-    const {width:w,height:h,pixels}=image,detail=params.detail??65,candidates=[],step=w>=450?2:1;
-    const at=(x,y)=>pixels[Math.max(0,Math.min(h-1,y))*w+Math.max(0,Math.min(w-1,x))];
+    const {width:w,height:h,pixels}=image,detail=params.detail??65,candidates=[],step=w>=450?2:1,scale1=blur(image,1).pixels,scale3=blur(image,3).pixels;
+    const at=(a,x,y)=>a[Math.max(0,Math.min(h-1,y))*w+Math.max(0,Math.min(w-1,x))];
     for(let y=2;y<h-2;y+=step)for(let x=2;x<w-2;x+=step){
-      const gx=(at(x+1,y-1)+2*at(x+1,y)+at(x+1,y+1)-at(x-1,y-1)-2*at(x-1,y)-at(x-1,y+1))/1020;
-      const gy=(at(x-1,y+1)+2*at(x,y+1)+at(x+1,y+1)-at(x-1,y-1)-2*at(x,y-1)-at(x+1,y-1))/1020;
-      const fine=Math.abs(at(x,y)*4-at(x-1,y)-at(x+1,y)-at(x,y-1)-at(x,y+1))/1020,score=Math.hypot(gx,gy)*.8+fine*.75,threshold=.025+(100-detail)*.00045;
+      const gradient=a=>[(at(a,x+1,y-1)+2*at(a,x+1,y)+at(a,x+1,y+1)-at(a,x-1,y-1)-2*at(a,x-1,y)-at(a,x-1,y+1))/1020,(at(a,x-1,y+1)+2*at(a,x,y+1)+at(a,x+1,y+1)-at(a,x-1,y-1)-2*at(a,x,y-1)-at(a,x+1,y-1))/1020],g1=gradient(scale1),g3=gradient(scale3),m1=Math.hypot(...g1),m3=Math.hypot(...g3),alignment=m1*m3?Math.abs((g1[0]*g3[0]+g1[1]*g3[1])/(m1*m3)):0;
+      const fine=Math.abs(at(pixels,x,y)*4-at(pixels,x-1,y)-at(pixels,x+1,y)-at(pixels,x,y-1)-at(pixels,x,y+1))/1020,persistence=Math.min(m1,m3)*(.35+.65*alignment),gridDistance=Math.min(x%8,8-x%8,y%8,8-y%8),gridPenalty=gridDistance<1.1&&m3<m1*.48?.45:1,score=(persistence*.95+fine*.18*alignment)*gridPenalty,gx=g1[0],gy=g1[1],threshold=.018+(100-detail)*.00032;
       if(score>threshold&&hash(x,y,seed)<Math.min(1,(score-threshold)*9+.08))candidates.push({x,y,gx,gy,score});
     }
     candidates.sort((a,b)=>b.score-a.score);const limit=1000+Math.round(detail*42),paths=[];
@@ -176,14 +188,14 @@
   }
   function freeze(paths,e){return paths.filter(p=>touches(p,e)).flatMap(p=>fragments(p,q=>Math.hypot(q[0]-e.x,q[1]-e.y)<e.radius));}
   function generate(recipe,baseGenerate,progress=()=>{}){
-    const p={...defaults,...recipe.pro},image=toneImage(recipe.image,p);progress(10,'明暗校正');
-    const base=baseGenerate({...recipe,pro:undefined,image,seed:(recipe.seed^p.hatchSeed)>>>0});
+    const p={...defaults,...recipe.pro},adjusted=toneImage(recipe.image,p),noiseLevel=noiseEstimate(adjusted),image=cleanImage(adjusted,p.cleanup,noiseLevel),structureImage=sketchStructure(image,p.sketch);progress(10,'明暗校正、净化与结构素描');
+    const base=baseGenerate({...recipe,pro:undefined,image,structureImage,seed:(recipe.seed^p.hatchSeed)>>>0});
     progress(55,'轮廓与排线');
     const budget=Math.max(1,(p.hatch+p.maze)/100);const paths=[],contourRandom=random(p.contourSeed);
     for(const path of base.paths){const isContour=path.role==='contour'||path.role==='filament';const weight=(isContour?p.contour:p.hatch/budget)/100*(path.role==='cross'?p.cross/100:1)*(isContour?.92+contourRandom()*.16:1);if(weight>0)paths.push({...path,width:path.width*weight});}
     // Coarse contour scale fills structural gaps while fine edges retain small features.
     if(p.contour>0&&recipe.image.width>=450){
-      const coarse=baseGenerate({...recipe,pro:undefined,image:blur(image,Math.max(1,Math.round(image.width/300))),seed:(p.contourSeed^recipe.seed)>>>0,params:{...recipe.params,density:0,fidelity:100,detail:45}});
+      const coarseImage=blur(image,Math.max(1,Math.round(image.width/300))),coarse=baseGenerate({...recipe,pro:undefined,image:coarseImage,structureImage:sketchStructure(coarseImage,p.sketch),seed:(p.contourSeed^recipe.seed)>>>0,params:{...recipe.params,density:0,fidelity:100,detail:45}});
       for(const path of coarse.paths)if(path.role==='contour')paths.push({...path,width:path.width*p.contour/100*.35,role:'contour-coarse'});
     }
     const styleSeed=(recipe.seed^recipe.variation^p.hatchSeed)>>>0,grammar=engravingGrammar(paths,image,styleSeed,recipe.params),detailWeight=(p.hatch*.65+p.contour*.35)/100;
@@ -194,8 +206,8 @@
     if(p.maze>0){const maze=imageMaze(image,(p.mazeSeed^recipe.seed^recipe.variation)>>>0);mazeRegions=maze.regions.length;for(const path of maze.paths)grammar.paths.push({...path,width:path.width*p.maze/100/budget});}
     progress(90,'局部编辑');
     const edited=applyEdits(grammar.paths,p.edits);
-    return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,edits:(p.edits||[]).length,pro:true}};
+    return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,noiseLevel,cleanupStrength:image.cleanupStrength,sketchStrength:structureImage.sketchStrength,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
+  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);
