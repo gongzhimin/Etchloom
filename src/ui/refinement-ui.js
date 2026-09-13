@@ -87,7 +87,7 @@
       if(r.mode==='photo'){for(const key of Object.keys(PhotoPro.defaults)){const v=r.pro?.[key]??PhotoPro.defaults[key];$('pro-'+key).value=v;if($('pro-'+key+'-value'))$('pro-'+key+'-value').value=v;}syncSimple();$('cropNote').textContent=original?'原图仅保留在当前会话，可重新裁切；刷新后需重新上传。':'恢复的是分析图，重新裁切需要上传原图。';}
       if(lastRecipe!==r.seed){editHistory=[];lastRecipe=r.seed;}
     },
-    paint(r,result){if(r.mode==='photo'){repaintSource(r);$('photoInfo').textContent=`${r.image.width} × ${r.image.height} · ${result.stats.bundles||0} 组线束 · ${result.stats.microDetails||0} 处微细节 · ${result.stats.contours||0} 段轮廓`;}}
+    paint(r,result){if(r.mode==='photo'){repaintSource(r);$('photoInfo').textContent=`${r.image.width} × ${r.image.height} · ${result.stats.bundles||0} 组线束 · ${result.stats.microDetails||0} 处微细节 · ${result.stats.filaments||0} 条细丝 · ${result.stats.contours||0} 段轮廓`;}}
     ,busy(b){isBusy=b;for(const id of ['undoLocal','clearLocal','applyCrop','exportDesignPNG','exportDesignSVG'])$(id).disabled=b;}
   };
 })();

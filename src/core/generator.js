@@ -370,10 +370,10 @@
       for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;next[i]=(tone[i]*4+tone[i-1]+tone[i+1]+tone[i-w]+tone[i+w])/8;}
       tone=next;
     }
-    const tx=new Float32Array(n),ty=new Float32Array(n),edge=new Float32Array(n),normal=new Uint8Array(n);
+    const tx=new Float32Array(n),ty=new Float32Array(n),gxField=new Float32Array(n),gyField=new Float32Array(n),edge=new Float32Array(n),normal=new Uint8Array(n);
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
       const i=y*w+x,gx=(tone[i+1]-tone[i-1])*.5,gy=(tone[i+w]-tone[i-w])*.5;
-      tx[i]=gx*gx-gy*gy;ty[i]=2*gx*gy;edge[i]=Math.hypot(gx,gy);
+      gxField[i]=gx;gyField[i]=gy;tx[i]=gx*gx-gy*gy;ty[i]=2*gx*gy;edge[i]=Math.hypot(gx,gy);
       const a=(Math.atan2(gy,gx)*180/Math.PI+180)%180;
       normal[i]=a<22.5||a>=157.5?0:a<67.5?1:a<112.5?2:3;
     }
@@ -452,14 +452,24 @@
           if(best<0)break;used[best]=1;out.push([best%w,Math.floor(best/w)]);i=best;
         }return out;
       }
+      const filamentGrid=new Map(),filamentCell=2;
+      const filamentNear=(x,y)=>{const gx=Math.floor(x/filamentCell),gy=Math.floor(y/filamentCell);for(let yy=gy-1;yy<=gy+1;yy++)for(let xx=gx-1;xx<=gx+1;xx++){const bucket=filamentGrid.get(yy*2048+xx);if(bucket&&bucket.some(q=>(q[0]-x)**2+(q[1]-y)**2<4))return true;}return false;};
+      const rememberFilament=points=>{for(const q of points){const key=Math.floor(q[1]/filamentCell)*2048+Math.floor(q[0]/filamentCell);if(!filamentGrid.has(key))filamentGrid.set(key,[]);filamentGrid.get(key).push(q);}};
       for(const i of seeds){
         if(used[i])continue;used[i]=1;
         const a=follow(i),b=follow(i),points=b.reverse().concat([[i%w,Math.floor(i/w)]],a);
         if(points.length<3+Math.round((100-p.detail)/25))continue;
-        paths.push({points:points.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.3+Math.min(.65,edge[i]*2))*p.fidelity/100,role:'contour'});contours++;
+        const rawThin=points.map(q=>{const j=q[1]*w+q[0],e=edge[j];if(e<.035)return false;const nx=gxField[j]/e,ny=gyField[j]/e,at=(x,y)=>tone[Math.max(0,Math.min(h-1,Math.round(y)))*w+Math.max(0,Math.min(w-1,Math.round(x)))],broad=Math.abs(at(q[0]+nx*3,q[1]+ny*3)-at(q[0]-nx*3,q[1]-ny*3));return at(q[0]-nx*6,q[1]-ny*6)-at(q[0]-nx*1.5,q[1]-ny*1.5)>.16&&broad/(e*2+.0001)<.9;});
+        const thin=rawThin.map((_,k)=>{let votes=0,total=0;for(let j=Math.max(0,k-2);j<=Math.min(rawThin.length-1,k+2);j++){votes+=rawThin[j]?1:0;total++;}return votes>=Math.ceil(total*.6);});
+        const runs=[];let run=[points[0]],kind=thin[0];for(let k=1;k<points.length;k++){if(thin[k]===kind)run.push(points[k]);else{runs.push([kind,run]);kind=thin[k];run=[points[k]];}}runs.push([kind,run]);
+        for(const [isThin,segment]of runs){
+          if(isThin&&segment.length>=Math.max(10,Math.round(w/90))){const centered=segment.map(q=>{const j=q[1]*w+q[0],e=edge[j];if(e<.0001)return q;const nx=-gxField[j]/e,ny=-gyField[j]/e;let best=q,bestTone=tone[j];for(let s=.5;s<=4;s+=.5){const x=Math.max(1,Math.min(w-2,q[0]+nx*s)),y=Math.max(1,Math.min(h-2,q[1]+ny*s)),v=tone[Math.round(y)*w+Math.round(x)];if(v<bestTone){bestTone=v;best=[x,y];}}return best;}),fine=segment.reduce((sum,q)=>sum+edge[q[1]*w+q[0]],0)/segment.length;if(centered.filter(q=>filamentNear(q[0],q[1])).length/centered.length>.35)continue;rememberFilament(centered);paths.push({points:centered.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.16+Math.min(.24,fine*.38))*p.fidelity/100,role:'filament',mark:'fine-filament',taper:true});contours++;
+          }else if(segment.length>=3){const strength=segment.reduce((m,q)=>Math.max(m,edge[q[1]*w+q[0]]),0);paths.push({points:segment.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.3+Math.min(.65,strength*2))*p.fidelity/100,role:'contour'});contours++;}
+        }
       }
     }
-    return {paths,recipe:JSON.parse(JSON.stringify(recipe)),layout:{width:w,height:h},stats:{algorithm:'photo',primary,cross:crossCount,contours}};
+    const filaments=paths.filter(path=>path.role==='filament').length;
+    return {paths,recipe:JSON.parse(JSON.stringify(recipe)),layout:{width:w,height:h},stats:{algorithm:'photo',primary,cross:crossCount,contours,filaments}};
   }
   const api = { defaults, algorithmDefaults, generate, draw, layout, validRecipe, validImage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

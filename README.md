@@ -29,6 +29,7 @@ Etchloom translates a photograph into an editable language of engraved marks. Re
 
 - **Image-aware engraving** — contours, tone, local texture, and structural direction drive every mark.
 - **Multi-scale detail** — broad tonal masses, coherent hatch bundles, and fine needle marks work together.
+- **Filament-aware contours** — whiskers, antennae, and similar narrow structures become tapered centerlines instead of doubled heavy edges.
 - **Editable line fields** — guide direction, recover white, or protect a finished region.
 - **Virtual printmaking** — work with plate depth, resist, acid, plate tone, ink, pressure, and paper.
 - **Reproducible variations** — the same image, settings, and seed always rebuild the same design.
@@ -78,6 +79,7 @@ http://127.0.0.1:4173/?demo=1
 | Regional hatching | Stable local direction and hand-cut bundle rhythm |
 | Cross-hatching | Progressive density through midtones and shadows |
 | Micro engraving | Fine edges, hair, foliage, masonry, and surface changes |
+| Fine filament | A tapered centerline for whiskers, antennae, and isolated narrow strokes |
 | Lost-and-found contour | Open weak edges and decisive silhouettes |
 | Dark mass | Depth with small retained paper openings |
 | Background field | Environmental tone that stops around strong subject edges |
@@ -118,14 +120,14 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 ## Development
 
 ```bash
-npm test          # Run all 33 tests
+npm test          # Run all 35 tests
 npm run benchmark # Update BENCHMARK.json
 npm start         # Start the local studio
 ```
 
 The core remains compatible with browsers and Node tests. The suite covers deterministic generation, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
 
-Read the [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), review the [refinement record](docs/REFINEMENT_PLAN.md), or see [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
+Read the [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), the [filament research note](docs/FILAMENT_RESEARCH.md), the [refinement record](docs/REFINEMENT_PLAN.md), or [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
 
 ## Material calibration
 

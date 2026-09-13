@@ -93,7 +93,7 @@ function paintSelected() {
   generator.draw($('designCanvas').getContext('2d'), result);
   $('designSeed').textContent = 'SEED ' + r.seed + ' / V' + r.variation;
   const detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线`;
-  if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${modeNames[r.mode]} · ${detail} · 方案 ${selected + 1}`;
+  if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.filaments||0} 条细丝 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${modeNames[r.mode]} · ${detail} · 方案 ${selected + 1}`;
   $('modeDescription').textContent = {
     wind: '让线条舒展、起伏，在疏密之间形成轻盈的明暗。先选构图，再慢慢调整它的节奏。',
     photo:'随机刻线沿着图片的明暗与轮廓生长。',

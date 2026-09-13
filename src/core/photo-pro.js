@@ -46,9 +46,11 @@
   function structureKind(image,x,y){const contrast=localContrast(image,x,y);if(contrast<.045)return'plane';if(contrast>.24)return'fragment';return'curve';}
   function engravingGrammar(input,image,seed,params={}){
     const out=[],stats={bundles:0,lostContours:0,deepLayer:0,brightGaps:0,planes:0,curves:0,fragments:0};
+    const filamentCell=4,filamentGrid=new Map(),addFilament=q=>{const key=Math.floor(q[1]/filamentCell)*512+Math.floor(q[0]/filamentCell);if(!filamentGrid.has(key))filamentGrid.set(key,[]);filamentGrid.get(key).push(q);};for(const path of input)if(path.role==='filament')for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],steps=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/(filamentCell/2)));for(let k=0;k<=steps;k++)addFilament([a[0]+(b[0]-a[0])*k/steps,a[1]+(b[1]-a[1])*k/steps]);}
+    const nearFilament=q=>{const gx=Math.floor(q[0]/filamentCell),gy=Math.floor(q[1]/filamentCell);for(let y=gy-1;y<=gy+1;y++)for(let x=gx-1;x<=gx+1;x++){const bucket=filamentGrid.get(y*512+x);if(bucket&&bucket.some(p=>(p[0]-q[0])**2+(p[1]-q[1])**2<12.25))return true;}return false;};
     for(let pathIndex=0;pathIndex<input.length;pathIndex++){
       const path=input[pathIndex];
-      if(path.role==='contour'||path.role==='contour-coarse'){
+      if(path.role==='contour'||path.role==='contour-coarse'||path.role==='filament'){
         let points=[];const finish=()=>{if(points.length>1)out.push({...path,points});points=[];};
         for(let i=0;i<path.points.length;i++){
           const q=path.points[i],contrast=localContrast(image,q[0],q[1]),keep=contrast>.075||hash(pathIndex,Math.floor(i/11),seed)>.32;
@@ -65,8 +67,8 @@
         const current=Math.atan2(last[1]-first[1],last[0]-first[0]),target=regionAngle(image,cx,cy,path.role==='cross',seed),stability=kind==='plane'?.82:kind==='fragment'?.42:.62,angle=current+angleDelta(current,target)*stability;
         const length=Math.max(5,Math.hypot(last[0]-first[0],last[1]-first[1]))*(.82+hash(pathIndex,start+3,seed)*.24),normal=angle+Math.PI/2;
         const points=source.map((q,i)=>{const t=i/(source.length-1)-.5,wobble=(hash(pathIndex*37+i,start,seed)-.5)*.7;return[Math.max(24,Math.min(876,cx+Math.cos(angle)*length*t+Math.cos(normal)*wobble)),Math.max(24,Math.min(636,cy+Math.sin(angle)*length*t+Math.sin(normal)*wobble))];});
-        const separated=fragments({...path,points,taper:true,bundle:true,structure:kind},q=>localContrast(image,q[0],q[1])<.19);
-        if(separated.length)out.push(...separated);else if(kind==='fragment')out.push({...path,points,taper:true,bundle:true,structure:kind});
+        const separated=fragments({...path,points,taper:true,bundle:true,structure:kind},q=>localContrast(image,q[0],q[1])<.19&&!nearFilament(q));
+        if(separated.length)out.push(...separated);else if(kind==='fragment'&&!points.some(nearFilament))out.push({...path,points,taper:true,bundle:true,structure:kind});
         stats.brightGaps+=Math.max(0,separated.length-1);stats.bundles+=separated.length;stats[kind==='plane'?'planes':kind==='curve'?'curves':'fragments']+=separated.length;
         if(path.role==='hatch'&&dark>.78&&hash(pathIndex,start+19,seed)<.16){
           const a=angle+Math.PI*.24,n=a+Math.PI/2,l=length*.62,deep=points.map((q,i)=>{const t=i/(points.length-1)-.5;return[Math.max(24,Math.min(876,cx+Math.cos(a)*l*t+Math.cos(n)*(hash(i,start,seed)-.5)*.5)),Math.max(24,Math.min(636,cy+Math.sin(a)*l*t+Math.sin(n)*(hash(i,start,seed)-.5)*.5))];});
@@ -90,6 +92,11 @@
       const bound=([px,py])=>[Math.max(24,Math.min(876,px)),Math.max(24,Math.min(636,py))];
       paths.push({points:[bound([x-Math.cos(a)*length/2+Math.cos(n)*jitter,y-Math.sin(a)*length/2+Math.sin(n)*jitter]),bound([x,y]),bound([x+Math.cos(a)*length/2-Math.cos(n)*jitter,y+Math.sin(a)*length/2-Math.sin(n)*jitter])],width:.16+Math.min(.62,q.score*.9),role:'hatch',mark:'micro-detail',taper:true});
     }return paths;
+  }
+  function suppressNear(paths,references,radius=3.5){
+    if(!references.length)return paths;const cell=Math.max(2,radius),grid=new Map(),add=q=>{const key=Math.floor(q[1]/cell)*1024+Math.floor(q[0]/cell);if(!grid.has(key))grid.set(key,[]);grid.get(key).push(q);};for(const path of references)for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],steps=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/(cell/2)));for(let k=0;k<=steps;k++)add([a[0]+(b[0]-a[0])*k/steps,a[1]+(b[1]-a[1])*k/steps]);}
+    const near=q=>{const gx=Math.floor(q[0]/cell),gy=Math.floor(q[1]/cell);for(let y=gy-1;y<=gy+1;y++)for(let x=gx-1;x<=gx+1;x++){const bucket=grid.get(y*1024+x);if(bucket&&bucket.some(p=>(p[0]-q[0])**2+(p[1]-q[1])**2<radius*radius))return true;}return false;};
+    return paths.filter(path=>!path.points.some(near));
   }
   function backgroundField(image,seed,params={}){
     const border=[];for(let x=0;x<900;x+=8){border.push(sample(image,x,25),sample(image,x,635));}for(let y=25;y<636;y+=8){border.push(sample(image,25,y),sample(image,875,y));}
@@ -173,14 +180,14 @@
     const base=baseGenerate({...recipe,pro:undefined,image,seed:(recipe.seed^p.hatchSeed)>>>0});
     progress(55,'轮廓与排线');
     const budget=Math.max(1,(p.hatch+p.maze)/100);const paths=[],contourRandom=random(p.contourSeed);
-    for(const path of base.paths){const isContour=path.role==='contour';const weight=(isContour?p.contour:p.hatch/budget)/100*(path.role==='cross'?p.cross/100:1)*(isContour?.92+contourRandom()*.16:1);if(weight>0)paths.push({...path,width:path.width*weight});}
+    for(const path of base.paths){const isContour=path.role==='contour'||path.role==='filament';const weight=(isContour?p.contour:p.hatch/budget)/100*(path.role==='cross'?p.cross/100:1)*(isContour?.92+contourRandom()*.16:1);if(weight>0)paths.push({...path,width:path.width*weight});}
     // Coarse contour scale fills structural gaps while fine edges retain small features.
     if(p.contour>0&&recipe.image.width>=450){
       const coarse=baseGenerate({...recipe,pro:undefined,image:blur(image,Math.max(1,Math.round(image.width/300))),seed:(p.contourSeed^recipe.seed)>>>0,params:{...recipe.params,density:0,fidelity:100,detail:45}});
       for(const path of coarse.paths)if(path.role==='contour')paths.push({...path,width:path.width*p.contour/100*.35,role:'contour-coarse'});
     }
     const styleSeed=(recipe.seed^recipe.variation^p.hatchSeed)>>>0,grammar=engravingGrammar(paths,image,styleSeed,recipe.params),detailWeight=(p.hatch*.65+p.contour*.35)/100;
-    const micro=microDetails(image,styleSeed^0x51f15e,recipe.params);for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
+    const micro=suppressNear(microDetails(image,styleSeed^0x51f15e,recipe.params),grammar.paths.filter(path=>path.role==='filament'));for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
     const background=backgroundField(image,styleSeed^0xa11ce,recipe.params);for(const path of background)grammar.paths.push({...path,width:path.width*p.hatch/100});
     const masses=darkMasses(image,styleSeed^0xda4c,recipe.params);for(const path of masses)grammar.paths.push({...path,width:path.width*p.hatch/100});
     progress(75,'图片迷宫');let mazeRegions=0;
@@ -189,6 +196,6 @@
     const edited=applyEdits(grammar.paths,p.edits);
     return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,imageMaze,structureKind,engravingGrammar,microDetails,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
+  const api={defaults,valid,value,toneImage,autoLevels,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);

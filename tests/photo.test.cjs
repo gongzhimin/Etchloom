@@ -30,7 +30,17 @@ test('full-resolution fine structures survive as independent contour strokes',()
   const r=recipe(image);r.params.detail=85;
   const result=G.generate(r);
   assert.ok(result.stats.contours>30);
-  assert.ok(result.paths.filter(p=>p.role==='contour').some(p=>p.points.length>12));
+  assert.ok(result.paths.filter(p=>p.role==='contour'||p.role==='filament').some(p=>p.points.length>12));
   assert.ok(G.validRecipe(JSON.parse(JSON.stringify(r))));
   for(const p of result.paths)for(const [x,y]of p.points)assert.ok(x>=24&&x<=876&&y>=24&&y<=636);
+});
+test('thin high-contrast whiskers become tapered filaments below silhouette weight',()=>{
+  const width=900,height=660,image={width,height,pixels:Array.from({length:width*height},(_,i)=>{
+    const x=i%width,y=Math.floor(i/width),face=((x-380)/170)**2+((y-330)/210)**2<1;
+    const whisker=x>510&&x<840&&[[-.18,270],[0,330],[.18,390]].some(([slope,origin])=>Math.abs(y-(origin+slope*(x-510)))<1.2);
+    return whisker?10:face?95:245;
+  })};
+  const r=recipe(image);Object.assign(r.params,{detail:100,fidelity:100,density:0});const result=G.generate(r),filaments=result.paths.filter(p=>p.role==='filament'),contours=result.paths.filter(p=>p.role==='contour');
+  assert.ok(filaments.length>=3);assert.ok(filaments.every(p=>p.taper&&p.mark==='fine-filament'));
+  assert.ok(Math.max(...filaments.map(p=>p.width))<Math.min(...contours.map(p=>p.width))*.6);
 });
