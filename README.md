@@ -1,76 +1,102 @@
-# Etchloom
+<p align="center">
+  <img src="docs/images/etchloom-logo.svg" width="132" alt="Etchloom logo">
+</p>
 
-**Weave images into digital prints.**
+<h1 align="center">Etchloom</h1>
 
-Etchloom is a local-first digital printmaking studio. It translates photographs into structured engraving marks, then lets you work with the result as a virtual plate: guide the hatch direction, reserve highlights, deepen the etch, apply ink, set pressure, and pull a print.
+<p align="center"><strong>Weave images into digital prints.</strong></p>
 
-![Etchloom workbench showing the source image and generated engraving](docs/images/etchloom-workbench.png)
+<p align="center">
+  A local-first studio for generative engraving, virtual plates, etching, and printmaking.
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img alt="Node 20+" src="https://img.shields.io/badge/Node.js-20%2B-596f50?style=flat-square">
+  <img alt="Zero runtime dependencies" src="https://img.shields.io/badge/runtime_dependencies-0-c8b67e?style=flat-square">
+  <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-766d4e?style=flat-square">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f3932?style=flat-square"></a>
+</p>
+
+![Etchloom workbench showing a source image beside its generated engraving](docs/images/etchloom-workbench.png)
+
+Etchloom translates a photograph into an editable language of engraved marks. Regional hatching follows form, cross-hatching grows through shadow, micro-marks retain small structures, and deterministic seeds produce controlled variations. The drawing then becomes a virtual plate that can be etched, inked, pressed, and printed.
+
+## Highlights
+
+- **Image-aware engraving** — contours, tone, local texture, and structural direction drive every mark.
+- **Multi-scale detail** — broad tonal masses, coherent hatch bundles, and fine needle marks work together.
+- **Editable line fields** — guide direction, recover white, or protect a finished region.
+- **Virtual printmaking** — work with plate depth, resist, acid, plate tone, ink, pressure, and paper.
+- **Reproducible variations** — the same image, settings, and seed always rebuild the same design.
+- **Print-oriented export** — export physical-scale PNG, SVG paths, recipes, and complete virtual plates.
+- **Private by design** — images remain in the browser and are never uploaded.
 
 ## From image to impression
 
-```text
-Image analysis → Engraving grammar → Virtual plate → Etching → Ink & pressure → Print
+```mermaid
+flowchart LR
+    A[Photograph] --> B[Image analysis]
+    B --> C[Engraving grammar]
+    C --> D[Editable line field]
+    D --> E[Virtual plate]
+    E --> F[Etch and ink]
+    F --> G[Printed impression]
 ```
 
-Etchloom rebuilds image information with a vocabulary inspired by intaglio printmaking:
+The plate stores depth, exposed material, and stop-out separately from its printed appearance. A single design can therefore produce different impressions as wiping, ink, pressure, and paper change.
 
-- **Regional hatching** keeps neighboring marks coherent instead of varying every pixel.
-- **Cross-hatching** enters progressively through midtones and shadows.
-- **Micro-engraving marks** retain small edges, hair, foliage, masonry, and surface changes.
-- **Lost-and-found contours** open weak edges while preserving decisive silhouettes.
-- **Dark masses and plate tone** create depth without filling every shadow uniformly.
-- **Deterministic seeds** make every design reproducible and open to controlled variation.
+## Quick start
 
-## A virtual plate, not just an image
+Etchloom has no build step and no runtime packages.
 
-The generated drawing can be transferred to a simulated copper plate. The plate stores depth, exposed material, and stop-out protection separately from the printed appearance. One plate can therefore produce different impressions as ink, pressure, wiping, and paper change.
+### Open it directly
 
-Local tools provide a compact editing workflow:
-
-| Tool | Purpose |
-|---|---|
-| Direction guide | Bend marks toward a chosen local direction |
-| White | Remove marks and recover paper |
-| Protect | Freeze a finished region while generating variations |
-| Needle / Drypoint | Add marks directly to the virtual plate |
-| Stop-out / Burnisher | Protect or reduce existing plate depth |
-
-## Try it
-
-Etchloom has no runtime dependencies and no build step.
-
-### Open directly
-
-Double-click `index.html`. This keeps the entire workflow offline. Complex generations run on the main browser thread in this mode.
+Double-click `index.html` for a completely offline session. Detailed generations run on the main browser thread in this mode.
 
 ### Run the local studio
 
-Node.js 20 or newer is recommended:
+With Node.js 20 or newer:
 
 ```bash
 npm start
 ```
 
-Open <http://127.0.0.1:4173/>. The local server enables background generation with a Web Worker, so the interface remains responsive during detailed analysis.
-
-To open the included demonstration automatically:
+Open <http://127.0.0.1:4173/>. The local server enables background generation through a Web Worker. To load the included sample automatically, open:
 
 ```text
 http://127.0.0.1:4173/?demo=1
 ```
 
-Uploaded images remain on the device. Etchloom does not send image data to a server.
+## Engraving vocabulary
+
+| Layer | What it contributes |
+|---|---|
+| Regional hatching | Stable local direction and hand-cut bundle rhythm |
+| Cross-hatching | Progressive density through midtones and shadows |
+| Micro engraving | Fine edges, hair, foliage, masonry, and surface changes |
+| Lost-and-found contour | Open weak edges and decisive silhouettes |
+| Dark mass | Depth with small retained paper openings |
+| Background field | Environmental tone that stops around strong subject edges |
+
+## Editing and plate tools
+
+| Tool | Purpose |
+|---|---|
+| Direction guide | Bend marks toward a chosen local direction |
+| White | Remove marks and recover paper |
+| Protect | Freeze a finished region during later variations |
+| Needle / Drypoint | Draw directly into the virtual plate |
+| Stop-out / Burnisher | Protect or reduce existing plate depth |
 
 ## Export and reproducibility
 
-Etchloom exports:
+Etchloom exports print-ready PNG with physical DPI metadata, scalable SVG engraving paths, deterministic design recipes, and complete virtual plates. Target needle width and ink-gain compensation affect plate transfer, PNG, and SVG output.
 
-- print-ready PNG with physical DPI metadata;
-- scalable SVG engraving paths;
-- deterministic design recipes;
-- complete virtual plates with depth and stop-out data.
-
-Target needle width and ink-gain compensation affect the plate, PNG, and SVG output. Saved design recipes contain the grayscale analysis, parameters, and seeds; they do not contain the original color photograph.
+Saved recipes contain the grayscale analysis, parameters, and random seeds. They do not contain the original color photograph. Older `kejian-design` recipes and browser favorites remain readable.
 
 ## Project structure
 
@@ -92,18 +118,18 @@ Target needle width and ink-gain compensation affect the plate, PNG, and SVG out
 ## Development
 
 ```bash
-npm test          # Run the complete test suite
+npm test          # Run all 33 tests
 npm run benchmark # Update BENCHMARK.json
 npm start         # Start the local studio
 ```
 
-The core uses browser-compatible scripts that can also be loaded by Node tests. The current suite covers deterministic generation, fine-feature retention, regional engraving grammar, virtual plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
+The core remains compatible with browsers and Node tests. The suite covers deterministic generation, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
 
-Read the [engraving texture plan](docs/LINE_TEXTURE_PLAN.md) for the visual system and the [refinement record](docs/REFINEMENT_PLAN.md) for implementation history. Contributions are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+Read the [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), review the [refinement record](docs/REFINEMENT_PLAN.md), or see [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
 
 ## Material calibration
 
-The plate-depth, paper, ink, and pressure model is designed for visual experimentation. Needle-width conversion is physically scaled, while absorption and pressure presets still require calibration against real printed sheets.
+Needle-width conversion is physically scaled. Paper absorption, etching expansion, and pressure presets are visual models until they can be calibrated against real printed sheets.
 
 ## License
 
