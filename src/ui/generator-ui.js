@@ -28,6 +28,7 @@ panel.className = 'gen-panel';
 panel.innerHTML = `<div class="gen-heading"><div><h2>图片刻线</h2><p id="modeDescription">上传图片，让随机刻线沿着它的明暗与轮廓生长。</p></div><span id="designSeed" class="seed-badge"></span></div>
 <div class="studio design-stage"><canvas id="designCanvas" width="900" height="660" aria-label="选中图案的放大预览"></canvas></div>
 <div class="caption"><span id="designInfo"></span><span>固定黑线 · 暖白纸底 / 制版方向</span></div>
+<details id="qualityPanel" class="quality-panel"><summary>质量诊断 <span id="qualitySummary"></span></summary><div id="qualityMetrics" class="quality-metrics"></div><p>指标用于同一图片的方案比较。轮廓和调子越高越好；碎线越低越好。它们描述可测属性，不代替艺术判断。</p></details>
 <div class="recent"><span>最近的变奏</span><div id="candidates" class="candidates" aria-label="最近四次变奏"></div></div>
 <div class="gen-footer"><span id="genMessage" class="gen-message" role="status" aria-live="polite">上传一张图片开始创作。</span><div class="row"><select id="transferMode" class="transfer-select" aria-label="转入制版方式" hidden><option value="replace">替换当前版面</option></select><button id="transferDesign" class="primary">进入制版 →</button></div></div>
 <p class="notes">刻线转入铜版后，再通过腐蚀、墨量、压力和纸张得到最终印样。</p>`;
@@ -103,7 +104,15 @@ function paintSelected() {
     maze: '精刻风格将迷宫展开成环形纹章，中心叠加玫瑰曲线，外缘辅以细线与刻度。长通道、分枝与回路决定纹章内部的节奏；原始风格保留方形网格。'
   }[r.mode] || '上传图片，让随机刻线沿着它的明暗与轮廓生长。';
   window.refinement?.paint(r,result);
+  paintQuality(r,result);
   document.querySelectorAll('.candidate').forEach((b, i) => { b.classList.toggle('active', i === selected); b.setAttribute('aria-pressed', String(i === selected)); });
+}
+function paintQuality(recipe,result){
+  const panel=$('qualityPanel'),container=$('qualityMetrics');
+  if(recipe.mode!=='photo'||!globalThis.QualityMetrics){panel.hidden=true;return;}
+  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),items=[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
+  container.replaceChildren(...items.map(([label,value,inverse])=>{const item=document.createElement('div'),score=Math.round(value*100);item.className='quality-metric'+(inverse&&value>.72?' warning':'');item.innerHTML=`<span>${label}</span><strong>${score}%</strong><meter min="0" max="1" value="${inverse?1-value:value}"></meter>`;return item;}));
+  $('qualitySummary').textContent=`轮廓 ${Math.round(q.contourF1*100)} · 明暗 ${Math.round(q.toneCorrelation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`;
 }
 function paintCandidates() {
   const container = $('candidates'); container.replaceChildren();
