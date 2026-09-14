@@ -92,8 +92,8 @@ function paintSelected() {
   const r = currentRecipe(), result = currentResult(); if (!r || !result) return;
   generator.draw($('designCanvas').getContext('2d'), result);
   $('designSeed').textContent = 'SEED ' + r.seed + ' / V' + r.variation;
-  const detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线`;
-  if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.filaments||0} 条细丝 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${modeNames[r.mode]} · ${detail} · 方案 ${selected + 1}`;
+  const route=r.mode==='photo'?(r.pro?.sourceMode==='sketch'?'完整素描':'照片分析'):modeNames[r.mode],regionDetail=result.stats.stableRegions!==undefined?` · 稳定明暗区 ${result.stats.stableRegions}`:'',detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线${regionDetail}`;
+  if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.filaments||0} 条细丝 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${route} · ${detail} · 方案 ${selected + 1}`;
   $('modeDescription').textContent = {
     wind: '让线条舒展、起伏，在疏密之间形成轻盈的明暗。先选构图，再慢慢调整它的节奏。',
     photo:'随机刻线沿着图片的明暗与轮廓生长。',
@@ -111,7 +111,7 @@ function paintCandidates() {
     const b = document.createElement('button'); b.className = 'candidate';
     b.setAttribute('aria-label', `选择方案 ${i + 1}，${modeNames[recipes[i].mode]}`);
     const c = document.createElement('canvas'); c.width = 360; c.height = 264;
-    const title = document.createElement('span'); title.textContent = `变奏 ${i + 1} · ${result.paths.length} 条线`;
+    const title = document.createElement('span'),route=recipes[i].pro?.sourceMode==='sketch'?'完整素描':'照片分析'; title.textContent = `${route} · ${result.paths.length} 条线`;
     b.append(c, title); b.onclick = async () => { await flushUpdate(); selected = i; syncControls(); paintSelected(); message('已回到这个变奏。'); };
     container.append(b); generator.draw(c.getContext('2d'), result);
   });
@@ -144,6 +144,10 @@ async function generateFour() {
   return await runGeneration(draft,index,[index]);
 
 }
+window.comparePhotoRoutes=async()=>{
+  await flushUpdate();if(!uploadedImage){message('请先上传一张图片。');return false;}const current=currentRecipe(),seed=current?.seed??freshSeed(),variation=current?.variation??0,params=readParams(),pro=window.refinement?.recipe(false)||{version:1,...PhotoPro.defaults};
+  const make=sourceMode=>({version:1,mode:'photo',seed,layoutSeed:seed,variation,params:{...params},image:uploadedImage,pro:{...cloneRecipe(pro),sourceMode,edits:[]}}),draft=[make('photo'),make('sketch')];results=[];const ok=await runGeneration(draft,0);if(ok)message('双路对照已生成：两个方案使用相同参数与种子。');return ok;
+};
 $('generateFour').textContent='生成新变奏';
 $('generateFour').onclick = generateFour;
 $('genMode').onchange = ()=>{$('genMode').value='photo';};

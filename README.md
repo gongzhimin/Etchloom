@@ -122,12 +122,12 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 ## Development
 
 ```bash
-npm test          # Run all 47 tests
+npm test          # Run all 51 tests
 npm run benchmark # Update BENCHMARK.json
 npm start         # Start the local studio
 ```
 
-The core remains compatible with browsers and Node tests. The suite covers deterministic generation, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
+The core remains compatible with browsers and Node tests. The suite covers deterministic generation, photo/sketch route comparison, tone-region analysis, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
 
 Read the [sketch-only pipeline study](docs/SKETCH_ONLY_RESEARCH.md), [next-stage algorithm research](docs/ALGORITHM_RESEARCH.md), [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), [image cleanup pipeline](docs/IMAGE_CLEANUP.md), [sketch structure pipeline](docs/SKETCH_PIPELINE.md), [filament research note](docs/FILAMENT_RESEARCH.md), [refinement record](docs/REFINEMENT_PLAN.md), or [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
 
