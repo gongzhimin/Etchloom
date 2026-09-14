@@ -129,7 +129,7 @@ npm start         # Start the local studio
 
 The core remains compatible with browsers and Node tests. The suite covers deterministic generation, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
 
-Read the [next-stage algorithm research](docs/ALGORITHM_RESEARCH.md), [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), [image cleanup pipeline](docs/IMAGE_CLEANUP.md), [sketch structure pipeline](docs/SKETCH_PIPELINE.md), [filament research note](docs/FILAMENT_RESEARCH.md), [refinement record](docs/REFINEMENT_PLAN.md), or [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
+Read the [sketch-only pipeline study](docs/SKETCH_ONLY_RESEARCH.md), [next-stage algorithm research](docs/ALGORITHM_RESEARCH.md), [engraving texture plan](docs/LINE_TEXTURE_PLAN.md), [image cleanup pipeline](docs/IMAGE_CLEANUP.md), [sketch structure pipeline](docs/SKETCH_PIPELINE.md), [filament research note](docs/FILAMENT_RESEARCH.md), [refinement record](docs/REFINEMENT_PLAN.md), or [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
 
 ## Material calibration
 
