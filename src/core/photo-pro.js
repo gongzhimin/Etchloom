@@ -39,7 +39,6 @@
     for(let pass=0;pass<iterations;pass++){const out=src.slice();for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x,c=src[i];let flow=0;for(const j of [i-1,i+1,i-w,i+w]){const d=src[j]-c,conduct=1/(1+(d/threshold)**2);flow+=conduct*d;}out[i]=Math.max(0,Math.min(255,c+flow*.2));}src=out;}
     return{...image,pixels:Array.from(src,v=>Math.round(v)),noiseLevel:estimated,cleanupStrength:adaptive};
   }
-  function thinMask(mask,w,h,iterations=28){const out=Uint8Array.from(mask);for(let iteration=0;iteration<iterations;iteration++){let changed=0;for(let phase=0;phase<2;phase++){const remove=[];for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(!out[i])continue;const p=[out[i-w],out[i-w+1],out[i+1],out[i+w+1],out[i+w],out[i+w-1],out[i-1],out[i-w-1]],count=p.reduce((a,b)=>a+b,0);if(count<2||count>6)continue;let transitions=0;for(let k=0;k<8;k++)if(!p[k]&&p[(k+1)%8])transitions++;if(transitions!==1)continue;const first=phase===0?p[0]*p[2]*p[4]:p[0]*p[2]*p[6],second=phase===0?p[2]*p[4]*p[6]:p[0]*p[4]*p[6];if(!first&&!second)remove.push(i);}for(const i of remove)out[i]=0;changed+=remove.length;}if(!changed)break;}return out;}
   function sketchStructure(image,amount=45){
     amount=Math.max(0,Math.min(100,amount));if(amount===0)return{...image,pixels:image.pixels.slice(),sketchStrength:0};
     const {width:w,height:h}=image,n=image.pixels.length,fine=blur(image,1).pixels,broad=blur(image,4).pixels,mix=amount/100,response=new Float32Array(n),flowed=new Float32Array(n),tangent=new Float32Array(n),candidate=new Uint8Array(n),strong=new Uint8Array(n),keep=new Uint8Array(n),out=new Array(n),low=2.8-mix*1.2,high=11-mix*3;
@@ -53,7 +52,7 @@
     // a faint highlight without admitting the entire photographic texture.
     const queue=[];for(let i=0;i<n;i++)if(strong[i]){keep[i]=1;queue.push(i);}for(let head=0;head<queue.length;head++){const i=queue[head],x=i%w,y=Math.floor(i/w),a=tangent[i];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const nx=x+dx,ny=y+dy;if(nx<2||nx>=w-2||ny<2||ny>=h-2)continue;const j=ny*w+nx;if(keep[j]||!candidate[j])continue;const step=Math.atan2(dy,dx),along=Math.abs(Math.cos(step-a)),coherent=Math.abs(Math.cos(tangent[j]-a));if(along>.42&&coherent>.48){keep[j]=1;queue.push(j);}}}
     for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x;if(!keep[i])continue;let neighbors=0;for(const o of [-w-1,-w,-w+1,-1,1,w-1,w,w+1])neighbors+=keep[i+o];if(neighbors<2&&!strong[i])keep[i]=0;}
-    const centerline=thinMask(keep,w,h),lineValue=Math.round(58-24*mix);for(let i=0;i<n;i++)out[i]=centerline[i]?lineValue:255;return{...image,pixels:out,sketchStrength:mix,flowLinked:queue.length,uniformWidth:true};
+    for(let i=0;i<n;i++){const t=keep[i]?Math.max(0,Math.min(1,(flowed[i]-low)/(high-low))):0,ink=t*t*(3-2*t),shadow=Math.max(0,(82-broad[i])/82)*22*mix;out[i]=Math.round(Math.max(0,255-ink*(185+45*mix)-shadow));}return{...image,pixels:out,sketchStrength:mix,flowLinked:queue.length};
   }
   function productionSketch(image,structure=sketchStructure(image,45)){
     const wash=blur(image,7),pixels=new Array(image.pixels.length);for(let i=0;i<pixels.length;i++){const tone=188+wash.pixels[i]/255*67,line=structure.pixels[i];pixels[i]=Math.round(Math.min(tone,line));}return{width:image.width,height:image.height,pixels,production:true};
@@ -67,17 +66,11 @@
     // halos and excessive hatching.
     const low=blur(lightEnvelope(sketch,5),8),pixels=low.pixels.map(v=>Math.round(Math.max(0,Math.min(255,(v-188)/67*255))));return{width:sketch.width,height:sketch.height,pixels,recovered:true};
   }
-  function recoverSketchStructure(sketch,amount=45){
-    // productionSketch reserves 188..255 for graphite wash and 34..58 for
-    // structural ink. Recover that ink directly so the sketch-only route does
-    // not turn tonal gradients back into duplicate or broken contour bands.
-    const mix=Math.max(0,Math.min(100,amount))/100,lineValue=Math.round(58-24*mix),pixels=sketch.pixels.map(v=>v<128?lineValue:255);return{width:sketch.width,height:sketch.height,pixels,sketchStrength:mix,uniformWidth:true,recoveredStructure:true};
-  }
   function toneRegions(image){
     const smooth=blur(image,4),{width:w,height:h,pixels}=smooth,n=w*h,bands=Uint8Array.from(pixels,v=>v>238?5:Math.min(4,Math.floor(v/48))),labels=new Int32Array(n);labels.fill(-1);const regions=[];for(let start=0;start<n;start++){if(labels[start]>=0)continue;const id=regions.length,band=bands[start],stack=[start];labels[start]=id;let count=0,sum=0,border=false;while(stack.length){const i=stack.pop(),x=i%w,y=Math.floor(i/w);count++;sum+=pixels[i];if(x===0||y===0||x===w-1||y===h-1)border=true;for(const next of [i-1,i+1,i-w,i+w]){if(next<0||next>=n||labels[next]>=0||bands[next]!==band)continue;const nx=next%w;if(Math.abs(nx-x)>1)continue;labels[next]=id;stack.push(next);}}regions.push({count,mean:sum/count,border,band});}return{width:w,height:h,labels,regions};
   }
   function intermediateImage(image,p,sourceMode='photo'){
-    const structure=sketchStructure(image,p.sketch);if(sourceMode!=='sketch')return{tone:image,structure,regions:toneRegions(image),production:null,sourceMode:'photo'};const production=productionSketch(image,structure),tone=recoverSketchTone(production),recoveredStructure=recoverSketchStructure(production,p.sketch);return{tone,structure:recoveredStructure,regions:toneRegions(tone),production,sourceMode:'sketch'};
+    const structure=sketchStructure(image,p.sketch);if(sourceMode!=='sketch')return{tone:image,structure,regions:toneRegions(image),production:null,sourceMode:'photo'};const production=productionSketch(image,structure),tone=recoverSketchTone(production);return{tone,structure:sketchStructure(production,p.sketch),regions:toneRegions(tone),production,sourceMode:'sketch'};
   }
   function vectorizeSketch(sketch,tone,regionMap=null){
     const {width:w,height:h}=sketch,n=w*h,mask=new Uint8Array(n),candidate=new Uint8Array(n),strong=new Uint8Array(n),confidence=new Float32Array(n),tangent=new Float32Array(n),weakDepth=new Uint8Array(n),queue=[];
@@ -89,7 +82,7 @@
     for(let head=0;head<queue.length;head++){const i=queue[head],x=i%w,y=Math.floor(i/w);for(const o of [-w-1,-w,-w+1,-1,1,w-1,w,w+1]){const j=i+o;if(j<0||j>=n||mask[j]||!candidate[j]||Math.abs(j%w-x)>1)continue;const nx=j%w,ny=Math.floor(j/w),step=Math.atan2(ny-y,nx-x),along=Math.max(Math.abs(Math.cos(step-tangent[i])),Math.abs(Math.cos(step-tangent[j]))),coherent=Math.abs(Math.cos(tangent[i]-tangent[j])),intensityGap=Math.abs(sketch.pixels[i]-sketch.pixels[j]);if((weakDepth[i]>1&&(along<.44||coherent<.38||intensityGap>32))||weakDepth[i]>=72)continue;mask[j]=1;weakDepth[j]=strong[j]?0:weakDepth[i]+1;queue.push(j);}}
     // Zhang-Suen thinning turns the rendered sketch band into a single-pixel
     // drawing skeleton before graph tracing.
-    mask.set(thinMask(mask,w,h));
+    for(let iteration=0;iteration<28;iteration++){let changed=0;for(let phase=0;phase<2;phase++){const remove=[];for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(!mask[i])continue;const p=[mask[i-w],mask[i-w+1],mask[i+1],mask[i+w+1],mask[i+w],mask[i+w-1],mask[i-1],mask[i-w-1]],count=p.reduce((a,b)=>a+b,0);if(count<2||count>6)continue;let transitions=0;for(let k=0;k<8;k++)if(!p[k]&&p[(k+1)%8])transitions++;if(transitions!==1)continue;const first=phase===0?p[0]*p[2]*p[4]:p[0]*p[2]*p[6],second=phase===0?p[2]*p[4]*p[6]:p[0]*p[4]*p[6];if(!first&&!second)remove.push(i);}for(const i of remove)mask[i]=0;changed+=remove.length;}if(!changed)break;}
     const directions=[-w,-w+1,1,w+1,w,w-1,-1,-w-1],opposite=[4,5,6,7,0,1,2,3],used=new Uint8Array(n),neighbors=i=>{const out=[];for(let d=0;d<8;d++)if(mask[i+directions[d]])out.push(d);return out;},markEdge=(i,d)=>{used[i]|=1<<d;used[i+directions[d]]|=1<<opposite[d];};
     // Junctions split a traced outline into short graph edges. Label the whole
     // connected skeleton so those short edges retain the scale of the object
@@ -291,6 +284,6 @@
     const stableRegions=intermediate.regions.regions.filter(region=>region.count>image.pixels.length*.002).length;
     return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,sketchPaths:sketchPaths.length,sketchMain:sketchPaths.filter(path=>path.level==='main').length,sketchStructure:sketchPaths.filter(path=>path.level==='structure').length,sketchDetails:sketchPaths.filter(path=>path.level==='detail').length,silhouettes:sketchPaths.filter(path=>path.semantic==='silhouette').length,occlusions:sketchPaths.filter(path=>path.semantic==='occlusion').length,formLines:sketchPaths.filter(path=>path.semantic==='form').length,textureLines:sketchPaths.filter(path=>path.semantic==='texture').length,toneFeedback:feedback.length,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,toneRegions:intermediate.regions.regions.length,stableRegions,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:structureImage.sketchStrength,flowLinked:structureImage.flowLinked||0,sourceMode:intermediate.sourceMode,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,thinMask,sketchStructure,productionSketch,recoverSketchTone,recoverSketchStructure,toneRegions,intermediateImage,vectorizeSketch,contourSemantic,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,toneFeedback,generate,applyEdits,freeze,fragments};
+  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,productionSketch,recoverSketchTone,toneRegions,intermediateImage,vectorizeSketch,contourSemantic,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,toneFeedback,generate,applyEdits,freeze,fragments};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);
