@@ -34,6 +34,7 @@ Etchloom translates a photograph into an editable language of engraved marks. Re
 - **Filament-aware contours** — whiskers, antennae, and similar narrow structures become tapered centerlines instead of doubled heavy edges.
 - **Editable line fields** — guide direction, recover white, or protect a finished region.
 - **Virtual printmaking** — work with plate depth, resist, acid, plate tone, ink, pressure, and paper.
+- **Independent engraved frames** — share fine, double, and rough borders across AI line art and sketch plates, with adjustable inset and hand-drawn variation.
 - **Reproducible variations** — the same image, settings, and seed always rebuild the same design.
 - **Print-oriented export** — export physical-scale PNG, SVG paths, recipes, and complete virtual plates.
 - **Private by design** — images remain in the browser and are never uploaded.
@@ -125,7 +126,7 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 npm run model:download
 npm run model:start # Start local Informative Drawings on port 7861
 npm start           # Start the Etchloom studio on port 4173
-npm test          # Run all 64 tests
+npm test          # Run all 65 tests
 npm run benchmark # Update BENCHMARK.json
 npm run quality   # Update QUALITY_REPORT.json
 ```

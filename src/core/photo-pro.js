@@ -3,13 +3,14 @@
   'use strict';
   const markSystem=typeof module!=='undefined'&&module.exports?require('./mark-system.js'):root.MarkSystem;
   const lineArtInput=typeof module!=='undefined'&&module.exports?require('./line-art-input.js'):root.LineArtInput;
-  const defaults={exposure:50,blackPoint:0,whitePoint:100,shadows:20,cleanup:55,sketch:45,contour:85,hatch:100,maze:0,cross:65,contourSeed:1,hatchSeed:1,mazeSeed:1};
+  const defaults={exposure:50,blackPoint:0,whitePoint:100,shadows:20,cleanup:55,sketch:45,contour:85,hatch:100,maze:0,cross:65,frameMargin:5,frameIrregularity:12,contourSeed:1,hatchSeed:1,mazeSeed:1};
   const clone=x=>JSON.parse(JSON.stringify(x));
   function random(seed){let s=seed>>>0;return()=>{s+=0x6D2B79F5;let t=Math.imul(s^s>>>15,1|s);t^=t+Math.imul(t^t>>>7,61|t);return((t^t>>>14)>>>0)/4294967296;};}
   function valid(pro){
     if(!pro||pro.version!==1)return false;
     if(pro.sourceMode!==undefined&&!['photo','sketch'].includes(pro.sourceMode))return false;
     if(pro.pipeline!==undefined&&!['legacy','marks','lineart','model','sketchplate'].includes(pro.pipeline))return false;
+    if(pro.frameStyle!==undefined&&!['none','fine','double','rough'].includes(pro.frameStyle))return false;
     for(const k of Object.keys(defaults)){const v=pro[k]??defaults[k];if(!Number.isFinite(v)||v<0||v>(k.endsWith('Seed')?4294967295:100))return false;}
     if((pro.blackPoint??0)>=(pro.whitePoint??100))return false;
     return !pro.edits||(Array.isArray(pro.edits)&&pro.edits.length<=300&&pro.edits.every(e=>['white','direction','cross','protect'].includes(e.type)&&[e.x,e.y,e.radius,e.angle].every(Number.isFinite)&&e.x>=0&&e.x<=900&&e.y>=0&&e.y<=660&&e.radius>=1&&e.radius<=150&&(!e.frozen||(Array.isArray(e.frozen)&&e.frozen.length<=20000&&e.frozen.every(validPath)))));
@@ -263,13 +264,24 @@
     }return paths;
   }
   function freeze(paths,e){return paths.filter(p=>touches(p,e)).flatMap(p=>fragments(p,q=>Math.hypot(q[0]-e.x,q[1]-e.y)<e.radius));}
+  function framePaths(pro={},seed=1){
+    const style=pro.frameStyle??'double';if(style==='none')return[];
+    const margin=Math.max(2,Math.min(15,pro.frameMargin??5)),irregularity=Math.max(0,Math.min(40,pro.frameIrregularity??12))/40,rng=random((seed^0x46a3d91b)>>>0),paths=[];
+    function rectangle(extra,width,rough=false){
+      const left=900*(margin/100)+extra,top=660*(margin/100)+extra,right=900-left,bottom=660-top,sides=[[[left,top],[right,top]],[[right,top],[right,bottom]],[[right,bottom],[left,bottom]],[[left,bottom],[left,top]]];
+      if(rough){for(const [a,b]of sides){const parts=7;for(let part=0;part<parts;part++){if(rng()<.16)continue;const start=(part+rng()*.14)/parts,end=(part+1-rng()*.14)/parts,points=[];for(let i=0;i<=5;i++){const t=start+(end-start)*i/5,j=(rng()-.5)*2.2*irregularity;points.push([a[0]+(b[0]-a[0])*t+(a[1]===b[1]?0:j),a[1]+(b[1]-a[1])*t+(a[0]===b[0]?0:j)]);}paths.push({points,width:width*(.78+rng()*.42),role:'frame',mark:'engraved-frame',preserve:true});}}return;}
+      const points=[];for(const [a,b]of sides)for(let i=0;i<24;i++){const t=i/24,j=(rng()-.5)*1.8*irregularity;points.push([a[0]+(b[0]-a[0])*t+(a[1]===b[1]?0:j),a[1]+(b[1]-a[1])*t+(a[0]===b[0]?0:j)]);}points.push(points[0]);paths.push({points,width,role:'frame',mark:'engraved-frame',preserve:true});
+    }
+    if(style==='fine')rectangle(0,.62);else if(style==='double'){rectangle(0,.42);rectangle(Math.max(7,900*.014),.7);}else rectangle(0,.82,true);
+    return paths;
+  }
   function generate(recipe,baseGenerate,progress=()=>{}){
     if(['lineart','model'].includes(recipe.pro?.pipeline)){
-      progress(35,'读取 AI 线稿');const made=lineArtInput.generate(recipe.image),edited=applyEdits(made.paths,recipe.pro.edits||[]);progress(90,'映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,sourceMode:'lineart',edits:(recipe.pro.edits||[]).length,pro:true,pipeline:recipe.pro.pipeline}};
+      progress(35,'读取 AI 线稿');const made=lineArtInput.generate(recipe.image),frame=framePaths(recipe.pro,recipe.seed^recipe.variation),edited=applyEdits(made.paths.concat(frame),recipe.pro.edits||[]);progress(90,'映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,framePaths:frame.length,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,sourceMode:'lineart',edits:(recipe.pro.edits||[]).length,pro:true,pipeline:recipe.pro.pipeline}};
     }
     const p={...defaults,...recipe.pro},adjusted=toneImage(recipe.image,p),noiseLevel=noiseEstimate(adjusted),cleaned=cleanImage(adjusted,p.cleanup,noiseLevel),intermediate=intermediateImage(cleaned,p,recipe.pro?.sourceMode),image=intermediate.tone,structureImage=intermediate.structure;progress(10,intermediate.sourceMode==='sketch'?'完整素描解析':'明暗校正、净化与结构素描');
     if(recipe.pro?.pipeline==='sketchplate'){
-      progress(40,'生成完整素描底图');const sketch=productionSketch(cleaned,sketchStructure(cleaned,p.sketch)),made=lineArtInput.generate(sketch,{threshold:250}),edited=applyEdits(made.paths,p.edits);progress(90,'素描映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:p.sketch/100,sourceMode:'sketchplate',edits:(p.edits||[]).length,pro:true,pipeline:'sketchplate'}};
+      progress(40,'生成完整素描底图');const sketch=productionSketch(cleaned,sketchStructure(cleaned,p.sketch)),made=lineArtInput.generate(sketch,{threshold:250}),frame=framePaths(p,recipe.seed^recipe.variation),edited=applyEdits(made.paths.concat(frame),p.edits);progress(90,'素描映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,framePaths:frame.length,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:p.sketch/100,sourceMode:'sketchplate',edits:(p.edits||[]).length,pro:true,pipeline:'sketchplate'}};
     }
     if(recipe.pro?.pipeline==='marks'){
       progress(45,'五档明暗与方向场');const made=markSystem.generate(image,(recipe.seed^recipe.variation^p.hatchSeed)>>>0,{...recipe.params,hatch:p.hatch,cross:p.cross}),edited=applyEdits(made.paths,p.edits);progress(90,'材料痕迹编排');return{paths:edited,layout:{width:image.width,height:image.height},recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:made.stats.toneTiers.filter(Boolean).length,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sourceMode:intermediate.sourceMode,edits:(p.edits||[]).length,pro:true,pipeline:'marks'}};
@@ -296,6 +308,6 @@
     const stableRegions=intermediate.regions.regions.filter(region=>region.count>image.pixels.length*.002).length;
     return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,sketchPaths:sketchPaths.length,sketchMain:sketchPaths.filter(path=>path.level==='main').length,sketchStructure:sketchPaths.filter(path=>path.level==='structure').length,sketchDetails:sketchPaths.filter(path=>path.level==='detail').length,silhouettes:sketchPaths.filter(path=>path.semantic==='silhouette').length,occlusions:sketchPaths.filter(path=>path.semantic==='occlusion').length,formLines:sketchPaths.filter(path=>path.semantic==='form').length,textureLines:sketchPaths.filter(path=>path.semantic==='texture').length,toneFeedback:feedback.length,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,toneRegions:intermediate.regions.regions.length,stableRegions,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:structureImage.sketchStrength,flowLinked:structureImage.flowLinked||0,sourceMode:intermediate.sourceMode,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,productionSketch,recoverSketchTone,toneRegions,intermediateImage,vectorizeSketch,contourSemantic,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,toneFeedback,generate,applyEdits,freeze,fragments};
+  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,productionSketch,recoverSketchTone,toneRegions,intermediateImage,vectorizeSketch,contourSemantic,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,toneFeedback,framePaths,generate,applyEdits,freeze,fragments};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);
