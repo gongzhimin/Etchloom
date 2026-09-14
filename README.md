@@ -54,11 +54,11 @@ The plate stores depth, exposed material, and stop-out separately from its print
 
 ## Quick start
 
-Etchloom has no build step and no runtime packages.
+The Etchloom web app has no build step. Local Informative Drawings inference requires Python, PyTorch, Pillow, and the roughly 17 MB official model weights.
 
 ### Open it directly
 
-Double-click `index.html` for a completely offline session. Detailed generations run on the main browser thread in this mode.
+Double-click `index.html` to use imported line art and the browser-native algorithms offline. Local model inference requires the HTTP workflow below.
 
 ### Run the local studio
 
@@ -122,11 +122,15 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 ## Development
 
 ```bash
-npm test          # Run all 63 tests
+npm run model:download
+npm run model:start # Start local Informative Drawings on port 7861
+npm start           # Start the Etchloom studio on port 4173
+npm test          # Run all 64 tests
 npm run benchmark # Update BENCHMARK.json
 npm run quality   # Update QUALITY_REPORT.json
-npm start         # Start the local studio
 ```
+
+Install `services/informative_drawings/requirements.txt` into a Python environment before the first run. The launcher discovers a compatible project virtual environment, Conda environment, or system Python; set `ETCHLOOM_MODEL_PYTHON` to choose one explicitly. Model weights live at `services/informative_drawings/weights/model.pth`, are excluded from Git, and are checked against the official SHA-256 after download. See the [local model integration guide](docs/INFORMATIVE_DRAWINGS_INTEGRATION.md).
 
 The core remains compatible with browsers and Node tests. The suite covers deterministic generation, photo/sketch route comparison, tone-region analysis, fine-feature retention, regional engraving grammar, plate persistence, physical stroke scaling, Worker cancellation, and direct-file operation.
 

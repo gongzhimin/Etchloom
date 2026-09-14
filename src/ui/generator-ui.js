@@ -4,7 +4,7 @@ const cloneRecipe = r => JSON.parse(JSON.stringify(r));
 const modeNames = { wind: '风迹', vortex: '回旋', islands: '群岛', fluid: '流体', maze: '迷宫', photo: '图片拟合' };
 let uploadedImage=null;
 const imageControls=document.createElement('div');
-imageControls.innerHTML='<button id="uploadPhoto" class="primary">上传 AI 线稿 · JPG / PNG</button><input id="photoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden><canvas id="sourcePreview" width="225" height="165" aria-label="线稿输入灰度预览" hidden style="margin-top:12px;box-shadow:none;cursor:default"></canvas><p id="photoInfo" class="source-note">支持 Informative Drawings 的 *_out.png；图片仅在本机处理。</p>';
+imageControls.innerHTML='<button id="uploadPhoto" class="primary">上传照片并运行本机模型</button><input id="photoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden><canvas id="sourcePreview" width="225" height="165" aria-label="模型输出灰度预览" hidden style="margin-top:12px;box-shadow:none;cursor:default"></canvas><p id="photoInfo" class="source-note">Informative Drawings 在本机 GPU 运行，照片不会上传到网络。</p>';
 $('generatorControls').prepend(imageControls);
 const controlIds = { density: 'genDensity', flow: 'genFlow', order: 'genOrder', space: 'genSpace', width: 'genWidth' };
 const advanced = document.createElement('div');
@@ -93,11 +93,11 @@ function paintSelected() {
   const r = currentRecipe(), result = currentResult(); if (!r || !result) return;
   generator.draw($('designCanvas').getContext('2d'), result);
   $('designSeed').textContent = 'SEED ' + r.seed + ' / V' + r.variation;
-  const route=r.mode==='photo'?(r.pro?.pipeline==='lineart'?'导入模型输出':r.pro?.pipeline==='sketchplate'?'素描底图直制版':r.pro?.sourceMode==='sketch'?'完整素描':'照片分析'):modeNames[r.mode],regionDetail=result.stats.stableRegions?` · 稳定明暗区 ${result.stats.stableRegions}`:'',detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线${regionDetail}`;
+  const route=r.mode==='photo'?(r.pro?.pipeline==='model'?'本机模型输出':r.pro?.pipeline==='lineart'?'导入模型输出':r.pro?.pipeline==='sketchplate'?'素描底图直制版':r.pro?.sourceMode==='sketch'?'完整素描':'照片分析'):modeNames[r.mode],regionDetail=result.stats.stableRegions?` · 稳定明暗区 ${result.stats.stableRegions}`:'',detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线${regionDetail}`;
   if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.filaments||0} 条细丝 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${route} · ${detail} · 方案 ${selected + 1}`;
   $('modeDescription').textContent = {
     wind: '让线条舒展、起伏，在疏密之间形成轻盈的明暗。先选构图，再慢慢调整它的节奏。',
-    photo:r.pro?.pipeline==='lineart'?'导入已经生成的模型线稿并直接制版；这里不会调用模型。':r.pro?.pipeline==='sketchplate'?'将照片转换为完整素描底图，再把素描直接送入虚拟制版。':'随机刻线沿着图片的明暗与轮廓生长。',
+    photo:r.pro?.pipeline==='model'?'照片由本机 Informative Drawings 模型生成线稿，然后直接进入虚拟制版。':r.pro?.pipeline==='lineart'?'导入已经生成的模型线稿并直接制版。':r.pro?.pipeline==='sketchplate'?'将照片转换为完整素描底图，再把素描直接送入虚拟制版。':'随机刻线沿着图片的明暗与轮廓生长。',
     vortex: '线条围绕偏心的中心盘旋，局部相遇、转向，留下环流之间的空隙。',
     islands: '几处独立线群被纸面的空白分开，在聚集与间隔之间建立平衡。',
     fluid: '精刻风格从演化后的流体中提取细密曲线，以间距、收尖与留白形成浓淡。原始风格保留粒子的运动轨迹。改变演化时间与黏度，可以重塑内部纹理。',
@@ -110,7 +110,7 @@ function paintSelected() {
 function paintQuality(recipe,result){
   const panel=$('qualityPanel'),container=$('qualityMetrics');
   if(recipe.mode!=='photo'||!globalThis.QualityMetrics){panel.hidden=true;return;}
-  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),direct=['lineart','sketchplate'].includes(recipe.pro?.pipeline),marks=recipe.pro?.pipeline==='marks',items=direct?[['输入保留',q.contourF1],['白底保留',q.whitePreservation]]:marks?[['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]]:[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
+  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),direct=['model','lineart','sketchplate'].includes(recipe.pro?.pipeline),marks=recipe.pro?.pipeline==='marks',items=direct?[['输入保留',q.contourF1],['白底保留',q.whitePreservation]]:marks?[['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]]:[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
   container.replaceChildren(...items.map(([label,value,inverse])=>{const item=document.createElement('div'),score=Math.round(value*100);item.className='quality-metric'+(inverse&&value>.72?' warning':'');item.innerHTML=`<span>${label}</span><strong>${score}%</strong><meter min="0" max="1" value="${inverse?1-value:value}"></meter>`;return item;}));
   $('qualitySummary').textContent=direct?`线稿保留 ${Math.round(q.contourF1*100)} · 白底 ${Math.round(q.whitePreservation*100)}`:marks?`明暗 ${Math.round(q.toneCorrelation*100)} · 留白 ${Math.round(q.whitePreservation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`:`轮廓 ${Math.round(q.contourF1*100)} · 明暗 ${Math.round(q.toneCorrelation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`;
 }
@@ -239,7 +239,8 @@ async function loadPhoto(file){
     if(!['image/jpeg','image/png'].includes(file.type))throw Error('请选择 JPG 或 PNG 图片');
     if(file.size>20*1024*1024)throw Error('图片请控制在 20 MB 以内');
     $('uploadPhoto').disabled=true;message('正在读取图片并生成刻线…');
-    bitmap=await createImageBitmap(file);
+    let input=file;if($('markPipeline').value==='model'){message('本机模型正在生成线稿…');try{const response=await fetch('http://127.0.0.1:7861/infer',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});if(!response.ok){const detail=await response.text();throw Error(detail||`HTTP ${response.status}`);}input=await response.blob();}catch(error){throw Error('本机模型调用失败。请先运行 npm run model:start。'+(error.message?' '+error.message:''));}}
+    bitmap=await createImageBitmap(input);
     if(window.refinement){uploadedImage=await window.refinement.setOriginal(bitmap);}else{
     const c=document.createElement('canvas');c.width=900;c.height=660;const context=c.getContext('2d');
     context.fillStyle='#fff';context.fillRect(0,0,900,660);

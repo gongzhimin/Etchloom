@@ -7,3 +7,8 @@ Thumbs.db
 coverage/
 dist/
 *.tmp
+.venv-model/
+services/informative_drawings/weights/
+services/informative_drawings/upstream_app.py
+__pycache__/
+*.pyc

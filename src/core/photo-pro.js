@@ -9,7 +9,7 @@
   function valid(pro){
     if(!pro||pro.version!==1)return false;
     if(pro.sourceMode!==undefined&&!['photo','sketch'].includes(pro.sourceMode))return false;
-    if(pro.pipeline!==undefined&&!['legacy','marks','lineart','sketchplate'].includes(pro.pipeline))return false;
+    if(pro.pipeline!==undefined&&!['legacy','marks','lineart','model','sketchplate'].includes(pro.pipeline))return false;
     for(const k of Object.keys(defaults)){const v=pro[k]??defaults[k];if(!Number.isFinite(v)||v<0||v>(k.endsWith('Seed')?4294967295:100))return false;}
     if((pro.blackPoint??0)>=(pro.whitePoint??100))return false;
     return !pro.edits||(Array.isArray(pro.edits)&&pro.edits.length<=300&&pro.edits.every(e=>['white','direction','cross','protect'].includes(e.type)&&[e.x,e.y,e.radius,e.angle].every(Number.isFinite)&&e.x>=0&&e.x<=900&&e.y>=0&&e.y<=660&&e.radius>=1&&e.radius<=150&&(!e.frozen||(Array.isArray(e.frozen)&&e.frozen.length<=20000&&e.frozen.every(validPath)))));
@@ -264,8 +264,8 @@
   }
   function freeze(paths,e){return paths.filter(p=>touches(p,e)).flatMap(p=>fragments(p,q=>Math.hypot(q[0]-e.x,q[1]-e.y)<e.radius));}
   function generate(recipe,baseGenerate,progress=()=>{}){
-    if(recipe.pro?.pipeline==='lineart'){
-      progress(35,'读取 AI 线稿');const made=lineArtInput.generate(recipe.image),edited=applyEdits(made.paths,recipe.pro.edits||[]);progress(90,'映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,sourceMode:'lineart',edits:(recipe.pro.edits||[]).length,pro:true,pipeline:'lineart'}};
+    if(['lineart','model'].includes(recipe.pro?.pipeline)){
+      progress(35,'读取 AI 线稿');const made=lineArtInput.generate(recipe.image),edited=applyEdits(made.paths,recipe.pro.edits||[]);progress(90,'映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,sourceMode:'lineart',edits:(recipe.pro.edits||[]).length,pro:true,pipeline:recipe.pro.pipeline}};
     }
     const p={...defaults,...recipe.pro},adjusted=toneImage(recipe.image,p),noiseLevel=noiseEstimate(adjusted),cleaned=cleanImage(adjusted,p.cleanup,noiseLevel),intermediate=intermediateImage(cleaned,p,recipe.pro?.sourceMode),image=intermediate.tone,structureImage=intermediate.structure;progress(10,intermediate.sourceMode==='sketch'?'完整素描解析':'明暗校正、净化与结构素描');
     if(recipe.pro?.pipeline==='sketchplate'){

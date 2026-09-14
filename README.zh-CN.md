@@ -54,11 +54,11 @@ flowchart LR
 
 ## 快速开始
 
-Etchloom 没有构建步骤，也没有第三方运行依赖。
+Etchloom 的网页端没有构建步骤。使用本机 Informative Drawings 推理时，需要 Python、PyTorch、Pillow 和约 17 MB 的官方模型权重。
 
 ### 直接打开
 
-双击根目录的 `index.html` 即可离线使用。复杂图片会在浏览器主线程中生成，期间界面可能短暂停顿。
+双击根目录的 `index.html` 可以使用导入线稿和浏览器内置算法。本机模型模式需要通过下面的本地服务器打开工作台。
 
 ### 启动本地工作台
 
@@ -122,10 +122,14 @@ Etchloom 可以导出带物理 DPI 的 PNG、可缩放 SVG 刻线路径、可复
 ## 开发
 
 ```bash
-npm test          # 运行全部 47 项测试
+npm run model:download
+npm run model:start # 启动 7861 端口的本机 Informative Drawings 模型
+npm start           # 启动 4173 端口的 Etchloom 工作台
+npm test          # 运行全部 64 项测试
 npm run benchmark # 更新 BENCHMARK.json
-npm start         # 启动本地工作台
 ```
+
+首次运行还需为某个 Python 环境安装 `services/informative_drawings/requirements.txt`。启动脚本会自动寻找满足依赖的项目虚拟环境、Conda 环境或系统 Python；也可以用 `ETCHLOOM_MODEL_PYTHON` 指定解释器。模型权重位于 `services/informative_drawings/weights/model.pth`，不会提交到 Git，下载后会核对官方文件的 SHA-256。完整说明见[本机模型集成指南](docs/INFORMATIVE_DRAWINGS_INTEGRATION.md)。
 
 核心代码同时兼容浏览器和 Node 测试。自动测试覆盖生成复现、细节保留、区域刻线语法、虚拟版保存、物理线宽换算、Worker 取消和直接文件运行。
 
