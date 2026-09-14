@@ -241,5 +241,5 @@ async function loadPhoto(file){
   finally{bitmap?.close();$('uploadPhoto').disabled=false;}
 }
 $('photoFile').onchange=async e=>{await loadPhoto(e.target.files[0]);e.target.value='';};
-window.addEventListener('load',async()=>{if(new URLSearchParams(location.search).get('demo')==='1'&&location.protocol!=='file:'){try{const response=await fetch('examples/photo-fixture.png');await loadPhoto(await response.blob());}catch(error){message('演示样片载入失败：'+error.message);}}},{once:true});
+window.addEventListener('load',async()=>{if(new URLSearchParams(location.search).get('demo')==='1'&&location.protocol!=='file:'){try{const response=await fetch('examples/complex-photo-fixture.png');await loadPhoto(await response.blob());}catch(error){message('演示样片载入失败：'+error.message);}}},{once:true});
 setTimeout(()=>{showWorkspace(true);const c=$('designCanvas'),cx=c.getContext('2d');cx.fillStyle='#f1ead6';cx.fillRect(0,0,c.width,c.height);setBusy(false);},0);

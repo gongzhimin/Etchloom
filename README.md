@@ -68,7 +68,7 @@ With Node.js 20 or newer:
 npm start
 ```
 
-Open <http://127.0.0.1:4173/>. The local server enables background generation through a Web Worker. To load the included sample automatically, open:
+Open <http://127.0.0.1:4173/>. The local server enables background generation through a Web Worker. To load the included complex stress test—with foliage, glass, ceramic, a cat, whiskers, folds, and background structure—open:
 
 ```text
 http://127.0.0.1:4173/?demo=1

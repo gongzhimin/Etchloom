@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="660" viewBox="0 0 900 660">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eee9df"/><stop offset="1" stop-color="#aaa79f"/></linearGradient>
+    <linearGradient id="glass" x1="0" x2="1"><stop stop-color="#d7d8d5"/><stop offset=".22" stop-color="#f4f1e8"/><stop offset=".58" stop-color="#929791"/><stop offset=".82" stop-color="#e2e1da"/><stop offset="1" stop-color="#72766f"/></linearGradient>
+    <radialGradient id="pot"><stop stop-color="#ddd8cc"/><stop offset=".62" stop-color="#99968d"/><stop offset="1" stop-color="#4b4d48"/></radialGradient>
+    <linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d8d2c5"/><stop offset="1" stop-color="#77776f"/></linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency=".65" numOctaves="2" seed="7" result="n"/><feBlend in="SourceGraphic" in2="n" mode="multiply"/></filter>
+  </defs>
+  <rect width="900" height="660" fill="url(#wall)"/>
+  <path d="M0 155H900M0 164H900" stroke="#8d8b85" stroke-width="3" opacity=".45"/>
+  <path d="M95 0V390M111 0V390" stroke="#777973" stroke-width="5" opacity=".45"/>
+  <g opacity=".28" stroke="#666862" stroke-width="2">
+    <path d="M145 52h128m-96 38h170m-215 42h150m45 0h88m-260 48h210m35 0h116m-420 45h155m38 0h190m45 42h145"/>
+  </g>
+  <rect y="430" width="900" height="230" fill="#77766e"/>
+  <path d="M0 470C180 438 292 486 445 460S730 433 900 471V660H0Z" fill="url(#cloth)"/>
+  <g fill="none" stroke="#66665f" stroke-width="3" opacity=".62">
+    <path d="M20 507C180 466 293 548 448 486S724 488 884 527"/><path d="M34 572C193 518 317 606 488 534S739 545 875 583"/>
+    <path d="M170 455c36 62 57 131 63 205M515 458c-21 75-19 142-3 202M745 456c-42 73-55 139-56 204"/>
+  </g>
+  <!-- transparent bottle: faint exterior, decisive internal reflections -->
+  <g stroke="#565a55" stroke-linejoin="round">
+    <path d="M205 445V231c0-29 25-39 44-53v-71h76v71c22 15 45 27 45 55v212Z" fill="url(#glass)" stroke-width="5" opacity=".92"/>
+    <path d="M258 114v66c-18 22-26 51-25 89v154" fill="none" stroke="#faf8ef" stroke-width="13" opacity=".78"/>
+    <path d="M330 193c19 29 19 80 17 126M328 340v82" fill="none" stroke="#4e524e" stroke-width="4" opacity=".55"/>
+    <ellipse cx="287" cy="445" rx="83" ry="14" fill="#555851" opacity=".35"/>
+  </g>
+  <!-- stems and layered foliage -->
+  <g fill="none" stroke="#353a35" stroke-linecap="round">
+    <path d="M292 227C266 169 232 125 182 77M292 230c14-78 50-136 96-182M297 232c35-68 99-100 151-129M287 226c-49-54-102-70-146-69M300 235c5-77-6-139-28-192" stroke-width="5"/>
+    <g stroke-width="3">
+      <path d="M187 84c-35-22-53-7-58 13 31 8 49 4 58-13Zm22 32c-31-4-44 12-42 31 29-4 42-14 42-31Zm66-61c-24-31-44-24-55-7 24 17 42 19 55 7Zm49 58c36-25 55-12 60 9-32 10-51 5-60-9Zm39-44c20-34 42-30 56-14-21 22-39 27-56 14Zm39 70c35-7 49 10 47 31-32-2-47-12-47-31Z" fill="#555a53"/>
+      <path d="M242 154c-32-19-50-4-52 17 30 6 46 0 52-17Zm82 24c26-26 47-18 55 2-24 16-43 16-55-2Zm-59 12c-30-9-45 6-45 25 28 0 43-8 45-25Zm64-63c-8-34 10-49 31-45 1 30-9 45-31 45Z" fill="#777b73"/>
+    </g>
+  </g>
+  <g fill="#dbd7cd" stroke="#424741" stroke-width="3">
+    <path d="M164 75c-15-18-5-41 17-42 6-23 38-24 47-3 23-5 39 20 26 39 9 22-17 39-35 26-17 17-45 3-41-21Z"/>
+    <path d="M373 55c-10-21 7-41 29-36 11-20 41-13 44 10 23 1 32 29 14 43 3 23-25 33-41 17-20 12-43-8-34-29Z"/>
+    <path d="M435 102c-7-17 8-32 25-25 12-14 34-4 33 15 18 4 21 27 5 37 0 19-24 25-36 11-17 8-35-10-26-27Z"/>
+  </g>
+  <!-- ceramic bowl with rim, cast shadow and cross-object occlusion -->
+  <ellipse cx="493" cy="526" rx="151" ry="24" fill="#484a45" opacity=".5"/>
+  <path d="M380 355c4 111 38 159 119 159s116-51 121-159Z" fill="url(#pot)" stroke="#454843" stroke-width="6"/>
+  <ellipse cx="500" cy="355" rx="121" ry="28" fill="#4b4e49" stroke="#333733" stroke-width="5"/>
+  <ellipse cx="500" cy="352" rx="96" ry="17" fill="#aaa89f" stroke="#777871" stroke-width="3"/>
+  <path d="M415 392c27 16 49 21 74 22m-67 19c34 17 76 22 110 14m-92 24c42 17 82 12 111-2" fill="none" stroke="#666862" stroke-width="3" opacity=".75"/>
+  <!-- cat: fur edge, facial planes, eye and whisker filaments -->
+  <g stroke="#373b36" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M653 516c-30-44-27-103-4-145l-15-63 52 34c20-8 42-8 63 0l47-39-8 69c23 47 18 113-17 144Z" fill="#8b8b83" stroke-width="6"/>
+    <path d="M665 384c18 11 31 18 45 20 17-2 31-10 48-22M674 432c13-10 25-12 37-2m22 0c13-8 25-7 36 3" fill="none" stroke-width="4"/>
+    <path d="M713 450l17 0-9 12Z" fill="#30342f" stroke-width="2"/>
+    <path d="M721 462c-6 17-18 22-31 24m31-24c7 17 20 22 34 23" fill="none" stroke-width="3"/>
+    <ellipse cx="691" cy="430" rx="7" ry="11" fill="#222621"/><ellipse cx="750" cy="430" rx="7" ry="11" fill="#222621"/>
+    <g fill="none" stroke-width="2">
+      <path d="M705 466C651 451 619 447 579 452M703 473c-60-2-95 4-131 19M739 466c56-18 93-20 132-13M740 474c57 0 91 8 126 24"/>
+    </g>
+    <g stroke-width="2" opacity=".55"><path d="M662 399l24 13m-28 3l29 10m94-28l-23 14m27 2l-28 12m-82 76l24-16m64 15l-25-15"/></g>
+  </g>
+  <path d="M126 548c129 47 246 57 358 31s235-35 352 5" fill="none" stroke="#444640" stroke-width="5" opacity=".72"/>
+  <g opacity=".13" filter="url(#grain)"><rect width="900" height="660" fill="#777"/></g>
+</svg>
