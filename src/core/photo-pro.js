@@ -9,7 +9,7 @@
   function valid(pro){
     if(!pro||pro.version!==1)return false;
     if(pro.sourceMode!==undefined&&!['photo','sketch'].includes(pro.sourceMode))return false;
-    if(pro.pipeline!==undefined&&!['legacy','marks','lineart'].includes(pro.pipeline))return false;
+    if(pro.pipeline!==undefined&&!['legacy','marks','lineart','sketchplate'].includes(pro.pipeline))return false;
     for(const k of Object.keys(defaults)){const v=pro[k]??defaults[k];if(!Number.isFinite(v)||v<0||v>(k.endsWith('Seed')?4294967295:100))return false;}
     if((pro.blackPoint??0)>=(pro.whitePoint??100))return false;
     return !pro.edits||(Array.isArray(pro.edits)&&pro.edits.length<=300&&pro.edits.every(e=>['white','direction','cross','protect'].includes(e.type)&&[e.x,e.y,e.radius,e.angle].every(Number.isFinite)&&e.x>=0&&e.x<=900&&e.y>=0&&e.y<=660&&e.radius>=1&&e.radius<=150&&(!e.frozen||(Array.isArray(e.frozen)&&e.frozen.length<=20000&&e.frozen.every(validPath)))));
@@ -268,6 +268,9 @@
       progress(35,'读取 AI 线稿');const made=lineArtInput.generate(recipe.image),edited=applyEdits(made.paths,recipe.pro.edits||[]);progress(90,'映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,sourceMode:'lineart',edits:(recipe.pro.edits||[]).length,pro:true,pipeline:'lineart'}};
     }
     const p={...defaults,...recipe.pro},adjusted=toneImage(recipe.image,p),noiseLevel=noiseEstimate(adjusted),cleaned=cleanImage(adjusted,p.cleanup,noiseLevel),intermediate=intermediateImage(cleaned,p,recipe.pro?.sourceMode),image=intermediate.tone,structureImage=intermediate.structure;progress(10,intermediate.sourceMode==='sketch'?'完整素描解析':'明暗校正、净化与结构素描');
+    if(recipe.pro?.pipeline==='sketchplate'){
+      progress(40,'生成完整素描底图');const sketch=productionSketch(cleaned,sketchStructure(cleaned,p.sketch)),made=lineArtInput.generate(sketch,{threshold:250}),edited=applyEdits(made.paths,p.edits);progress(90,'素描映射防蚀层');return{...made,paths:edited,recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:0,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:p.sketch/100,sourceMode:'sketchplate',edits:(p.edits||[]).length,pro:true,pipeline:'sketchplate'}};
+    }
     if(recipe.pro?.pipeline==='marks'){
       progress(45,'五档明暗与方向场');const made=markSystem.generate(image,(recipe.seed^recipe.variation^p.hatchSeed)>>>0,{...recipe.params,hatch:p.hatch,cross:p.cross}),edited=applyEdits(made.paths,p.edits);progress(90,'材料痕迹编排');return{paths:edited,layout:{width:image.width,height:image.height},recipe:clone(recipe),stats:{...made.stats,silhouettes:0,occlusions:0,formLines:0,textureLines:0,stableRegions:made.stats.toneTiers.filter(Boolean).length,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sourceMode:intermediate.sourceMode,edits:(p.edits||[]).length,pro:true,pipeline:'marks'}};
     }

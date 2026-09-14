@@ -93,11 +93,11 @@ function paintSelected() {
   const r = currentRecipe(), result = currentResult(); if (!r || !result) return;
   generator.draw($('designCanvas').getContext('2d'), result);
   $('designSeed').textContent = 'SEED ' + r.seed + ' / V' + r.variation;
-  const route=r.mode==='photo'?(r.pro?.pipeline==='lineart'?'AI 线稿直制版':r.pro?.sourceMode==='sketch'?'完整素描':'照片分析'):modeNames[r.mode],regionDetail=result.stats.stableRegions?` · 稳定明暗区 ${result.stats.stableRegions}`:'',detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线${regionDetail}`;
+  const route=r.mode==='photo'?(r.pro?.pipeline==='lineart'?'导入模型输出':r.pro?.pipeline==='sketchplate'?'素描底图直制版':r.pro?.sourceMode==='sketch'?'完整素描':'照片分析'):modeNames[r.mode],regionDetail=result.stats.stableRegions?` · 稳定明暗区 ${result.stats.stableRegions}`:'',detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线${regionDetail}`;
   if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.filaments||0} 条细丝 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${route} · ${detail} · 方案 ${selected + 1}`;
   $('modeDescription').textContent = {
     wind: '让线条舒展、起伏，在疏密之间形成轻盈的明暗。先选构图，再慢慢调整它的节奏。',
-    photo:r.pro?.pipeline==='lineart'?'将模型输出的线稿直接送入虚拟制版，不再二次生成图案。':'随机刻线沿着图片的明暗与轮廓生长。',
+    photo:r.pro?.pipeline==='lineart'?'导入已经生成的模型线稿并直接制版；这里不会调用模型。':r.pro?.pipeline==='sketchplate'?'将照片转换为完整素描底图，再把素描直接送入虚拟制版。':'随机刻线沿着图片的明暗与轮廓生长。',
     vortex: '线条围绕偏心的中心盘旋，局部相遇、转向，留下环流之间的空隙。',
     islands: '几处独立线群被纸面的空白分开，在聚集与间隔之间建立平衡。',
     fluid: '精刻风格从演化后的流体中提取细密曲线，以间距、收尖与留白形成浓淡。原始风格保留粒子的运动轨迹。改变演化时间与黏度，可以重塑内部纹理。',
@@ -110,7 +110,7 @@ function paintSelected() {
 function paintQuality(recipe,result){
   const panel=$('qualityPanel'),container=$('qualityMetrics');
   if(recipe.mode!=='photo'||!globalThis.QualityMetrics){panel.hidden=true;return;}
-  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),direct=recipe.pro?.pipeline==='lineart',marks=recipe.pro?.pipeline==='marks',items=direct?[['线稿保留',q.contourF1],['白底保留',q.whitePreservation]]:marks?[['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]]:[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
+  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),direct=['lineart','sketchplate'].includes(recipe.pro?.pipeline),marks=recipe.pro?.pipeline==='marks',items=direct?[['输入保留',q.contourF1],['白底保留',q.whitePreservation]]:marks?[['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]]:[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
   container.replaceChildren(...items.map(([label,value,inverse])=>{const item=document.createElement('div'),score=Math.round(value*100);item.className='quality-metric'+(inverse&&value>.72?' warning':'');item.innerHTML=`<span>${label}</span><strong>${score}%</strong><meter min="0" max="1" value="${inverse?1-value:value}"></meter>`;return item;}));
   $('qualitySummary').textContent=direct?`线稿保留 ${Math.round(q.contourF1*100)} · 白底 ${Math.round(q.whitePreservation*100)}`:marks?`明暗 ${Math.round(q.toneCorrelation*100)} · 留白 ${Math.round(q.whitePreservation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`:`轮廓 ${Math.round(q.contourF1*100)} · 明暗 ${Math.round(q.toneCorrelation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`;
 }

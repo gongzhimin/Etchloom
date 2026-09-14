@@ -122,7 +122,7 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 ## Development
 
 ```bash
-npm test          # Run all 62 tests
+npm test          # Run all 63 tests
 npm run benchmark # Update BENCHMARK.json
 npm run quality   # Update QUALITY_REPORT.json
 npm start         # Start the local studio
