@@ -29,18 +29,18 @@
       "contourPrecision": 0.8027,
       "contourRecall": 0.9462,
       "contourF1": 0.8686,
-      "toneCorrelation": 0.9606,
+      "toneCorrelation": 0.9608,
       "toneOrder": 0,
       "whitePreservation": 0.9636,
-      "shortFragmentRate": 0.1264,
+      "shortFragmentRate": 0.1259,
       "toneInkByBand": [
         0.0121,
         0,
         0.5567,
-        0.503,
+        0.5044,
         0
       ],
-      "paths": 1464,
+      "paths": 1465,
       "semantics": {
         "silhouettes": 7,
         "occlusions": 0,

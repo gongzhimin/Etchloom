@@ -185,6 +185,20 @@
       paths.push({points:[point(-.5),point(.5)],width:.8+(dark-.82)*8,role:'hatch',mark:'dark-mass'});
     }return paths;
   }
+  function toneFeedback(image,existing,protectedPaths,seed,params={}){
+    const cell=24,cols=Math.ceil(900/cell),rows=Math.ceil(660/cell),ink=new Float32Array(cols*rows),paths=[];
+    for(const path of existing)for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,cx=Math.max(0,Math.min(cols-1,Math.floor(mx/cell))),cy=Math.max(0,Math.min(rows-1,Math.floor(my/cell)));ink[cy*cols+cx]+=Math.hypot(b[0]-a[0],b[1]-a[1])*(path.width||.3)/(cell*cell);}
+    for(let cy=1;cy<rows-1;cy++)for(let cx=1;cx<cols-1;cx++){
+      const x=(cx+.5)*cell,y=(cy+.5)*cell,dark=1-sample(image,x,y)/255;if(dark<.45||localContrast(image,x,y)>.22)continue;
+      const target=Math.max(0,(dark-.38)*(.055+(params.contrast??55)*.00035)),unit=.016,needed=Math.min(3,Math.max(0,Math.ceil((target-ink[cy*cols+cx])/unit)));if(!needed)continue;
+      const base=regionAngle(image,x,y,false,seed),layers=[base,base,base+Math.PI*.43],available=dark>.78?3:dark>.55?2:1,count=Math.min(needed,available);
+      for(let layer=0;layer<count;layer++){
+        const jitter=(hash(cx*11+layer,cy*17,seed)-.5)*cell*.34,normal=layers[layer]+Math.PI/2,length=cell*(layer===2?.62:.82),centerX=x+Math.cos(normal)*jitter,centerY=y+Math.sin(normal)*jitter,point=t=>[Math.max(25,Math.min(875,centerX+Math.cos(layers[layer])*length*t)),Math.max(25,Math.min(635,centerY+Math.sin(layers[layer])*length*t))];
+        paths.push({points:[point(-.5),point(0),point(.5)],width:.25+dark*.28,role:layer===2?'cross':'hatch',mark:'tone-feedback',layer:layer+1,taper:true});
+      }
+    }
+    return suppressNear(paths,protectedPaths,4.5);
+  }
   function imageMaze(image,seed){
     const rng=random(seed),paths=[],regions=[];
     // Adaptive tiles: subdivide dark or textured regions into finer local mazes.
@@ -258,7 +272,8 @@
       for(const path of coarse.paths)if(path.role==='contour')paths.push({...path,width:path.width*p.contour/100*.35,role:'contour-coarse'});
     }
     const styleSeed=(recipe.seed^recipe.variation^p.hatchSeed)>>>0,grammar=engravingGrammar(paths,image,styleSeed,recipe.params),detailWeight=(p.hatch*.65+p.contour*.35)/100;
-    const micro=suppressNear(microDetails(image,styleSeed^0x51f15e,recipe.params),grammar.paths.filter(path=>path.role==='filament'||path.preserve));for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
+    const protectedPaths=grammar.paths.filter(path=>path.role==='filament'||path.preserve),feedback=toneFeedback(image,grammar.paths,protectedPaths,styleSeed^0x70ae,recipe.params);for(const path of feedback)grammar.paths.push({...path,width:path.width*p.hatch/100});
+    const micro=suppressNear(microDetails(image,styleSeed^0x51f15e,recipe.params),protectedPaths);for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
     const background=backgroundField(image,styleSeed^0xa11ce,recipe.params);for(const path of background)grammar.paths.push({...path,width:path.width*p.hatch/100});
     const masses=darkMasses(image,styleSeed^0xda4c,recipe.params);for(const path of masses)grammar.paths.push({...path,width:path.width*p.hatch/100});
     progress(75,'图片迷宫');let mazeRegions=0;
@@ -266,8 +281,8 @@
     progress(90,'局部编辑');
     const edited=applyEdits(grammar.paths,p.edits);
     const stableRegions=intermediate.regions.regions.filter(region=>region.count>image.pixels.length*.002).length;
-    return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,sketchPaths:sketchPaths.length,sketchMain:sketchPaths.filter(path=>path.level==='main').length,sketchStructure:sketchPaths.filter(path=>path.level==='structure').length,sketchDetails:sketchPaths.filter(path=>path.level==='detail').length,silhouettes:sketchPaths.filter(path=>path.semantic==='silhouette').length,occlusions:sketchPaths.filter(path=>path.semantic==='occlusion').length,formLines:sketchPaths.filter(path=>path.semantic==='form').length,textureLines:sketchPaths.filter(path=>path.semantic==='texture').length,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,toneRegions:intermediate.regions.regions.length,stableRegions,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:structureImage.sketchStrength,flowLinked:structureImage.flowLinked||0,sourceMode:intermediate.sourceMode,edits:(p.edits||[]).length,pro:true}};
+    return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,sketchPaths:sketchPaths.length,sketchMain:sketchPaths.filter(path=>path.level==='main').length,sketchStructure:sketchPaths.filter(path=>path.level==='structure').length,sketchDetails:sketchPaths.filter(path=>path.level==='detail').length,silhouettes:sketchPaths.filter(path=>path.semantic==='silhouette').length,occlusions:sketchPaths.filter(path=>path.semantic==='occlusion').length,formLines:sketchPaths.filter(path=>path.semantic==='form').length,textureLines:sketchPaths.filter(path=>path.semantic==='texture').length,toneFeedback:feedback.length,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,toneRegions:intermediate.regions.regions.length,stableRegions,noiseLevel,cleanupStrength:cleaned.cleanupStrength,sketchStrength:structureImage.sketchStrength,flowLinked:structureImage.flowLinked||0,sourceMode:intermediate.sourceMode,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,productionSketch,recoverSketchTone,toneRegions,intermediateImage,vectorizeSketch,contourSemantic,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
+  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,productionSketch,recoverSketchTone,toneRegions,intermediateImage,vectorizeSketch,contourSemantic,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,toneFeedback,generate,applyEdits,freeze,fragments};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);
