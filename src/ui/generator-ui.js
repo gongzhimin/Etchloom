@@ -2,7 +2,7 @@
 const generator = PrintGenerator;
 const cloneRecipe = r => JSON.parse(JSON.stringify(r));
 const modeNames = { wind: '风迹', vortex: '回旋', islands: '群岛', fluid: '流体', maze: '迷宫', photo: '图片拟合' };
-let uploadedImage=null;
+let uploadedImage=null,sourceFile=null,sourceImage=null,modelImage=null;
 const imageControls=document.createElement('div');
 imageControls.innerHTML='<button id="uploadPhoto" class="primary">上传照片并运行本机模型</button><input id="photoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden><canvas id="sourcePreview" width="225" height="165" aria-label="模型输出灰度预览" hidden style="margin-top:12px;box-shadow:none;cursor:default"></canvas><p id="photoInfo" class="source-note">Informative Drawings 在本机 GPU 运行，照片不会上传到网络。</p>';
 $('generatorControls').prepend(imageControls);
@@ -232,25 +232,56 @@ function paintSource(source){
   source.pixels.forEach((v,i)=>{im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=v;im.data[i*4+3]=255;});context.putImageData(im,0,0);
 }
 $('uploadPhoto').onclick=()=>$('photoFile').click();
+async function inferModel(file){
+  message('本机模型正在生成线稿…');
+  const response=await fetch('http://127.0.0.1:7861/infer',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
+  if(!response.ok){const detail=await response.text();throw Error(detail||`HTTP ${response.status}`);}
+  const output=await response.blob(),bitmap=await createImageBitmap(output);
+  try{return window.refinement?window.refinement.analyzeBitmap(bitmap):null;}finally{bitmap.close();}
+}
+async function selectPhotoInput(reset=true,forceModel=false){
+  if(!sourceImage)return false;
+  const pipeline=$('markPipeline').value;
+  if(pipeline==='model'){
+    try{if(forceModel)modelImage=null;if(!modelImage)modelImage=await inferModel(sourceFile);uploadedImage=modelImage;}
+    catch(error){throw Error('本机模型调用失败。请确认模型服务保持运行。 '+error.message);}
+  }else uploadedImage=sourceImage;
+  if(reset){recipes=[];results=[];selected=0;}
+  $('genMode').value='photo';
+  return generateFour();
+}
+window.changePhotoPipeline=async()=>{
+  if(!sourceImage){schedule();return;}
+  $('uploadPhoto').disabled=true;
+  try{const ok=await selectPhotoInput();if(ok)message($('markPipeline').value==='model'?'模型线稿已生成并送入制版。':'已恢复原照片，并生成素描底图制版方案。');}
+  catch(error){message(error.message);}
+  finally{$('uploadPhoto').disabled=false;}
+};
+window.refreshPhotoInput=async()=>{
+  if(!sourceImage)return;
+  $('uploadPhoto').disabled=true;
+  try{await selectPhotoInput(true,true);message('已按新构图重新生成当前制版输入。');}
+  catch(error){message(error.message);}
+  finally{$('uploadPhoto').disabled=false;}
+};
 async function loadPhoto(file){
   let bitmap;
   try{
     if(!file)return;
     if(!['image/jpeg','image/png'].includes(file.type))throw Error('请选择 JPG 或 PNG 图片');
     if(file.size>20*1024*1024)throw Error('图片请控制在 20 MB 以内');
-    $('uploadPhoto').disabled=true;message('正在读取图片并生成刻线…');
-    let input=file;if($('markPipeline').value==='model'){message('本机模型正在生成线稿…');try{const response=await fetch('http://127.0.0.1:7861/infer',{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});if(!response.ok){const detail=await response.text();throw Error(detail||`HTTP ${response.status}`);}input=await response.blob();}catch(error){throw Error('本机模型调用失败。请先运行 npm run model:start。'+(error.message?' '+error.message:''));}}
-    bitmap=await createImageBitmap(input);
-    if(window.refinement){uploadedImage=await window.refinement.setOriginal(bitmap);}else{
+    $('uploadPhoto').disabled=true;message('正在读取原照片…');sourceFile=file;modelImage=null;
+    bitmap=await createImageBitmap(file);
+    if(window.refinement){sourceImage=await window.refinement.setOriginal(bitmap);}else{
     const c=document.createElement('canvas');c.width=900;c.height=660;const context=c.getContext('2d');
     context.fillStyle='#fff';context.fillRect(0,0,900,660);
     const ratio=Math.min(828/bitmap.width,588/bitmap.height),dw=bitmap.width*ratio,dh=bitmap.height*ratio;
     context.drawImage(bitmap,(900-dw)/2,(660-dh)/2,dw,dh);
     const rgba=context.getImageData(0,0,900,660).data,pixels=[];
     for(let i=0;i<rgba.length;i+=4)pixels.push(Math.round(.2126*rgba[i]+.7152*rgba[i+1]+.0722*rgba[i+2]));
-    uploadedImage={width:900,height:660,pixels};}
+    sourceImage={width:900,height:660,pixels};}
     $('photoInfo').textContent=`已载入 ${bitmap.width} × ${bitmap.height} 图片 · 本机处理 · 透明区域按白纸处理`;
-    recipes=[];results=[];selected=0;$('genMode').value='photo';if(await generateFour())message(results.some(r=>r.paths.length)?'刻线稿已生成。可调参数、生成变奏或进入制版。':'图片很浅，当前没有可刻线区域。请调整明暗或使用“自动展开明暗”。');
+    if(await selectPhotoInput())message(results.some(r=>r.paths.length)?'刻线稿已生成。可切换模型线稿或素描底图路线，再进入制版。':'当前输入没有形成可见刻痕，请检查左侧输入预览。');
   }catch(error){message('图片读取失败：'+error.message);}
   finally{bitmap?.close();$('uploadPhoto').disabled=false;}
 }

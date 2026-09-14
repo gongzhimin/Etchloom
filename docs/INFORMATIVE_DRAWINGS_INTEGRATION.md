@@ -26,4 +26,6 @@ npm start
 
 模型服务提供 `GET /health` 和 `POST /infer`。网页仅向 `127.0.0.1:7861` 发送原始照片，服务返回灰度 PNG；图片不会上传到第三方。CUDA 可用时自动使用 GPU，否则回退到 CPU。推理前会将长边限制为 1024 像素，并补齐到网络下采样所需的 4 像素倍数，输出再恢复到输入尺寸。
 
+网页会在当前会话中分别保留原照片分析和模型线稿。左侧“AI 模型线稿”与“素描底图”按钮可随时切换制版输入：前者使用 `/infer` 的结果，后者重新从原照片生成完整素描。切换路线不会再让模型结果覆盖原照片。
+
 若启动脚本没有选中所需环境，可先设置 `$env:ETCHLOOM_MODEL_PYTHON='C:\path\to\python.exe'`。模型结构与权重来自 Informative Drawings，上游许可证见 `services/informative_drawings/UPSTREAM_LICENSE`。
