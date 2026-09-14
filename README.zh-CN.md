@@ -129,7 +129,7 @@ npm start         # 启动本地工作台
 
 核心代码同时兼容浏览器和 Node 测试。自动测试覆盖生成复现、细节保留、区域刻线语法、虚拟版保存、物理线宽换算、Worker 取消和直接文件运行。
 
-进一步阅读：[刻线纹理计划](docs/LINE_TEXTURE_PLAN.md)、[图像净化管线](docs/IMAGE_CLEANUP.md)、[素描结构管线](docs/SKETCH_PIPELINE.md)、[细丝算法调研](docs/FILAMENT_RESEARCH.md)、[精进记录](docs/REFINEMENT_PLAN.md)和[贡献指南](CONTRIBUTING.md)。
+进一步阅读：[下一阶段算法调研](docs/ALGORITHM_RESEARCH.md)、[刻线纹理计划](docs/LINE_TEXTURE_PLAN.md)、[图像净化管线](docs/IMAGE_CLEANUP.md)、[素描结构管线](docs/SKETCH_PIPELINE.md)、[细丝算法调研](docs/FILAMENT_RESEARCH.md)、[精进记录](docs/REFINEMENT_PLAN.md)和[贡献指南](CONTRIBUTING.md)。
 
 ## 实物标定
 
