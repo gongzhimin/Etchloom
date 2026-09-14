@@ -133,6 +133,9 @@
     context.save();
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (paper) { context.fillStyle = '#f2eddd'; context.fillRect(0, 0, canvas.width, canvas.height); }
+    if(result.plateMask&&result.maskWidth&&result.maskHeight&&typeof document!=='undefined'){
+      const buffer=document.createElement('canvas');buffer.width=result.maskWidth;buffer.height=result.maskHeight;const bctx=buffer.getContext('2d'),data=bctx.createImageData(buffer.width,buffer.height),rgb=paper?[41,45,39]:[255,255,255];for(let i=0;i<result.plateMask.length;i++){data.data[i*4]=rgb[0];data.data[i*4+1]=rgb[1];data.data[i*4+2]=rgb[2];data.data[i*4+3]=result.plateMask[i];}bctx.putImageData(data,0,0);context.imageSmoothingEnabled=true;context.drawImage(buffer,0,0,canvas.width,canvas.height);context.restore();return;
+    }
     context.scale(canvas.width / WIDTH, canvas.height / HEIGHT);
     context.strokeStyle = paper ? '#292d27' : '#fff'; context.lineCap = 'round'; context.lineJoin = 'round';
     for (const path of result.paths) {
