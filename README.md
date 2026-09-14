@@ -29,7 +29,7 @@ Etchloom translates a photograph into an editable language of engraved marks. Re
 
 - **Image-aware engraving** — contours, tone, local texture, and structural direction drive every mark.
 - **Structure-aware cleanup** — adaptive edge-preserving diffusion removes photographic grain before cross-scale detail confidence selects engraving marks.
-- **Sketch structure pass** — an XDoG-inspired map clarifies meaningful strokes while the cleaned photograph continues to control tone.
+- **Sketch-to-engraving backbone** — an XDoG-inspired sketch is thinned into preserved main, structural, and detail paths; the cleaned photograph independently controls tone.
 - **Multi-scale detail** — broad tonal masses, coherent hatch bundles, and fine needle marks work together.
 - **Filament-aware contours** — whiskers, antennae, and similar narrow structures become tapered centerlines instead of doubled heavy edges.
 - **Editable line fields** — guide direction, recover white, or protect a finished region.
@@ -122,7 +122,7 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 ## Development
 
 ```bash
-npm test          # Run all 43 tests
+npm test          # Run all 45 tests
 npm run benchmark # Update BENCHMARK.json
 npm start         # Start the local studio
 ```

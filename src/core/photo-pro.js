@@ -46,6 +46,21 @@
     for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x;if(!keep[i])continue;let neighbors=0;for(const o of [-w-1,-w,-w+1,-1,1,w-1,w,w+1])neighbors+=keep[i+o];if(neighbors<2)keep[i]=0;}
     for(let i=0;i<out.length;i++){const t=keep[i]?Math.max(0,Math.min(1,(response[i]-low)/(high-low))):0,ink=t*t*(3-2*t),shadow=Math.max(0,(82-broad[i])/82)*22*mix;out[i]=Math.round(Math.max(0,255-ink*(185+45*mix)-shadow));}return{...image,pixels:out,sketchStrength:mix};
   }
+  function vectorizeSketch(sketch,tone){
+    const {width:w,height:h}=sketch,n=w*h,mask=new Uint8Array(n);for(let i=0;i<n;i++)if(sketch.pixels[i]<218)mask[i]=1;
+    // Zhang-Suen thinning turns the rendered sketch band into a single-pixel
+    // drawing skeleton before graph tracing.
+    for(let iteration=0;iteration<28;iteration++){let changed=0;for(let phase=0;phase<2;phase++){const remove=[];for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(!mask[i])continue;const p=[mask[i-w],mask[i-w+1],mask[i+1],mask[i+w+1],mask[i+w],mask[i+w-1],mask[i-1],mask[i-w-1]],count=p.reduce((a,b)=>a+b,0);if(count<2||count>6)continue;let transitions=0;for(let k=0;k<8;k++)if(!p[k]&&p[(k+1)%8])transitions++;if(transitions!==1)continue;const first=phase===0?p[0]*p[2]*p[4]:p[0]*p[2]*p[6],second=phase===0?p[2]*p[4]*p[6]:p[0]*p[4]*p[6];if(!first&&!second)remove.push(i);}for(const i of remove)mask[i]=0;changed+=remove.length;}if(!changed)break;}
+    const directions=[-w,-w+1,1,w+1,w,w-1,-1,-w-1],opposite=[4,5,6,7,0,1,2,3],used=new Uint8Array(n),neighbors=i=>{const out=[];for(let d=0;d<8;d++)if(mask[i+directions[d]])out.push(d);return out;},markEdge=(i,d)=>{used[i]|=1<<d;used[i+directions[d]]|=1<<opposite[d];};
+    // Junctions split a traced outline into short graph edges. Label the whole
+    // connected skeleton so those short edges retain the scale of the object
+    // boundary they belong to instead of being demoted to incidental detail.
+    const component=new Int32Array(n);component.fill(-1);const componentScale=[];for(let start=0;start<n;start++){if(!mask[start]||component[start]>=0)continue;const id=componentScale.length,stack=[start];component[start]=id;let count=0,minX=w,maxX=0,minY=h,maxY=0;while(stack.length){const i=stack.pop(),x=i%w,y=Math.floor(i/w);count++;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);for(const d of neighbors(i)){const next=i+directions[d];if(component[next]<0){component[next]=id;stack.push(next);}}}componentScale.push({count,span:Math.hypot(maxX-minX,maxY-minY)*900/w});}
+    function walk(start,d){const points=[[start%w,Math.floor(start/w)]];let current=start,dir=d;for(let steps=0;steps<4000;steps++){markEdge(current,dir);const next=current+directions[dir];points.push([next%w,Math.floor(next/w)]);const options=neighbors(next).filter(nd=>!(used[next]&(1<<nd)));if(options.length!==1)break;current=next;dir=options[0];}return points;}
+    const raw=[];for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x;if(!mask[i]||neighbors(i).length===2)continue;for(const d of neighbors(i))if(!(used[i]&(1<<d)))raw.push({points:walk(i,d),component:component[i]});}for(let i=0;i<n;i++)if(mask[i])for(const d of neighbors(i))if(!(used[i]&(1<<d)))raw.push({points:walk(i,d),component:component[i]});
+    const paths=[];for(const traced of raw){const points=traced.points;if(points.length<5)continue;const sampled=points.filter((_,i)=>i%2===0||i===points.length-1),scaled=sampled.map(q=>[q[0]*900/w,q[1]*660/h]),length=scaled.slice(1).reduce((sum,q,i)=>sum+Math.hypot(q[0]-scaled[i][0],q[1]-scaled[i][1]),0);if(length<7)continue;const contrast=scaled.reduce((sum,q)=>sum+localContrast(tone,q[0],q[1]),0)/scaled.length,closed=Math.hypot(scaled[0][0]-scaled.at(-1)[0],scaled[0][1]-scaled.at(-1)[1])<5,scale=componentScale[traced.component]||{count:0,span:0},main=(length>58&&contrast>.045)||(closed&&length>28),structural=length>17||scale.span>72||scale.count>34,level=main?'main':structural?'structure':'detail',width=level==='main'?1.9:level==='structure'?1.1:.58;paths.push({points:scaled,width,role:'contour',mark:'sketch-'+level,level,preserve:true,taper:level==='detail'});}
+    return paths;
+  }
   function sample(image,x,y){return image.pixels[Math.min(image.height-1,Math.max(0,Math.floor(y*image.height/660)))*image.width+Math.min(image.width-1,Math.max(0,Math.floor(x*image.width/900)))];}
   function hash(x,y,seed){let n=(Math.imul((x|0)+101,374761393)^Math.imul((y|0)+47,668265263)^seed)>>>0;n=Math.imul(n^(n>>>13),1274126177)>>>0;return(n>>>0)/4294967295;}
   function angleDelta(a,b){return Math.atan2(Math.sin(b-a),Math.cos(b-a));}
@@ -63,10 +78,11 @@
   function structureKind(image,x,y){const contrast=localContrast(image,x,y);if(contrast<.045)return'plane';if(contrast>.24)return'fragment';return'curve';}
   function engravingGrammar(input,image,seed,params={}){
     const out=[],stats={bundles:0,lostContours:0,deepLayer:0,brightGaps:0,planes:0,curves:0,fragments:0};
-    const filamentCell=4,filamentGrid=new Map(),addFilament=q=>{const key=Math.floor(q[1]/filamentCell)*512+Math.floor(q[0]/filamentCell);if(!filamentGrid.has(key))filamentGrid.set(key,[]);filamentGrid.get(key).push(q);};for(const path of input)if(path.role==='filament')for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],steps=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/(filamentCell/2)));for(let k=0;k<=steps;k++)addFilament([a[0]+(b[0]-a[0])*k/steps,a[1]+(b[1]-a[1])*k/steps]);}
-    const nearFilament=q=>{const gx=Math.floor(q[0]/filamentCell),gy=Math.floor(q[1]/filamentCell);for(let y=gy-1;y<=gy+1;y++)for(let x=gx-1;x<=gx+1;x++){const bucket=filamentGrid.get(y*512+x);if(bucket&&bucket.some(p=>(p[0]-q[0])**2+(p[1]-q[1])**2<12.25))return true;}return false;};
+    const filamentCell=4,filamentGrid=new Map(),addFilament=(q,radius)=>{const key=Math.floor(q[1]/filamentCell)*512+Math.floor(q[0]/filamentCell);if(!filamentGrid.has(key))filamentGrid.set(key,[]);filamentGrid.get(key).push([q[0],q[1],radius]);};for(const path of input)if(path.role==='filament'||path.preserve)for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],radius=path.role==='filament'?3.5:path.level==='main'?7:path.level==='structure'?5:3,steps=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/(filamentCell/2)));for(let k=0;k<=steps;k++)addFilament([a[0]+(b[0]-a[0])*k/steps,a[1]+(b[1]-a[1])*k/steps],radius);}
+    const nearFilament=q=>{const gx=Math.floor(q[0]/filamentCell),gy=Math.floor(q[1]/filamentCell);for(let y=gy-2;y<=gy+2;y++)for(let x=gx-2;x<=gx+2;x++){const bucket=filamentGrid.get(y*512+x);if(bucket&&bucket.some(p=>(p[0]-q[0])**2+(p[1]-q[1])**2<p[2]*p[2]))return true;}return false;};
     for(let pathIndex=0;pathIndex<input.length;pathIndex++){
       const path=input[pathIndex];
+      if(path.preserve){out.push(path);continue;}
       if(path.role==='contour'||path.role==='contour-coarse'||path.role==='filament'){
         let points=[];const finish=()=>{if(points.length>1)out.push({...path,points});points=[];};
         for(let i=0;i<path.points.length;i++){
@@ -193,25 +209,26 @@
   function freeze(paths,e){return paths.filter(p=>touches(p,e)).flatMap(p=>fragments(p,q=>Math.hypot(q[0]-e.x,q[1]-e.y)<e.radius));}
   function generate(recipe,baseGenerate,progress=()=>{}){
     const p={...defaults,...recipe.pro},adjusted=toneImage(recipe.image,p),noiseLevel=noiseEstimate(adjusted),image=cleanImage(adjusted,p.cleanup,noiseLevel),structureImage=sketchStructure(image,p.sketch);progress(10,'明暗校正、净化与结构素描');
-    const base=baseGenerate({...recipe,pro:undefined,image,structureImage,seed:(recipe.seed^p.hatchSeed)>>>0});
+    const base=baseGenerate({...recipe,pro:undefined,image,seed:(recipe.seed^p.hatchSeed)>>>0}),sketchPaths=p.sketch>0?vectorizeSketch(structureImage,image):[];
     progress(55,'轮廓与排线');
     const budget=Math.max(1,(p.hatch+p.maze)/100);const paths=[],contourRandom=random(p.contourSeed);
-    for(const path of base.paths){const isContour=path.role==='contour'||path.role==='filament';const weight=(isContour?p.contour:p.hatch/budget)/100*(path.role==='cross'?p.cross/100:1)*(isContour?.92+contourRandom()*.16:1);if(weight>0)paths.push({...path,width:path.width*weight});}
+    for(const path of base.paths){const isFilament=path.role==='filament',isContour=path.role==='contour';if(p.sketch>0&&isContour)continue;const weight=((isFilament||isContour)?p.contour:p.hatch/budget)/100*(path.role==='cross'?p.cross/100:1)*((isFilament||isContour)?.92+contourRandom()*.16:1);if(weight>0)paths.push({...path,width:path.width*weight});}
+    for(const path of sketchPaths)paths.push({...path,width:path.width*p.contour/100});
     // Coarse contour scale fills structural gaps while fine edges retain small features.
-    if(p.contour>0&&recipe.image.width>=450){
+    if(p.sketch===0&&p.contour>0&&recipe.image.width>=450){
       const coarseImage=blur(image,Math.max(1,Math.round(image.width/300))),coarse=baseGenerate({...recipe,pro:undefined,image:coarseImage,structureImage:sketchStructure(coarseImage,p.sketch),seed:(p.contourSeed^recipe.seed)>>>0,params:{...recipe.params,density:0,fidelity:100,detail:45}});
       for(const path of coarse.paths)if(path.role==='contour')paths.push({...path,width:path.width*p.contour/100*.35,role:'contour-coarse'});
     }
     const styleSeed=(recipe.seed^recipe.variation^p.hatchSeed)>>>0,grammar=engravingGrammar(paths,image,styleSeed,recipe.params),detailWeight=(p.hatch*.65+p.contour*.35)/100;
-    const micro=suppressNear(microDetails(image,styleSeed^0x51f15e,recipe.params),grammar.paths.filter(path=>path.role==='filament'));for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
+    const micro=suppressNear(microDetails(image,styleSeed^0x51f15e,recipe.params),grammar.paths.filter(path=>path.role==='filament'||path.preserve));for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
     const background=backgroundField(image,styleSeed^0xa11ce,recipe.params);for(const path of background)grammar.paths.push({...path,width:path.width*p.hatch/100});
     const masses=darkMasses(image,styleSeed^0xda4c,recipe.params);for(const path of masses)grammar.paths.push({...path,width:path.width*p.hatch/100});
     progress(75,'图片迷宫');let mazeRegions=0;
     if(p.maze>0){const maze=imageMaze(image,(p.mazeSeed^recipe.seed^recipe.variation)>>>0);mazeRegions=maze.regions.length;for(const path of maze.paths)grammar.paths.push({...path,width:path.width*p.maze/100/budget});}
     progress(90,'局部编辑');
     const edited=applyEdits(grammar.paths,p.edits);
-    return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,noiseLevel,cleanupStrength:image.cleanupStrength,sketchStrength:structureImage.sketchStrength,edits:(p.edits||[]).length,pro:true}};
+    return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,sketchPaths:sketchPaths.length,sketchMain:sketchPaths.filter(path=>path.level==='main').length,sketchStructure:sketchPaths.filter(path=>path.level==='structure').length,sketchDetails:sketchPaths.filter(path=>path.level==='detail').length,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,noiseLevel,cleanupStrength:image.cleanupStrength,sketchStrength:structureImage.sketchStrength,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
+  const api={defaults,valid,value,toneImage,autoLevels,noiseEstimate,cleanImage,sketchStructure,vectorizeSketch,imageMaze,structureKind,engravingGrammar,microDetails,suppressNear,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);
