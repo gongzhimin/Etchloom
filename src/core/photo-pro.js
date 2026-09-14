@@ -269,10 +269,10 @@
     const margin=Math.max(2,Math.min(15,pro.frameMargin??5)),irregularity=Math.max(0,Math.min(40,pro.frameIrregularity??12))/40,rng=random((seed^0x46a3d91b)>>>0),paths=[];
     function rectangle(extra,width,rough=false){
       const left=900*(margin/100)+extra,top=660*(margin/100)+extra,right=900-left,bottom=660-top,sides=[[[left,top],[right,top]],[[right,top],[right,bottom]],[[right,bottom],[left,bottom]],[[left,bottom],[left,top]]];
-      if(rough){for(const [a,b]of sides){const parts=7;for(let part=0;part<parts;part++){if(rng()<.16)continue;const start=(part+rng()*.14)/parts,end=(part+1-rng()*.14)/parts,points=[];for(let i=0;i<=5;i++){const t=start+(end-start)*i/5,j=(rng()-.5)*2.2*irregularity;points.push([a[0]+(b[0]-a[0])*t+(a[1]===b[1]?0:j),a[1]+(b[1]-a[1])*t+(a[0]===b[0]?0:j)]);}paths.push({points,width:width*(.78+rng()*.42),role:'frame',mark:'engraved-frame',preserve:true});}}return;}
-      const points=[];for(const [a,b]of sides)for(let i=0;i<24;i++){const t=i/24,j=(rng()-.5)*1.8*irregularity;points.push([a[0]+(b[0]-a[0])*t+(a[1]===b[1]?0:j),a[1]+(b[1]-a[1])*t+(a[0]===b[0]?0:j)]);}points.push(points[0]);paths.push({points,width,role:'frame',mark:'engraved-frame',preserve:true});
+      if(rough){for(const [a,b]of sides){const parts=7;for(let part=0;part<parts;part++){if(rng()<.16)continue;const start=(part+rng()*.14)/parts,end=(part+1-rng()*.14)/parts,points=[];for(let i=0;i<=5;i++){const t=start+(end-start)*i/5,j=(rng()-.5)*6*irregularity;points.push([a[0]+(b[0]-a[0])*t+(a[1]===b[1]?0:j),a[1]+(b[1]-a[1])*t+(a[0]===b[0]?0:j)]);}paths.push({points,width:width*(.78+rng()*.42),role:'frame',mark:'engraved-frame',preserve:true});}}return;}
+      const points=[];for(const [a,b]of sides)for(let i=0;i<24;i++){const t=i/24,j=(rng()-.5)*4.5*irregularity;points.push([a[0]+(b[0]-a[0])*t+(a[1]===b[1]?0:j),a[1]+(b[1]-a[1])*t+(a[0]===b[0]?0:j)]);}points.push(points[0]);paths.push({points,width,role:'frame',mark:'engraved-frame',preserve:true});
     }
-    if(style==='fine')rectangle(0,.62);else if(style==='double'){rectangle(0,.42);rectangle(Math.max(7,900*.014),.7);}else rectangle(0,.82,true);
+    if(style==='fine')rectangle(0,1.15);else if(style==='double'){rectangle(0,.9);rectangle(Math.max(7,900*.014),1.35);}else rectangle(0,1.45,true);
     return paths;
   }
   function generate(recipe,baseGenerate,progress=()=>{}){

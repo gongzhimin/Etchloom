@@ -126,7 +126,7 @@ Saved recipes contain the grayscale analysis, parameters, and random seeds. They
 npm run model:download
 npm run model:start # Start local Informative Drawings on port 7861
 npm start           # Start the Etchloom studio on port 4173
-npm test          # Run all 65 tests
+npm test          # Run all 66 tests
 npm run benchmark # Update BENCHMARK.json
 npm run quality   # Update QUALITY_REPORT.json
 ```
