@@ -90,7 +90,7 @@
       if(r.mode==='photo'){for(const key of Object.keys(PhotoPro.defaults)){const v=r.pro?.[key]??PhotoPro.defaults[key];$('pro-'+key).value=v;if($('pro-'+key+'-value'))$('pro-'+key+'-value').value=v;}syncSimple();$('cropNote').textContent=original?'原图仅保留在当前会话，可重新裁切；刷新后需重新上传。':'恢复的是分析图，重新裁切需要上传原图。';}
       if(lastRecipe!==r.seed){editHistory=[];lastRecipe=r.seed;}
     },
-    paint(r,result){if(r.mode==='photo'){repaintSource(r);$('photoInfo').textContent=`${r.image.width} × ${r.image.height} · 主轮廓 ${result.stats.sketchMain||0} · 结构线 ${result.stats.sketchStructure||0} · 细节线 ${result.stats.sketchDetails||0} · 微刻 ${result.stats.microDetails||0}`;}}
+    paint(r,result){if(r.mode==='photo'){repaintSource(r);$('photoInfo').textContent=`${r.image.width} × ${r.image.height} · 外轮廓 ${result.stats.silhouettes||0} · 遮挡 ${result.stats.occlusions||0} · 转折 ${result.stats.formLines||0} · 材质 ${result.stats.textureLines||0}`;}}
     ,busy(b){isBusy=b;for(const id of ['undoLocal','clearLocal','applyCrop','exportDesignPNG','exportDesignSVG'])$(id).disabled=b;}
   };
 })();
