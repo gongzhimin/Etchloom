@@ -3,47 +3,47 @@
   "note": "Diagnostic scores in [0,1], except shortFragmentRate; compare revisions on the same fixture.",
   "routes": {
     "photo": {
-      "contourPrecision": 0.7603,
-      "contourRecall": 0.8369,
-      "contourF1": 0.7968,
-      "toneCorrelation": 0.9828,
+      "contourPrecision": 0.811,
+      "contourRecall": 1,
+      "contourF1": 0.8957,
+      "toneCorrelation": 0.9632,
       "toneOrder": 1,
-      "whitePreservation": 0.9572,
-      "shortFragmentRate": 0.6659,
+      "whitePreservation": 0.9488,
+      "shortFragmentRate": 0.1558,
       "toneInkByBand": [
-        0.0143,
+        0.0171,
         0,
-        0.7024,
-        0.7495,
+        0.5997,
+        0.6063,
         0
       ],
-      "paths": 1290,
+      "paths": 1012,
       "semantics": {
-        "silhouettes": 14,
-        "occlusions": 1,
+        "silhouettes": 4,
+        "occlusions": 0,
         "formLines": 1,
         "textureLines": 0
       }
     },
     "sketch": {
-      "contourPrecision": 0.7431,
-      "contourRecall": 0.7527,
-      "contourF1": 0.7479,
-      "toneCorrelation": 0.9779,
-      "toneOrder": 1,
-      "whitePreservation": 0.9662,
-      "shortFragmentRate": 0.7835,
+      "contourPrecision": 0.8027,
+      "contourRecall": 0.9462,
+      "contourF1": 0.8686,
+      "toneCorrelation": 0.9606,
+      "toneOrder": 0,
+      "whitePreservation": 0.9636,
+      "shortFragmentRate": 0.1264,
       "toneInkByBand": [
-        0.0113,
+        0.0121,
         0,
-        0.6445,
-        0.6706,
+        0.5567,
+        0.503,
         0
       ],
-      "paths": 1626,
+      "paths": 1464,
       "semantics": {
-        "silhouettes": 14,
-        "occlusions": 1,
+        "silhouettes": 7,
+        "occlusions": 0,
         "formLines": 1,
         "textureLines": 0
       }
