@@ -1,5 +1,5 @@
 'use strict';
-importScripts('../core/photo-pro.js','../core/generator.js');
+importScripts('../core/mark-system.js','../core/photo-pro.js','../core/generator.js');
 self.onmessage=event=>{
   const {id,recipes}=event.data;
   try{

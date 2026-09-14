@@ -110,9 +110,9 @@ function paintSelected() {
 function paintQuality(recipe,result){
   const panel=$('qualityPanel'),container=$('qualityMetrics');
   if(recipe.mode!=='photo'||!globalThis.QualityMetrics){panel.hidden=true;return;}
-  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),items=[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
+  panel.hidden=false;const q=QualityMetrics.evaluate(recipe.image,result),marks=recipe.pro?.pipeline==='marks',items=marks?[['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]]:[['轮廓准确',q.contourPrecision],['轮廓召回',q.contourRecall],['轮廓 F1',q.contourF1],['明暗关系',q.toneCorrelation],['调子次序',q.toneOrder],['高光留白',q.whitePreservation],['短碎线',q.shortFragmentRate,true]];
   container.replaceChildren(...items.map(([label,value,inverse])=>{const item=document.createElement('div'),score=Math.round(value*100);item.className='quality-metric'+(inverse&&value>.72?' warning':'');item.innerHTML=`<span>${label}</span><strong>${score}%</strong><meter min="0" max="1" value="${inverse?1-value:value}"></meter>`;return item;}));
-  $('qualitySummary').textContent=`轮廓 ${Math.round(q.contourF1*100)} · 明暗 ${Math.round(q.toneCorrelation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`;
+  $('qualitySummary').textContent=marks?`明暗 ${Math.round(q.toneCorrelation*100)} · 留白 ${Math.round(q.whitePreservation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`:`轮廓 ${Math.round(q.contourF1*100)} · 明暗 ${Math.round(q.toneCorrelation*100)} · 碎线 ${Math.round(q.shortFragmentRate*100)}`;
 }
 function paintCandidates() {
   const container = $('candidates'); container.replaceChildren();
