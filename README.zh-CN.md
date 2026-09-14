@@ -126,7 +126,7 @@ Etchloom 可以导出带物理 DPI 的 PNG、可缩放 SVG 刻线路径、可复
 npm run model:download
 npm run model:start # 启动 7861 端口的本机 Informative Drawings 模型
 npm start           # 启动 4173 端口的 Etchloom 工作台
-npm test          # 运行全部 70 项测试
+npm test          # 运行全部 71 项测试
 npm run benchmark # 更新 BENCHMARK.json
 ```
 
