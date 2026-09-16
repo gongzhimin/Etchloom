@@ -1,315 +1,57 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etchloom · Digital Printmaking Studio</title><link rel="icon" href="docs/images/etchloom-logo.svg" type="image/svg+xml">
+<style>
+:root{color-scheme:dark;font:14px 'Segoe UI','Microsoft YaHei',sans-serif;color:#ded9cc;background:#202421}*{box-sizing:border-box}body{margin:0}header{padding:18px 32px;border-bottom:1px solid #42473d;display:flex;align-items:center;gap:16px}.brand-mark{width:42px;height:42px;flex:none}h1{font:27px Georgia,serif;margin:0;letter-spacing:5px}small,.muted{color:#a1a593}header p{margin:0;color:#a1a593}main{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 79px)}aside{padding:24px;border-right:1px solid #42473d}h2{font-size:12px;letter-spacing:2px;color:#b5baa6;margin:0 0 14px}section{margin-bottom:27px}.tools{display:grid;grid-template-columns:1fr 1fr;gap:7px}button,select{background:#2c322c;color:#ded9cc;border:1px solid #515949;padding:10px;border-radius:3px;cursor:pointer;font:inherit}button:hover{border-color:#c3b27e}button.active,.primary{background:#c8b67e;color:#252a23;border-color:#c8b67e}label{display:block;font-size:12px;color:#b9beac;margin:14px 0 6px}input[type=range]{width:100%;accent-color:#c8b67e}output{float:right;color:#e7dcc0}.row{display:flex;gap:8px;margin-top:10px}.row>*{flex:1}.work{padding:24px 32px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}.views{display:flex;gap:6px}.studio{display:grid;place-items:center;min-height:520px;background:#191d1a;border:1px solid #3b4238;padding:30px;background-image:radial-gradient(#363c32 0.6px,transparent 0.6px);background-size:8px 8px}canvas{width:100%;max-width:900px;height:auto;box-shadow:0 18px 40px #0007;touch-action:none;cursor:crosshair}.caption{display:flex;justify-content:space-between;margin-top:15px;font-size:12px;color:#a1a593}.notes{max-width:850px;line-height:1.9;color:#a1a593;margin-top:24px;font-size:13px}#status{color:#c8b67e}button:disabled{opacity:.4;cursor:default}select{width:100%}@media(max-width:800px){main{grid-template-columns:1fr}aside{border-right:0;display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px}section{margin:0}.work{padding:18px}.studio{min-height:0;padding:12px}header{padding:14px 18px;display:grid;grid-template-columns:auto 1fr}.brand-mark{grid-row:1/3}header p{margin:0}.top{flex-wrap:wrap}}
+</style><link rel="stylesheet" href="styles/app.css"></head><body>
+<header><img class="brand-mark" src="docs/images/etchloom-logo.svg" alt=""><h1>Etchloom</h1><p>Digital Printmaking Studio</p><nav class="workspace-tabs" aria-label="工作阶段"><button id="showGenerator" class="active">图片设计</button><button id="showPlate">制版与印样</button></nav></header><main><aside>
+<section class="generator-controls" id="generatorControls">
+<h2>00 / 图案生成</h2><label for="genMode">随机模式</label><select id="genMode"><option value="wind">风迹 · 舒展的线群</option><option value="vortex">回旋 · 偏心的环流</option><option value="islands">群岛 · 留白中的聚落</option></select>
+<div class="sliders">
+<div><label for="genDensity">疏密 <output id="genDensityValue"></output></label><input id="genDensity" type="range" min="0" max="100" value="48"></div>
+<div><label for="genFlow">流动 <output id="genFlowValue"></output></label><input id="genFlow" type="range" min="0" max="100" value="48"></div>
+<div><label for="genOrder">秩序 <output id="genOrderValue"></output></label><input id="genOrder" type="range" min="0" max="100" value="72"></div>
+<div><label for="genSpace">留白 <output id="genSpaceValue"></output></label><input id="genSpace" type="range" min="0" max="100" value="45"></div>
+<div><label for="genWidth">线宽 <output id="genWidthValue"></output></label><input id="genWidth" type="range" min="0" max="100" value="24"></div>
+</div><label><input id="lockLayout" type="checkbox" checked> 锁定构图</label><p class="gen-intro">调节参数保留种子。锁定时保留线群位置；关闭后，参数也参与构图变化。“生成四张”始终探索新构图。</p>
+<div class="row"><button id="generateFour" class="primary">生成四张</button><button id="varyDesign">变奏</button></div>
+<label for="favorites">收藏方案</label><div class="favorite-row"><select id="favorites"><option value="">尚无收藏</option></select><button id="restoreFavorite" style="width:auto">恢复</button></div><div class="row"><button id="favoriteDesign">收藏当前</button><button id="exportDesign">导出方案</button></div><button id="importDesign" style="margin-top:8px">打开方案文件</button><input id="designFile" type="file" accept=".json,application/json" hidden><p class="gen-intro">收藏保存在当前浏览器。导出方案可备份或在其他设备恢复。</p>
+</section>
+<section><h2>01 / 制版工具</h2><div class="tools"><button class="active" data-tool="needle">刻针</button><button data-tool="dry">干刻针</button><button data-tool="stop">防蚀层</button><button data-tool="polish">刮磨器</button></div><label>工具直径 <output id="sizeValue"></output></label><input id="size" type="range" min="1" max="50" value="4"><div class="row"><button id="undo">撤销</button><button id="clear">清空版面</button></div></section>
+<section><h2>02 / 酸液腐蚀</h2><label>酸液强度 <output id="acidValue"></output></label><input id="acid" type="range" min="1" max="100" value="45"><label>腐蚀颗粒 <output id="grainValue"></output></label><input id="grain" type="range" min="0" max="100" value="45"><button id="etch" class="primary" style="width:100%;margin-top:12px">开始腐蚀</button><label><input id="irreversible" type="checkbox"> 不可逆模式（清除撤销历史）</label></section>
+<section><h2>03 / 上墨与压印</h2><label>墨量 <output id="inkValue"></output></label><input id="ink" type="range" min="0" max="150" value="90"><label>压力 <output id="pressureValue"></output></label><input id="pressure" type="range" min="0" max="100" value="65"><label>擦版留墨 <output id="toneValue"></output></label><input id="tone" type="range" min="0" max="35" value="4"><label>纸张</label><select id="paper"><option value="rough">暖白 · 粗纹棉纸</option><option value="smooth">象牙白 · 细纹纸</option></select><div class="row"><button id="print" class="primary">取一张印样</button></div></section>
+</aside><div class="work"><div class="top"><div class="views"><button class="active" data-view="plate">虚拟铜版</button><button data-view="depth">刻深图</button><button data-view="print">压印预览</button></div><span id="status">就绪 · 在版面上划出第一条线</span></div><div class="studio"><canvas id="canvas" width="900" height="660" aria-label="数字铜版绘图区"></canvas></div><div class="caption"><span id="caption">制版 / 针尖划开保护层，等待酸液进入</span><span id="timer">腐蚀累计 0.0 s</span></div><div class="row" style="max-width:480px;margin-top:22px"><button id="demo">载入静物练习版</button><button id="save">保存虚拟版</button><button id="load">打开虚拟版</button></div><input id="file" type="file" accept="application/json,.json" hidden><p class="notes">刻针划开防蚀层；干刻针直接留下较深刻痕。酸液沿暴露的材料加深，并向刻痕邻域缓慢扩张。防蚀层阻止继续腐蚀，刮磨器减浅既有刻痕。切换压印预览后调整墨与纸，印样会左右反转。取样导出 PNG；保存虚拟版可保留刻深与保护层。此为可重复实验的视觉模型，并非真实化学仿真。</p></div></main>
+<script src="src/core/plate-codec.js"></script><script src="src/core/photo-pro.js"></script><script src="src/core/generator.js"></script><script src="src/ui/generation-client.js"></script>
+<script>
 'use strict';
-const generator = PrintGenerator;
-const cloneRecipe = r => JSON.parse(JSON.stringify(r));
-const modeNames = { wind: '风迹', vortex: '回旋', islands: '群岛', fluid: '流体', maze: '迷宫', photo: '图片拟合' };
-let uploadedImage=null;
-const imageControls=document.createElement('div');
-imageControls.innerHTML='<button id="uploadPhoto" class="primary">上传图片 · JPG / PNG</button><input id="photoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden><canvas id="sourcePreview" width="225" height="165" aria-label="拟合源图灰度预览" hidden style="margin-top:12px;box-shadow:none;cursor:default"></canvas><p id="photoInfo" class="source-note">图片仅在本机处理，按比例完整放入版面。</p>';
-$('generatorControls').prepend(imageControls);
-const controlIds = { density: 'genDensity', flow: 'genFlow', order: 'genOrder', space: 'genSpace', width: 'genWidth' };
-const advanced = document.createElement('div');
-advanced.className = 'legacy-controls';
-advanced.innerHTML = `<label for="designFinish">图案风格</label><select id="designFinish"><option value="engraved">精刻 · 层次与纹饰</option><option value="raw">原始 · 算法轨迹</option></select><div id="mazeAlgorithmGroup"><label for="mazeAlgorithm">迷宫算法</label><select id="mazeAlgorithm"><option value="dfs">深度优先 · 长通道</option><option value="prim">随机 Prim · 多分枝</option></select></div>`;
-for (const [key, name] of Object.entries({ swirl: '涡旋驱动力', viscosity: '黏度', duration: '演化时间', bias: '生长偏向', loops: '回路比例', warp: '网格弯曲', fidelity:'原图保真', randomness:'随机程度', detail:'细节尺度', contrast:'黑白层次' })) {
-  const id = 'algo' + key;
-  advanced.insertAdjacentHTML('beforeend', `<div id="${id}Group"><label for="${id}">${name} <output id="${id}Value"></output></label><input id="${id}" type="range" min="0" max="100" value="${generator.algorithmDefaults[key]}"></div>`);
-  controlIds[key] = id;
-}
-$('generatorControls').querySelector('.sliders').after(advanced);
-$('genMode').insertAdjacentHTML('afterbegin', '<option value="photo">图片 · 混合刻线拟合</option><option value="fluid">流体 · 速度场演化</option><option value="maze">迷宫 · 路径与回路</option>');
-$('genMode').value = 'photo';
-for(const element of [$('generatorControls').querySelector(':scope > h2'),$('generatorControls').querySelector('label[for="genMode"]'),$('genMode'),$('generatorControls').querySelector(':scope > .sliders'),$('generatorControls').querySelector('label[for="favorites"]'),$('favorites'),$('restoreFavorite'),$('favoriteDesign'),$('lockLayout')?.closest('label')])if(element)element.hidden=true;
-$('generatorControls').querySelectorAll('.gen-intro').forEach(element=>element.hidden=true);
-$('exportDesign').textContent='保存方案';$('importDesign').textContent='打开方案';
-const plateWork = document.querySelector('.work');
-const plateSections = [...document.querySelectorAll('aside > section:not(#generatorControls)')];
-const panel = document.createElement('div');
-panel.className = 'gen-panel';
-panel.innerHTML = `<div class="gen-heading"><div><h2>图片刻线</h2><p id="modeDescription">上传图片，让随机刻线沿着它的明暗与轮廓生长。</p></div><span id="designSeed" class="seed-badge"></span></div>
-<div id="pipelineInspector" class="pipeline-inspector" hidden>
-  <div class="pipeline-tabs" role="tablist" aria-label="版画制版工序透视">
-    <button class="stage-btn active" data-stage="full"><span class="step-num">7</span>完整版画</button>
-    <button class="stage-btn" data-stage="gray"><span class="step-num">1</span>感知灰度</button>
-    <button class="stage-btn" data-stage="smooth"><span class="step-num">2</span>保边去噪</button>
-    <button class="stage-btn" data-stage="tensor"><span class="step-num">3</span>张量流场</button>
-    <button class="stage-btn" data-stage="ridge"><span class="step-num">4</span>山脊骨架</button>
-    <button class="stage-btn" data-stage="contour"><span class="step-num">5</span>呼吸轮廓</button>
-    <button class="stage-btn" data-stage="hatch"><span class="step-num">6</span>形体排线</button>
-  </div>
-  <div class="pipeline-subbar">
-    <div class="stage-desc-group">
-      <span id="stageBadge" class="stage-badge">工序 7 / 7</span>
-      <span id="stageTitle" class="stage-title">完整版画底稿</span>
-      <span id="stageDesc" class="stage-desc">骨干轮廓、体块排线网、交叉影调与微观雕花完整咬合。</span>
-    </div>
-    <div class="onion-control">
-      <label for="onionSkinSlider">透光台叠加 <output id="onionSkinValue">0%</output></label>
-      <input id="onionSkinSlider" type="range" min="0" max="100" value="0" title="在当前工序产物下方透出原图进行对齐检视">
-    </div>
-  </div>
-</div>
-<div class="studio design-stage"><canvas id="designCanvas" width="900" height="660" aria-label="选中图案的放大预览"></canvas></div>
-<div class="caption"><span id="designInfo"></span><span>固定黑线 · 暖白纸底 / 制版方向</span></div>
-<div class="recent"><span>最近的变奏</span><div id="candidates" class="candidates" aria-label="最近四次变奏"></div></div>
-<div class="gen-footer"><span id="genMessage" class="gen-message" role="status" aria-live="polite">上传一张图片开始创作。</span><div class="row"><select id="transferMode" class="transfer-select" aria-label="转入制版方式" hidden><option value="replace">替换当前版面</option></select><button id="transferDesign" class="primary">进入制版 →</button></div></div>
-<p class="notes">刻线转入铜版后，再通过腐蚀、墨量、压力和纸张得到最终印样。</p>`;
-document.querySelector('main').appendChild(panel);
+let W=900,H=660,N=W*H;const $=id=>document.getElementById(id),canvas=$('canvas'),ctx=canvas.getContext('2d');
+let depth=new Float32Array(N),exposed=new Float32Array(N),blocked=new Uint8Array(N),burr=new Float32Array(N),next=new Float32Array(N),tool='needle',view='plate',running=false,elapsed=0,history=[],drawing=false,last=null,seed=17,dirty=true,plateSources=[];
+let grainNoise;function resetGrain(){grainNoise=new Float32Array(N);for(let i=0;i<N;i++){let x=(Math.imul(i+19,374761393)^12347)>>>0;x=Math.imul(x^(x>>>13),1274126177)>>>0;grainNoise[i]=(x>>>0)/4294967295;}}resetGrain();
+function allocatePlate(width){if(![900,1500,3000].includes(width))throw Error("版面尺寸无效");W=width;H=Math.round(W*660/900);N=W*H;canvas.width=W;canvas.height=H;depth=new Float32Array(N);exposed=new Float32Array(N);blocked=new Uint8Array(N);burr=new Float32Array(N);next=new Float32Array(N);resetGrain();dirty=true;}
+const val=id=>Number($(id).value)/100;
+function snapshot(){if($('irreversible').checked)return;history.push({width:W,depth:depth.slice(),exposed:exposed.slice(),blocked:blocked.slice(),burr:burr.slice(),elapsed,plateSources:structuredClone(plateSources)});while(history.length>1&&(history.length>12||history.reduce((n,s)=>n+s.depth.byteLength*2+s.blocked.byteLength+(s.burr?s.burr.byteLength:0),0)>128*1048576))history.shift();syncUndo()}
+function syncUndo(){$('undo').disabled=running||!history.length}
+function stop(){running=false;$('etch').textContent='开始腐蚀';$('status').textContent='已停止 · 可以继续制版或试印';syncUndo()}
+function setView(v){view=v;document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('caption').textContent={plate:'制版 / 针尖划开保护层，等待酸液进入',depth:'刻深 / 黑色为完整表面，亮度表示凹槽深度',print:'印样 / 铜版左右反转，墨色由刻深与压印共同决定'}[v];dirty=true}
+for(const id of ['size','acid','grain','ink','pressure','tone']){$(id).oninput=()=>{$(id+'Value').value=$(id).value+(id==='size'?' px':'%');dirty=true};$(id).oninput()}
+$('paper').onchange=()=>dirty=true;
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(e=>e.classList.toggle('active',e===b))});
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+function dab(x,y,force=1){let r=Number($('size').value)*W/900/2;let maxR=tool==='dry'?r*1.85:tool==='polish'?r*1.6:r;for(let yy=Math.max(0,Math.floor(y-maxR-1));yy<=Math.min(H-1,y+maxR+1);yy++)for(let xx=Math.max(0,Math.floor(x-maxR-1));xx<=Math.min(W-1,x+maxR+1);xx++){let dist=Math.hypot(xx-x,yy-y);let f=Math.max(0,Math.min(1,r+.5-dist))*force;let i=yy*W+xx;if(tool==='stop'){if(dist<=r+.5){blocked[i]=1;exposed[i]=0;burr[i]=0;}}else if(tool==='polish'){let fPol=Math.max(0,Math.min(1,maxR+.5-dist))*force;if(fPol>0){burr[i]*=Math.max(0,1-fPol*.88);depth[i]*=Math.max(0,1-fPol*.32);}}else if(tool==='dry'){if(f>0){blocked[i]=0;exposed[i]=Math.max(exposed[i],f*.7);depth[i]=Math.min(1,depth[i]+f*.36);}let fBurr=Math.max(0,Math.min(1,maxR+.5-dist))*force;if(fBurr>0){let halo=Math.sin(Math.min(Math.PI,dist/(maxR+.5)*Math.PI));burr[i]=Math.min(1,burr[i]+fBurr*(.5+.5*halo));}}else{if(f>0){blocked[i]=0;exposed[i]=Math.max(exposed[i],f);depth[i]=Math.min(1,depth[i]+f*.0008);burr[i]=0;}}}dirty=true}
+function line(a,b){let d=Math.hypot(b.x-a.x,b.y-a.y),steps=Math.max(1,Math.ceil(d/Math.max(.7,Number($('size').value)*W/900/5)));for(let j=1;j<=steps;j++)dab(a.x+(b.x-a.x)*j/steps,a.y+(b.y-a.y)*j/steps,b.p)}
+function point(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height,p:e.pointerType==='pen'?Math.max(.15,e.pressure):1}}
+canvas.onpointerdown=e=>{if(view==='print'){ $('status').textContent='切换到铜版或刻深图继续制版';return}snapshot();drawing=true;canvas.setPointerCapture(e.pointerId);last=point(e);dab(last.x,last.y,last.p)};
+canvas.onpointermove=e=>{if(!drawing)return;const p=point(e);line(last,p);last=p};canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;last=null};
+$('etch').onclick=()=>{if(running){stop();return}snapshot();running=true;$('etch').textContent='停止腐蚀';syncUndo()};
+$('irreversible').onchange=()=>{if($('irreversible').checked)history=[];syncUndo()};
+$('undo').onclick=()=>{const s=history.pop();if(!s)return;if(s.width!==W)allocatePlate(s.width);({depth,exposed,blocked,elapsed,plateSources}=s);burr=s.burr?s.burr.slice():new Float32Array(N);dirty=true;syncUndo()};
+$('clear').onclick=()=>{stop();snapshot();depth.fill(0);exposed.fill(0);blocked.fill(0);burr.fill(0);elapsed=0;plateSources=[];dirty=true};
+function etch(dt){let strength=val('acid'),g=val('grain');next.set(exposed);for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){let i=y*W+x;if(blocked[i])continue;let edge=Math.max(exposed[i-1],exposed[i+1],exposed[i-W],exposed[i+W]);next[i]=Math.min(1,exposed[i]+Math.max(0,edge-exposed[i])*dt*strength*(.14+g*grainNoise[i]*.55));depth[i]=Math.min(1,depth[i]+next[i]*dt*strength*.058*(1+g*(grainNoise[i]-.5)));if(burr[i]>0)burr[i]=Math.max(0,burr[i]-dt*strength*.14);}[exposed,next]=[next,exposed];elapsed+=dt;dirty=true}
+function render(target=ctx,mode=view){let im=target.createImageData(W,H),a=im.data,ink=val('ink'),pressure=val('pressure'),tone=val('tone'),rough=$('paper').value==='rough';let pm=Math.round(26*W/900);let bw=Math.round(7*W/900);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let i=y*W+x,j=mode==='print'?y*W+W-1-x:i,d=depth[j],bu=burr[j],noise=grainNoise[i],r,g,b;if(mode==='depth'){let dVal=Math.min(1,d+bu*.4);r=g=b=dVal*255;}else if(mode==='plate'){let slope=d-depth[Math.max(0,j-1)],cut=exposed[j];let burrReflect=bu*55;r=116+noise*9-d*67+slope*110+cut*27+burrReflect;g=85+noise*7-d*50+slope*95+cut*25+burrReflect*.9;b=61+noise*5-d*29+slope*75+cut*23+burrReflect*.8;if(blocked[j]){r*=.42;g*=.32;b*=.20;}}else{let texture=rough?noise*9:noise*3.5;let paperR=248-texture,paperG=242-texture,paperB=226-texture;let dxLeft=x-pm,dxRight=W-1-pm-x;let dyTop=y-pm,dyBottom=H-1-pm-y;let minBorderDist=Math.min(dxLeft,dxRight,dyTop,dyBottom);let bevel=0;if(minBorderDist<-bw){r=paperR+2;g=paperG+1;b=paperB;}else if(minBorderDist<=bw){let t=(minBorderDist+bw)/(2*bw);let isShadowSide=(dxLeft<dxRight&&dxLeft<=dyBottom)||(dyTop<dyBottom&&dyTop<=dxRight);bevel=isShadowSide?(-54*pressure*Math.sin(t*Math.PI)):(38*pressure*Math.sin(t*Math.PI));r=Math.max(0,Math.min(255,paperR+bevel));g=Math.max(0,Math.min(255,paperG+bevel));b=Math.max(0,Math.min(255,paperB+bevel));}else{let dropOut=0.07*(1-pressure);let effD=Math.max(0,d-dropOut);let transferRate=effD>0?(1-Math.exp(-effD*(1.8+13.0*pressure))):0;let burrInk=bu*.95*ink*(.30+.70*pressure);let dryThreshold=Math.max(0,(.65-ink)*1.65);let dryBreak=(dryThreshold>0&&noise<dryThreshold)?0.0:1.0;let lineInk=(transferRate*(.25+.75*ink)+burrInk)*dryBreak;let variation=rough?(.75+grainNoise[(i+seed*997)%N]*.5):1;let surfaceTone=tone*ink*.32;let black=Math.min(.98,lineInk*variation+surfaceTone);let pressedR=paperR-1.5,pressedG=paperG-1.5,pressedB=paperB-1;r=Math.max(0,Math.min(255,pressedR*(1-black)));g=Math.max(0,Math.min(255,pressedG*(1-black)));b=Math.max(0,Math.min(255,pressedB*(1-black)));}}a[i*4]=r;a[i*4+1]=g;a[i*4+2]=b;a[i*4+3]=255;}target.putImageData(im,0,0)}
+function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+$('print').onclick=()=>{seed++;setView('print');const c=document.createElement('canvas');c.width=W;c.height=H;render(c.getContext('2d'),'print');c.toBlob(async b=>{if(!b){$('status').textContent='导出失败，请重试';return;}download(await PlateCodec.pngDpi(b,W,window.printPaperMM||254),'Etchloom-print-'+seed+'.png');$('status').textContent='已生成 '+W+' × '+H+' 印样 · 已发起下载'});};
+$('save').onclick=()=>{download(new Blob([JSON.stringify({version:W===900?1:2,width:W,height:H,depth:W===900?Array.from(depth):PlateCodec.encode(depth),exposed:W===900?Array.from(exposed):PlateCodec.encode(exposed),blocked:W===900?Array.from(blocked):PlateCodec.encode(blocked),burr:W===900?Array.from(burr):PlateCodec.encode(burr),paperMM:window.printPaperMM||254,elapsed,seed,plateSources,designSession:window.designSession.save(),settings:Object.fromEntries(['ink','pressure','tone','paper','acid','grain','size','needleMM','inkGain'].map(id=>[id,$(id)?.value]).filter(([,value])=>value!=null))})],{type:'application/json'}),'Etchloom-plate.json')};
+$('load').onclick=()=>$('file').click();$('file').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const s=JSON.parse(await f.text());const decoded=PlateCodec.read(s);if(s.designSession&&!window.designSession.validate(s.designSession))throw Error('图案会话数据无效');if(s.plateSources&&(!Array.isArray(s.plateSources)||s.plateSources.length>1000||!s.plateSources.every(PrintGenerator.validRecipe)))throw Error('制版来源数据无效');stop();snapshot();if(s.width!==W)allocatePlate(s.width);({depth,exposed,blocked}=decoded);burr=s.burr?(s.version===1?Float32Array.from(s.burr):PlateCodec.decode(s.burr,Float32Array,N)):new Float32Array(N);window.printPaperMM=Number.isFinite(s.paperMM)?Math.max(50,Math.min(1000,s.paperMM)):254;elapsed=Number.isFinite(s.elapsed)?Math.max(0,s.elapsed):0;seed=Number.isInteger(s.seed)?Math.abs(s.seed)%100000:17;for(const id of ['ink','pressure','tone','paper','acid','grain','size','needleMM','inkGain'])if(s.settings&&s.settings[id]!=null&&$(id)){$(id).value=s.settings[id];if($(id).oninput)$(id).oninput()}plateSources=s.plateSources||[];if(s.designSession)await window.designSession.restore(s.designSession);if($('paperMM')){$('paperMM').value=window.printPaperMM;$('plateSize').value=W;$('paperMM').onchange?.();}dirty=true;$('status').textContent='虚拟版已载入'}catch(err){$('status').textContent='打开失败：'+err.message}e.target.value=''};
+$('demo').onclick=()=>{stop();snapshot();if(W!==900)allocatePlate(900);depth.fill(0);exposed.fill(0);blocked.fill(0);burr.fill(0);elapsed=0;plateSources=[];let old=tool,sz=$('size').value;tool='dry';$('size').value=2;const path=ps=>{for(let k=1;k<ps.length;k++)line({x:ps[k-1][0],y:ps[k-1][1]},{x:ps[k][0],y:ps[k][1],p:.6})};path([[90,505],[810,505]]);path([[240,490],[233,293],[260,266],[260,176],[310,176],[310,266],[337,293],[331,490],[240,490]]);path([[377,490],[368,335],[481,335],[471,490],[377,490]]);path([[530,490],[526,245],[628,245],[641,490],[530,490]]);for(let x=240;x<331;x+=6)path([[x,302],[x+2,482]]);for(let y=350;y<485;y+=7)path([[379,y],[470,y-8]]);for(let x=538;x<632;x+=5)path([[x,267],[x+3,483]]);for(let k=0;k<40;k++)path([[220+k*10,513],[260+k*10,541+(k%4)*3]]);tool=old;$('size').value=sz;dirty=true;setView('plate');$('status').textContent='静物练习版 · 可继续刻线或开始腐蚀'};
+let previous=0,acc=0;function frame(t){let dt=Math.min(.1,(t-previous)/1000);previous=t;if(running){acc+=dt;if(acc>=.08){etch(acc);acc=0}$('status').textContent='酸液作用中 · 随时停止以保留细线'}if(dirty){render();$('timer').textContent='腐蚀累计 '+elapsed.toFixed(1)+' s';dirty=false}requestAnimationFrame(frame)}syncUndo();requestAnimationFrame(frame);
+</script><script src="src/ui/generator-ui.js"></script><script src="src/ui/refinement-ui.js"></script></body></html>
 
-let currentStage = 'full';
-const stageMetadata = {
-  full: { badge: '工序 7 / 7', title: '完整版画底稿', desc: '骨干轮廓、体块排线网、交叉影调与微观雕花完整咬合。' },
-  gray: { badge: '工序 1 / 7', title: '感知灰度化', desc: '按人眼视敏度（0.2126R + 0.7152G + 0.0722B）加权量化，展开黑白动态并提升暗部细节。' },
-  smooth: { badge: '工序 2 / 7', title: '双边保边滤波', desc: '平滑消除皮肤毛孔与天空杂噪，同时对睫毛、瞳孔反光与发丝边缘 100% 保持原始锐度。' },
-  tensor: { badge: '工序 3 / 7', title: '结构张量流向场', desc: '通过表面梯度二阶矩矩阵提取肌肉与起伏走势（洋流等高线状），引导刻刀顺形排线。' },
-  ridge: { badge: '工序 4 / 7', title: '1px 山脊骨架线', desc: '沿 4 向法线进行非极大值抑制（NMS），将数像素宽的边缘收敛为 1 像素精纯山脊骨架。' },
-  contour: { badge: '工序 5 / 7', title: '呼吸感矢量轮廓', desc: '双尺度滞后追踪骨架线，并在低反差阴影处节制断线（Lost-and-Found），打破死板铁丝感。' },
-  hatch: { badge: '工序 6 / 7', title: '形体排线与交叉网', desc: '沿曲率流场自适应排线（五官处压缩至 1.2px）并在暗部叠织 81° 交叉羽网，烘托三维体积。' }
-};
-panel.querySelectorAll('.stage-btn').forEach(btn => {
-  btn.onclick = () => {
-    currentStage = btn.dataset.stage;
-    panel.querySelectorAll('.stage-btn').forEach(b => b.classList.toggle('active', b === btn));
-    const meta = stageMetadata[currentStage] || stageMetadata.full;
-    if ($('stageBadge')) $('stageBadge').textContent = meta.badge;
-    if ($('stageTitle')) $('stageTitle').textContent = meta.title;
-    if ($('stageDesc')) $('stageDesc').textContent = meta.desc;
-    paintSelected();
-  };
-});
-if ($('onionSkinSlider')) {
-  $('onionSkinSlider').oninput = () => {
-    $('onionSkinValue').value = $('onionSkinSlider').value + '%';
-    paintSelected();
-  };
-}
-
-let recipes = [], results = [], selected = 0, favorites = [], updateTimer;
-
-let uiJob=0,generationPromise=null;
-const progressUI=document.createElement('div');progressUI.innerHTML='<progress id="genProgress" max="100" value="0" style="width:100%"></progress><button id="cancelGeneration" hidden>取消生成</button><p id="generationMetrics" class="source-note"></p>';
-$('generatorControls').append(progressUI);
-const generationClient=new GenerationClient((value,label)=>{$('genProgress').value=value;message(label+' · '+value+'%');});
-function setBusy(busy){for(const id of ['generateFour','transferDesign','exportDesign','favoriteDesign','restoreFavorite','varyDesign','save'])$(id).disabled=busy||(!currentResult()&&id!=='restoreFavorite'&&id!=='save');document.querySelectorAll('.candidate').forEach(b=>b.disabled=busy);$('cancelGeneration').hidden=!busy;window.refinement?.busy(busy||!currentResult());}
-async function runGeneration(draft,nextSelected,indices=draft.map((_,i)=>i)){
-  const job=++uiJob;setBusy(true);$('genProgress').value=0;
-  generationPromise=(async()=>{try{
-    const reply=await generationClient.run(indices.map(i=>draft[i]));if(job!==uiJob)return false;
-    const next=indices.length===draft.length?[]:results.slice();reply.results.forEach((result,k)=>{result.recipe=draft[indices[k]];next[indices[k]]=result;});
-    recipes=draft;results=next;selected=nextSelected;syncControls();paintCandidates();$('genProgress').value=100;
-    $('generationMetrics').textContent=(reply.elapsed/1000).toFixed(2)+' s · 工作内存估算 '+(reply.estimatedBytes/1048576).toFixed(1)+' MB（非进程峰值）';message('生成完成。可继续编辑或转入制版。');return true;
-  }catch(error){if(job===uiJob){if(currentRecipe())syncControls();message(error.name==='AbortError'?'已取消，保留上一次结果。':error.message);}return false;
-  }finally{if(job===uiJob){setBusy(false);generationPromise=null;}}})();
-  return generationPromise;
-}
-$('cancelGeneration').onclick=()=>{generationClient.cancel();};
-
-const storageKey = 'etchloom-design-favorites-v1';
-function freshSeed() { return crypto.getRandomValues(new Uint32Array(1))[0]; }
-function readParams() { return { ...Object.fromEntries(Object.entries(controlIds).map(([key, id]) => [key, Number($(id).value)])), mazeAlgorithm: $('mazeAlgorithm').value, finish: $('designFinish').value }; }
-function message(text) { $('genMessage').textContent = text; }
-function currentRecipe() { return recipes[selected]; }
-function currentResult() { return results[selected]; }
-function syncControls() {
-  const r = currentRecipe(); if (!r) return;
-  $('genMode').value = r.mode;
-  if ($('pipelineInspector')) $('pipelineInspector').hidden = r.mode !== 'photo';
-  for (const [key, id] of Object.entries(controlIds)) { $(id).value = r.params[key] ?? generator.algorithmDefaults[key]; $(id + 'Value').value = $(id).value + '%'; }
-  $('mazeAlgorithm').value = r.params.mazeAlgorithm || 'dfs'; $('designFinish').value=r.params.finish || 'raw'; $('designFinish').hidden=!['fluid','maze'].includes(r.mode); advanced.querySelector('label[for=designFinish]').hidden=$('designFinish').hidden;
-  for (const key of Object.keys(generator.algorithmDefaults)) $('algo'+key+'Group').hidden = !((r.mode === 'fluid' ? ['swirl','viscosity','duration'] : r.mode === 'maze' ? ['bias','loops','warp'] : r.mode === 'photo' ? ['fidelity','randomness','detail','contrast'] : []).includes(key));
-  $('mazeAlgorithmGroup').hidden = r.mode !== 'maze';
-  for (const id of ['genFlow','genOrder']) $(id).parentElement.hidden = ['fluid','maze','photo'].includes(r.mode);
-  if(r.mode==='photo'){uploadedImage=r.image;paintSource(r.image);}
-  $('sourcePreview').hidden=r.mode!=='photo';
-  $('lockLayout').disabled=r.mode==='photo';
-  if(r.mode==='photo'){$('lockLayout').checked=true;$('photoInfo').textContent=`拟合源图 · ${r.image.width} × ${r.image.height} 分析 · 本机处理`;}
-  $('generatorControls').querySelector('.gen-intro').textContent = r.mode === 'maze' ? '锁定网格位置与形变。疏密控制网格数量，留白控制页边距。变奏重新开辟通道。回路为 0 时，任意两格间只有一条路径。' : r.mode === 'fluid' ? '锁定涡旋源位置。疏密控制粒子数量，留白控制中央无刻线区。变奏改变粒子起点和驱动力相位。' : '调节参数保留种子。锁定时保留线群位置；关闭后，参数也参与构图变化。“生成四张”始终探索新构图。';
-  if(r.params.finish==='engraved'&&r.mode==='fluid') $('generatorControls').querySelector('.gen-intro').textContent='疏密控制细线间距，线宽控制浓淡。锁定涡旋源位置后，演化时间与黏度仍可改变线条走势。';
-  if(r.params.finish==='engraved'&&r.mode==='maze') $('generatorControls').querySelector('.gen-intro').textContent='疏密控制迷宫细节，留白控制纹章大小。中央花纹和外缘刻度也会写入铜版。变奏重新生长环内路径。';
-  if(r.mode==='photo')$('generatorControls').querySelector('.gen-intro').textContent='图片构图固定，变奏只改变刻线。保真控制边缘约束，疏密控制排线间距；图片很浅时可减少留白或调整黑白层次。';
-  window.refinement?.sync(r);
-  panel.querySelector('.notes').textContent = '算法结果会成为防蚀层开口，开始腐蚀后才形成刻深。可以继续手工加工、叠加其他图案或返回选稿；铜版会保留。';
-  if(r.mode==='photo')panel.querySelector('.notes').textContent='新上传图片按 900 × 660 分析，独立细轮廓叠加明暗排线；旧方案保留原分析精度。原图与图案都是制版方向，压印会左右反转。方案文件包含分析用灰度图，可离线恢复。';
-}
-function showWorkspace(generating) {
-  if (generating) stop();
-  panel.hidden = !generating; plateWork.hidden = generating;
-  $('generatorControls').hidden = !generating;
-  plateSections.forEach(s => s.hidden = generating);
-  $('showGenerator').classList.toggle('active', generating);
-  $('showPlate').classList.toggle('active', !generating);
-}
-$('showGenerator').onclick = () => showWorkspace(true);
-$('showPlate').onclick = () => showWorkspace(false);
-function paintSelected() {
-  const r = currentRecipe(), result = currentResult(); if (!r || !result) return;
-  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
-  const canvas = $('designCanvas');
-  const targetW = Math.round(900 * dpr), targetH = Math.round(660 * dpr);
-  if (canvas.width !== targetW || canvas.height !== targetH) {
-    canvas.width = targetW;
-    canvas.height = targetH;
-  }
-  if (r.mode === 'photo' && window.PhotoPro && window.PhotoPro.renderStage) {
-    PhotoPro.renderStage(canvas.getContext('2d'), r, result, currentStage, {
-      onionSkin: Number($('onionSkinSlider')?.value || 0) / 100,
-      strokeScale: window.printStrokeScale || 1
-    });
-  } else {
-    generator.draw(canvas.getContext('2d'), result);
-  }
-  $('designSeed').textContent = 'SEED ' + r.seed + ' / V' + r.variation;
-
-  const detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线`;
-  if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${modeNames[r.mode]} · ${detail} · 方案 ${selected + 1}`;
-  $('modeDescription').textContent = {
-    wind: '让线条舒展、起伏，在疏密之间形成轻盈的明暗。先选构图，再慢慢调整它的节奏。',
-    photo:'随机刻线沿着图片的明暗与轮廓生长。',
-    vortex: '线条围绕偏心的中心盘旋，局部相遇、转向，留下环流之间的空隙。',
-    islands: '几处独立线群被纸面的空白分开，在聚集与间隔之间建立平衡。',
-    fluid: '精刻风格从演化后的流体中提取细密曲线，以间距、收尖与留白形成浓淡。原始风格保留粒子的运动轨迹。改变演化时间与黏度，可以重塑内部纹理。',
-    maze: '精刻风格将迷宫展开成环形纹章，中心叠加玫瑰曲线，外缘辅以细线与刻度。长通道、分枝与回路决定纹章内部的节奏；原始风格保留方形网格。'
-  }[r.mode] || '上传图片，让随机刻线沿着它的明暗与轮廓生长。';
-  window.refinement?.paint(r,result);
-  document.querySelectorAll('.candidate').forEach((b, i) => { b.classList.toggle('active', i === selected); b.setAttribute('aria-pressed', String(i === selected)); });
-}
-function paintCandidates() {
-  const container = $('candidates'); container.replaceChildren();
-  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
-  results.forEach((result, i) => {
-    const b = document.createElement('button'); b.className = 'candidate';
-    b.setAttribute('aria-label', `选择方案 ${i + 1}，${modeNames[recipes[i].mode]}`);
-    const c = document.createElement('canvas'); c.width = Math.round(360 * dpr); c.height = Math.round(264 * dpr);
-    c.style.width = '100%'; c.style.height = 'auto';
-    const title = document.createElement('span'); title.textContent = `变奏 ${i + 1} · ${result.paths.length} 条线`;
-    b.append(c, title); b.onclick = async () => { await flushUpdate(); selected = i; syncControls(); paintSelected(); message('已回到这个变奏。'); };
-    container.append(b); generator.draw(c.getContext('2d'), result);
-  });
-  paintSelected();
-}
-async function regenerateSelected() {
-  clearTimeout(updateTimer); updateTimer = null;
-  const current=currentRecipe(); if(!current)return; const r=cloneRecipe(current);
-  r.params=readParams(); if(r.mode==='photo'&&window.refinement){r.pro=window.refinement.recipe();if(r.pro?.style)r.params.style=r.pro.style;}
-  if (!$('lockLayout').checked) {
-    let hash = r.seed;
-    for (const value of JSON.stringify(r.params)) hash = Math.imul(hash ^ value.charCodeAt(0), 16777619) >>> 0;
-    r.layoutSeed = hash;
-  }
-  const draft=recipes.slice();draft[selected]=r;await runGeneration(draft,selected,[selected]);
-
-}
-async function flushUpdate() { if(updateTimer)await regenerateSelected(); else if(generationPromise)await generationPromise; }
-for (const [key, id] of Object.entries(controlIds)) {
-  $(id).oninput = () => { $(id + 'Value').value = $(id).value + '%'; clearTimeout(updateTimer); updateTimer = setTimeout(regenerateSelected, 140); };
-}
-async function generateFour() {
-  clearTimeout(updateTimer); updateTimer = null;
-  if(!uploadedImage){message('请先上传一张 JPG 或 PNG 图片。');return false;}
-  const params=readParams(),base=currentRecipe(),seed=base?.seed??freshSeed();
-  const pro=window.refinement?.recipe(base?false:true);if(pro?.style)params.style=pro.style;
-  const recipe=base?{...cloneRecipe(base),variation:(base.variation+1)>>>0,params:{...params},image:uploadedImage,pro}:{version:1,mode:'photo',seed,layoutSeed:seed,variation:0,params:{...params},image:uploadedImage,pro};
-  const draft=recipes.slice(),next=results.slice();
-  if(draft.length>=4){draft.shift();next.shift();}
-  draft.push(recipe);results=next;const index=draft.length-1;
-  return await runGeneration(draft,index,[index]);
-
-}
-$('generateFour').textContent='生成新变奏';
-$('generateFour').onclick = generateFour;
-$('genMode').onchange = ()=>{$('genMode').value='photo';};
-$('mazeAlgorithm').onchange = regenerateSelected; $('designFinish').onchange = regenerateSelected;
-$('varyDesign').onclick = async () => {
-  await flushUpdate(); const r = cloneRecipe(currentRecipe()); r.variation = (r.variation + 1) >>> 0;
-  const draft=recipes.slice();draft[selected]=r;await runGeneration(draft,selected,[selected]);
-};
-$('varyDesign').hidden=true;
-async function restoreRecipe(r) {
-  if (!generator.validRecipe(r)) throw new Error('方案格式不正确');
-  if(r.mode!=='photo')throw new Error('新版工作台只打开图片刻线方案');
-  clearTimeout(updateTimer); updateTimer = null;
-  if(!await runGeneration([cloneRecipe(r)],0))return false;
-  $('lockLayout').checked = true; syncControls(); paintCandidates();return true;
-}
-function refreshFavorites() {
-  $('favorites').replaceChildren();
-  if (!favorites.length) $('favorites').add(new Option('尚无收藏', ''));
-  favorites.forEach((r, i) => $('favorites').add(new Option(`${i + 1}. ${modeNames[r.mode]} / ${r.seed} / V${r.variation}`, String(i))));
-  $('restoreFavorite').disabled = !favorites.length;
-}
-try { const saved = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem('kejian-design-favorites-v1') || '[]'); if (Array.isArray(saved)) favorites = saved.filter(generator.validRecipe).slice(-40); } catch { /* File origins may disallow storage; exports remain available. */ }
-refreshFavorites();
-$('favoriteDesign').onclick = async () => {
-  await flushUpdate(); const r = cloneRecipe(currentRecipe());
-  if (favorites.some(item => JSON.stringify(item) === JSON.stringify(r))) { message('这张方案已经收藏。'); return; }
-  favorites.push(r); if (favorites.length > 40) favorites.shift(); refreshFavorites(); $('favorites').value = String(favorites.length - 1);
-  try { localStorage.setItem(storageKey, JSON.stringify(favorites)); message('已收藏。可导出方案文件作长期备份。'); }
-  catch { message('已暂存到本次会话；浏览器无法保存收藏，请导出方案文件。'); }
-};
-$('restoreFavorite').onclick = async () => { const r = favorites[Number($('favorites').value)]; if (r) { if(await restoreRecipe(r))message('已恢复收藏的种子、参数与构图。'); } };
-$('exportDesign').onclick = async () => { await flushUpdate(); download(new Blob([JSON.stringify({ type: 'etchloom-design', recipe: currentRecipe() }, null, 2)], { type: 'application/json' }), `Etchloom-design-${currentRecipe().seed}.json`); message('方案已导出。'); };
-$('importDesign').onclick = () => $('designFile').click();
-$('designFile').onchange = async e => {
-  try {
-    const file = e.target.files[0]; if (!file) return;
-    if (file.size > 6000000) throw new Error('方案文件过大');
-    const data = JSON.parse(await file.text());
-    if (!['etchloom-design','kejian-design'].includes(data.type)) throw new Error('请选择 Etchloom 导出的图案方案文件');
-    if(await restoreRecipe(data.recipe))message('方案已恢复。');
-  } catch (err) { message('打开失败：' + err.message); }
-  e.target.value = '';
-};
-$('transferDesign').onclick = async () => {
-  await flushUpdate(); const replace = true;
-  if (replace && $('irreversible').checked && !confirm('不可逆模式下，替换将清除当前铜版且无法撤销。确定替换？')) return;
-  stop(); snapshot();
-  if (replace) { const width=Number($('plateSize')?.value||900);if(width!==W)allocatePlate(width);depth.fill(0); exposed.fill(0); blocked.fill(0); elapsed = 0; plateSources = []; }
-  const mask = document.createElement('canvas'); mask.width = W; mask.height = H;
-  const context = mask.getContext('2d'); generator.draw(context, currentResult(), false, window.printStrokeScale||1);
-  const pixels = context.getImageData(0, 0, W, H).data;
-  for (let i = 0; i < N; i++) if (pixels[i * 4 + 3]) {
-    exposed[i] = Math.max(exposed[i], pixels[i * 4 + 3] / 255); blocked[i] = 0;
-  }
-  plateSources.push(cloneRecipe(currentRecipe()));
-  setView('plate'); dirty = true; showWorkspace(false);
-  $('status').textContent = '图案已划开防蚀层 · 点击“开始腐蚀”形成刻深';
-};
-// Plate files retain the working selection and all recipes applied to the plate.
-window.designSession = {
-  save() { return { recipes: recipes.map(cloneRecipe), selected, locked: $('lockLayout').checked }; },
-  validate(data) { return data && Array.isArray(data.recipes) && data.recipes.length >= 1 && data.recipes.length <= 4 && data.recipes.every(generator.validRecipe) && Number.isInteger(data.selected) && data.selected >= 0 && data.selected < data.recipes.length; },
-  async restore(data) {
-    if (!this.validate(data)) return;
-    clearTimeout(updateTimer); updateTimer = null;
-    await runGeneration(data.recipes.map(cloneRecipe),data.selected); $('lockLayout').checked = data.locked !== false;
-    syncControls(); paintCandidates();
-  }
-};
-function paintSource(source){
-  const c=$('sourcePreview');c.width=source.width;c.height=source.height;const context=c.getContext('2d'),im=context.createImageData(source.width,source.height);
-  source.pixels.forEach((v,i)=>{im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=v;im.data[i*4+3]=255;});context.putImageData(im,0,0);
-}
-$('uploadPhoto').onclick=()=>$('photoFile').click();
-async function loadPhoto(file){
-  let bitmap;
-  try{
-    if(!file)return;
-    if(!['image/jpeg','image/png'].includes(file.type))throw Error('请选择 JPG 或 PNG 图片');
-    if(file.size>20*1024*1024)throw Error('图片请控制在 20 MB 以内');
-    $('uploadPhoto').disabled=true;message('正在读取图片并生成刻线…');
-    bitmap=await createImageBitmap(file);
-    if(window.refinement){uploadedImage=await window.refinement.setOriginal(bitmap);}else{
-    const c=document.createElement('canvas');c.width=900;c.height=660;const context=c.getContext('2d');
-    context.fillStyle='#fff';context.fillRect(0,0,900,660);
-    const ratio=Math.min(828/bitmap.width,588/bitmap.height),dw=bitmap.width*ratio,dh=bitmap.height*ratio;
-    context.drawImage(bitmap,(900-dw)/2,(660-dh)/2,dw,dh);
-    const rgba=context.getImageData(0,0,900,660).data,pixels=[];
-    for(let i=0;i<rgba.length;i+=4)pixels.push(Math.round(.2126*rgba[i]+.7152*rgba[i+1]+.0722*rgba[i+2]));
-    uploadedImage={width:900,height:660,pixels};}
-    $('photoInfo').textContent=`已载入 ${bitmap.width} × ${bitmap.height} 图片 · 本机处理 · 透明区域按白纸处理`;
-    recipes=[];results=[];selected=0;$('genMode').value='photo';if(await generateFour())message(results.some(r=>r.paths.length)?'刻线稿已生成。可调参数、生成变奏或进入制版。':'图片很浅，当前没有可刻线区域。请调整明暗或使用“自动展开明暗”。');
-  }catch(error){message('图片读取失败：'+error.message);}
-  finally{bitmap?.close();$('uploadPhoto').disabled=false;}
-}
-$('photoFile').onchange=async e=>{await loadPhoto(e.target.files[0]);e.target.value='';};
-window.addEventListener('load',async()=>{if(new URLSearchParams(location.search).get('demo')==='1'&&location.protocol!=='file:'){try{const response=await fetch('examples/photo-fixture.png');await loadPhoto(await response.blob());}catch(error){message('演示样片载入失败：'+error.message);}}},{once:true});
-setTimeout(()=>{showWorkspace(true);const c=$('designCanvas'),cx=c.getContext('2d');cx.fillStyle='#f1ead6';cx.fillRect(0,0,c.width,c.height);setBusy(false);},0);
