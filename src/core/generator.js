@@ -21,6 +21,7 @@
       && ['seed', 'layoutSeed', 'variation'].every(k => Number.isInteger(r[k]) && r[k] >= 0 && r[k] <= 4294967295)
       && r.params && Object.keys(defaults).every(k => Number.isFinite(r.params[k]) && r.params[k] >= 0 && r.params[k] <= 100)
       && (r.params.finish === undefined || ['raw', 'engraved'].includes(r.params.finish))
+      && (r.params.style === undefined || ['engraving', 'woodcut'].includes(r.params.style))
       && Object.keys(algorithmDefaults).every(k => r.params[k] === undefined || (Number.isFinite(r.params[k]) && r.params[k] >= 0 && r.params[k] <= 100))
       && (r.params.mazeAlgorithm === undefined || ['dfs', 'prim'].includes(r.params.mazeAlgorithm));
   }
@@ -138,7 +139,7 @@
     for (const path of result.paths) {
       // Smooth width modulation follows the whole stroke rather than independent pixel noise.
       for (let start = 0; start < path.points.length - 1; start += 12) {
-        context.beginPath(); context.lineWidth = path.width * strokeScale * (path.taper ? .18 + .82 * Math.pow(Math.sin(Math.PI * (start+6)/(path.points.length+12)), .45) : .85 + .15 * Math.sin(start / path.points.length * Math.PI));
+        context.beginPath(); context.lineWidth = Math.max(0.1, path.width * strokeScale * (path.taper ? .20 + .80 * Math.pow(Math.sin(Math.PI * (start+6)/(path.points.length+12)), .55) : .85 + .15 * Math.sin(start / path.points.length * Math.PI)));
         const end = Math.min(path.points.length - 1, start + 12);
         context.moveTo(...path.points[start]);
         for (let i = start + 1; i <= end; i++) context.lineTo(...path.points[i]);
@@ -357,18 +358,32 @@
     return { paths, recipe: JSON.parse(JSON.stringify(recipe)), layout: { sources }, stats: { algorithm: 'fluid', steps, particles: count, grid: [nx,ny] } };
   }
   function validImage(image) {
-    return image && ((image.width===225 && image.height===165)||(image.width===450&&image.height===330)||(image.width===900&&image.height===660)) && Array.isArray(image.pixels)
+    return image && ((image.width===225 && image.height===165)||(image.width===450&&image.height===330)||(image.width===900&&image.height===660)||(image.width===1800&&image.height===1320)) && Array.isArray(image.pixels)
       && image.pixels.length===image.width*image.height && image.pixels.every(v=>Number.isInteger(v)&&v>=0&&v<=255);
   }
   function photo(recipe) {
     const p={...algorithmDefaults,...recipe.params}, w=recipe.image.width,h=recipe.image.height,n=w*h,hd=w>=450;
     const rng=random((recipe.seed^Math.imul(recipe.variation+1,1597334677))>>>0), phase=rng()*Math.PI*2;
     let tone=Float32Array.from(recipe.image.pixels,v=>v/255);
-    // Smoothing suppresses camera noise before direction and edge estimation.
-    for(let pass=0;pass<Math.round((100-p.detail)/22);pass++) {
-      const next=tone.slice();
-      for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;next[i]=(tone[i]*4+tone[i-1]+tone[i+1]+tone[i-w]+tone[i+w])/8;}
-      tone=next;
+    // Edge-preserving bilateral filter: suppresses noise while keeping eyelashes, pupils and sharp contours crisp.
+    const smoothPasses = Math.round((100 - p.detail) / 24);
+    for (let pass = 0; pass < smoothPasses; pass++) {
+      const next = tone.slice();
+      for (let y = 1; y < h - 1; y++) {
+        const yw = y * w;
+        for (let x = 1; x < w - 1; x++) {
+          const i = yw + x, c = tone[i];
+          let sum = c * 4, weightSum = 4;
+          for (const o of [-1, 1, -w, w]) {
+            const val = tone[i + o], diff = Math.abs(val - c);
+            const wEdge = diff < 0.12 ? 1 - diff * 5 : 0.05;
+            sum += val * wEdge;
+            weightSum += wEdge;
+          }
+          next[i] = sum / weightSum;
+        }
+      }
+      tone = next;
     }
     const tx=new Float32Array(n),ty=new Float32Array(n),edge=new Float32Array(n),normal=new Uint8Array(n);
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
@@ -390,7 +405,20 @@
       return (a[i]*(1-fx)+a[i+1]*fx)*(1-fy)+(a[i+w]*(1-fx)+a[i+w+1]*fx)*fy;
     };
     const dark=(x,y)=>Math.max(0,Math.min(1,(.5-sample(tone,x,y))*(.5+p.contrast*.018)+.5-p.space*.0015));
+    const tensorField = (proEngine && proEngine.computeTensorField) ? proEngine.computeTensorField(recipe.image) : null;
+    const tfVx = tensorField ? tensorField.vx : null;
+    const tfVy = tensorField ? tensorField.vy : null;
+    const tfW = tensorField ? tensorField.width : 0;
+    const tfH = tensorField ? tensorField.height : 0;
+    const isWoodcut = p.style === 'woodcut';
     const angle=(x,y,cross)=>{
+      if (tfVx) {
+        const px = Math.max(0, Math.min(tfW - 1, (x * tfW / 900) | 0));
+        const py = Math.max(0, Math.min(tfH - 1, (y * tfH / 660) | 0));
+        const idx = py * tfW + px;
+        const tAngle = 0.5 * Math.atan2(tfVy[idx], tfVx[idx]);
+        return tAngle + (cross ? (isWoodcut ? Math.PI * 0.5 : Math.PI * 0.46) : 0);
+      }
       const a=sample(tx,x,y),b=sample(ty,x,y),strength=Math.min(1,Math.hypot(a,b)*180);
       const base=-.65+Math.sin(x/105+y/150+phase)*p.randomness*.009;
       let tangent=.5*Math.atan2(b,a)+Math.PI/2;
@@ -405,32 +433,102 @@
       }return false;
     };
     function trace(x,y,sign,cross,spacing){
-      const points=[],initial=dark(x,y);let prev=angle(x,y,cross);
-      for(let k=0;k<65+p.detail;k++){
+      const points=[];let prev=angle(x,y,cross);
+      const step = hd ? 0.8 : 1.8;
+      const maxSteps = Math.round((65 + p.detail) * (hd ? 1.25 : 1.0));
+      for(let k=0;k<maxSteps;k++){
         let a=angle(x,y,cross);if(Math.cos(a-prev)<0)a+=Math.PI;
-        x+=Math.cos(a)*sign*(hd?1:2);y+=Math.sin(a)*sign*(hd?1:2);prev=a;
+        // Midpoint RK2 predictor for smooth subpixel curves
+        const midX = x + Math.cos(a) * sign * step * 0.5, midY = y + Math.sin(a) * sign * step * 0.5;
+        let midA = angle(midX, midY, cross); if(Math.cos(midA-prev)<0) midA += Math.PI;
+        x += Math.cos(midA) * sign * step; y += Math.sin(midA) * sign * step; prev = midA;
         if(x<24||x>876||y<24||y>636)break;
-        const d=dark(x,y),e=sample(edge,x,y);
-        if(d<(cross?.55:.07)||(p.fidelity>40&&Math.abs(d-initial)>.24+(100-p.fidelity)*.005)||near(x,y,spacing))break;
+        const d=dark(x,y);
+        if(d<(cross?.55:.07)||d<.04||near(x,y,spacing))break;
         points.push([x,y]);
       }return points;
     }
-    let primary=0;
-    for(const cross of [false,true]){
-      grid.clear();
-      for(let attempt=0;attempt<(hd?(cross?24000:60000):(cross?9000:18000));attempt++){
-        const x=24+rng()*852,y=24+rng()*612,d=dark(x,y),e=sample(edge,x,y);
-        if(d<(cross?.58:.08)||rng()>d+.12)continue;
-        const spacing=Math.min(7.5,(hd?3.6-p.density*.018:6.8-p.density*.035)*(1.35-d*.8))*(cross?1.15:1);
-        if(near(x,y,spacing))continue;
-        const points=trace(x,y,-1,cross,spacing).reverse().concat([[x,y]],trace(x,y,1,cross,spacing));
-        if(points.length<5)continue;
-        paths.push({points,width:(hd?.22+p.width*.012:.35+p.width*.025)*(.4+d*1.25+Math.min(.45,e*3)*p.fidelity/100)*(cross?.7:1),taper:true,role:cross?'cross':'hatch'});
-        if(!cross)primary++;
-        for(const q of points){const key=Math.floor(q[1]/cell)*113+Math.floor(q[0]/cell);if(!grid.has(key))grid.set(key,[]);grid.get(key).push(q);}
+    let primary=0, crossCount=0;
+    if (isWoodcut) {
+      // Modern Woodcut Engine: Chiaroscuro masses, decisive chisel gouges (U/V gouge), clean white highlights.
+      const woodCell = 16, woodGrid = new Map();
+      const woodNear = (x, y, d) => {
+        const gx = Math.floor(x / woodCell), gy = Math.floor(y / woodCell);
+        for (let yy = gy - 1; yy <= gy + 1; yy++) for (let xx = gx - 1; xx <= gx + 1; xx++) {
+          const b = woodGrid.get(yy * 113 + xx);
+          if (b) for (const q of b) if ((x - q[0]) ** 2 + (y - q[1]) ** 2 < d * d) return true;
+        }
+        return false;
+      };
+      function woodTrace(x, y, sign, spacing) {
+        const points = []; let prev = angle(x, y, false);
+        const maxSteps = 14 + Math.round(p.detail * 0.35);
+        for (let k = 0; k < maxSteps; k++) {
+          let a = angle(x, y, false);
+          if (Math.cos(a - prev) < 0) a += Math.PI;
+          x += Math.cos(a) * sign * (hd ? 2 : 3);
+          y += Math.sin(a) * sign * (hd ? 2 : 3);
+          prev = a;
+          if (x < 24 || x > 876 || y < 24 || y > 636) break;
+          const d = dark(x, y);
+          if (d < 0.20 || woodNear(x, y, spacing)) break;
+          points.push([x, y]);
+        }
+        return points;
+      }
+      for (let attempt = 0; attempt < (hd ? 18000 : 9000); attempt++) {
+        const x = 24 + rng() * 852, y = 24 + rng() * 612, d = dark(x, y);
+        if (d < 0.20 || rng() > d * 1.3) continue;
+        const spacing = Math.max(5.5, (14 - p.density * 0.08) * (1.3 - d * 0.75));
+        if (woodNear(x, y, spacing)) continue;
+        const pts = woodTrace(x, y, -1, spacing).reverse().concat([[x, y]], woodTrace(x, y, 1, spacing));
+        if (pts.length < 3) continue;
+        const cutWidth = (hd ? 1.6 : 2.2) + p.width * 0.035 + d * 2.6;
+        paths.push({ points: pts, width: cutWidth, taper: true, role: 'hatch', mark: 'gouge' });
+        primary++;
+        for (const q of pts) {
+          const key = Math.floor(q[1] / woodCell) * 113 + Math.floor(q[0] / woodCell);
+          if (!woodGrid.has(key)) woodGrid.set(key, []);
+          woodGrid.get(key).push(q);
+        }
+      }
+      // Chiaroscuro deep shadow blocks (阳刻留黑)
+      for (let y = 30; y < 630; y += 12) {
+        for (let x = 30; x < 870; x += 12) {
+          const d = dark(x, y);
+          if (d > 0.68 && rng() < 0.72) {
+            const a = angle(x, y, false);
+            const len = 10 + d * 16;
+            const p1 = [Math.max(24, Math.min(876, x - Math.cos(a) * len * 0.5)), Math.max(24, Math.min(636, y - Math.sin(a) * len * 0.5))];
+            const p2 = [Math.max(24, Math.min(876, x + Math.cos(a) * len * 0.5)), Math.max(24, Math.min(636, y + Math.sin(a) * len * 0.5))];
+            paths.push({ points: [p1, [x, y], p2], width: 3.2 + d * 2.8, role: 'hatch', mark: 'wood-mass' });
+            primary++;
+          }
+        }
+      }
+    } else {
+      // Classical Copper Engraving Engine: Fine flowing streamlines, cross-hatching, adaptive detail packing
+      for (const cross of [false, true]) {
+        grid.clear();
+        for (let attempt = 0; attempt < (hd ? (cross ? 24000 : 60000) : (cross ? 9000 : 18000)); attempt++) {
+          const x = 24 + rng() * 852, y = 24 + rng() * 612, d = dark(x, y), e = sample(edge, x, y);
+          if (d < (cross ? .58 : .08) || rng() > d + .12) continue;
+          // Local feature adaptive spacing: packs tighter lines into eyes, lips, hair and sharp edges
+          const detailCompress = Math.min(0.55, e * 3.5 * (p.fidelity / 100));
+          const baseSpacing = (hd ? 3.4 - p.density * .018 : 6.8 - p.density * .035) * (1.35 - d * .8);
+          const spacing = Math.max(1.2, Math.min(7.5, baseSpacing * (1.0 - detailCompress))) * (cross ? 1.15 : 1);
+          if (near(x, y, spacing)) continue;
+          const points = trace(x, y, -1, cross, spacing).reverse().concat([[x, y]], trace(x, y, 1, cross, spacing));
+          if (points.length < (e > 0.08 ? 3 : 5)) continue;
+          const localMod = 1.0 - detailCompress * 0.35;
+          const wFactor = (.42 + d * 1.3 + Math.min(.45, e * 3) * p.fidelity / 100) * localMod;
+          paths.push({ points, width: (hd ? .20 + p.width * .011 : .35 + p.width * .025) * wFactor * (cross ? .72 : 1), taper: true, role: cross ? 'cross' : 'hatch' });
+          if (!cross) primary++; else crossCount++;
+          for (const q of points) { const key = Math.floor(q[1] / cell) * 113 + Math.floor(q[0] / cell); if (!grid.has(key)) grid.set(key, []); grid.get(key).push(q); }
+        }
       }
     }
-    const crossCount=paths.length-primary;let contours=0;
+    let contours=0;
     if(hd&&p.fidelity>0){
       // Non-maximum suppression creates thin edge ridges; strong seeds trace into
       // weaker neighbors, retaining fine boundaries independently of tone hatching.
@@ -455,8 +553,10 @@
       for(const i of seeds){
         if(used[i])continue;used[i]=1;
         const a=follow(i),b=follow(i),points=b.reverse().concat([[i%w,Math.floor(i/w)]],a);
-        if(points.length<3+Math.round((100-p.detail)/25))continue;
-        paths.push({points:points.map(q=>[q[0]*900/w,q[1]*660/h]),width:(.3+Math.min(.65,edge[i]*2))*p.fidelity/100,role:'contour'});contours++;
+        const minLen = Math.max(2, 2 + Math.round((100 - p.detail) / 35));
+        if(points.length < minLen)continue;
+        const cWidth = isWoodcut ? (1.0 + Math.min(1.8, edge[i] * 3)) * p.fidelity / 100 : (.25 + Math.min(.65, edge[i] * 2)) * p.fidelity / 100;
+        paths.push({points:points.map(q=>[q[0]*900/w,q[1]*660/h]),width:cWidth,role:'contour'});contours++;
       }
     }
     return {paths,recipe:JSON.parse(JSON.stringify(recipe)),layout:{width:w,height:h},stats:{algorithm:'photo',primary,cross:crossCount,contours}};
