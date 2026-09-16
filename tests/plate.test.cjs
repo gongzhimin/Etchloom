@@ -63,3 +63,33 @@ test('invalid saved generation metadata leaves current plate untouched', async (
 test('3000px plate allocation and compact save restore dimensions through undo', async()=>{
  const a=app();a.run('snapshot();allocatePlate(3000);depth[N-1]=.6;download=(blob)=>{savedBlob=blob}');a.el('save').onclick();const saved=JSON.parse(await a.context.savedBlob.text());assert.equal(saved.version,2);assert.equal(saved.width,3000);assert.equal(saved.height,2200);a.el('undo').onclick();assert.equal(a.run('W'),900);await a.el('file').onchange({target:{files:[{text:async()=>JSON.stringify(saved)}],value:'test'}});assert.equal(a.run('N'),6600000);assert.ok(a.run('depth[N-1]')>.59);a.el('undo').onclick();assert.equal(a.run('W'),900);
 });
+
+test('4 plate-making tools have authentic, orthogonal physical behaviors', () => {
+  const a = app();
+  const idx = 300 * 900 + 400;
+  a.run("tool='needle'; dab(400, 300, 1);");
+  const needleDepth = a.run(`depth[${idx}]`);
+  const needleBurr = a.run(`burr[${idx}]`);
+  const needleExposed = a.run(`exposed[${idx}]`);
+  assert.ok(needleDepth < 0.015, 'Needle should not bite deep copper without acid');
+  assert.equal(needleBurr, 0, 'Needle does not throw up metal burr');
+  assert.ok(needleExposed > 0.5, 'Needle scratches away protective ground');
+
+  a.run("depth.fill(0); exposed.fill(0); blocked.fill(0); burr.fill(0); tool='dry'; dab(400, 300, 1);");
+  const dryDepth = a.run(`depth[${idx}]`);
+  const dryBurr = a.run(`burr[${idx}]`);
+  assert.ok(dryDepth > 0.25, 'Drypoint cuts deeply into copper');
+  assert.ok(dryBurr > 0.35, 'Drypoint throws up significant copper burr');
+
+  a.run("tool='polish'; dab(400, 300, 1);");
+  const polishedDepth = a.run(`depth[${idx}]`);
+  const polishedBurr = a.run(`burr[${idx}]`);
+  assert.ok(polishedBurr < dryBurr * 0.3, 'Burnisher should crush away metal burr rapidly');
+  assert.ok(polishedDepth < dryDepth, 'Burnisher should reduce depth');
+
+  a.run("tool='stop'; dab(400, 300, 1);");
+  assert.equal(a.run(`blocked[${idx}]`), 1, 'Stop-out blocks area');
+  assert.equal(a.run(`exposed[${idx}]`), 0, 'Stop-out covers exposed area');
+  assert.equal(a.run(`burr[${idx}]`), 0, 'Stop-out coats burr');
+});
+
