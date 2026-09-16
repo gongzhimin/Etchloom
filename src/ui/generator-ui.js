@@ -26,12 +26,63 @@ const plateSections = [...document.querySelectorAll('aside > section:not(#genera
 const panel = document.createElement('div');
 panel.className = 'gen-panel';
 panel.innerHTML = `<div class="gen-heading"><div><h2>图片刻线</h2><p id="modeDescription">上传图片，让随机刻线沿着它的明暗与轮廓生长。</p></div><span id="designSeed" class="seed-badge"></span></div>
+<div id="pipelineInspector" class="pipeline-inspector" hidden>
+  <div class="pipeline-tabs" role="tablist" aria-label="版画制版工序透视">
+    <button class="stage-btn active" data-stage="full"><span class="step-num">7</span>完整版画</button>
+    <button class="stage-btn" data-stage="gray"><span class="step-num">1</span>感知灰度</button>
+    <button class="stage-btn" data-stage="smooth"><span class="step-num">2</span>保边去噪</button>
+    <button class="stage-btn" data-stage="tensor"><span class="step-num">3</span>张量流场</button>
+    <button class="stage-btn" data-stage="ridge"><span class="step-num">4</span>山脊骨架</button>
+    <button class="stage-btn" data-stage="contour"><span class="step-num">5</span>呼吸轮廓</button>
+    <button class="stage-btn" data-stage="hatch"><span class="step-num">6</span>形体排线</button>
+  </div>
+  <div class="pipeline-subbar">
+    <div class="stage-desc-group">
+      <span id="stageBadge" class="stage-badge">工序 7 / 7</span>
+      <span id="stageTitle" class="stage-title">完整版画底稿</span>
+      <span id="stageDesc" class="stage-desc">骨干轮廓、体块排线网、交叉影调与微观雕花完整咬合。</span>
+    </div>
+    <div class="onion-control">
+      <label for="onionSkinSlider">透光台叠加 <output id="onionSkinValue">0%</output></label>
+      <input id="onionSkinSlider" type="range" min="0" max="100" value="0" title="在当前工序产物下方透出原图进行对齐检视">
+    </div>
+  </div>
+</div>
 <div class="studio design-stage"><canvas id="designCanvas" width="900" height="660" aria-label="选中图案的放大预览"></canvas></div>
 <div class="caption"><span id="designInfo"></span><span>固定黑线 · 暖白纸底 / 制版方向</span></div>
 <div class="recent"><span>最近的变奏</span><div id="candidates" class="candidates" aria-label="最近四次变奏"></div></div>
 <div class="gen-footer"><span id="genMessage" class="gen-message" role="status" aria-live="polite">上传一张图片开始创作。</span><div class="row"><select id="transferMode" class="transfer-select" aria-label="转入制版方式" hidden><option value="replace">替换当前版面</option></select><button id="transferDesign" class="primary">进入制版 →</button></div></div>
 <p class="notes">刻线转入铜版后，再通过腐蚀、墨量、压力和纸张得到最终印样。</p>`;
 document.querySelector('main').appendChild(panel);
+
+let currentStage = 'full';
+const stageMetadata = {
+  full: { badge: '工序 7 / 7', title: '完整版画底稿', desc: '骨干轮廓、体块排线网、交叉影调与微观雕花完整咬合。' },
+  gray: { badge: '工序 1 / 7', title: '感知灰度化', desc: '按人眼视敏度（0.2126R + 0.7152G + 0.0722B）加权量化，展开黑白动态并提升暗部细节。' },
+  smooth: { badge: '工序 2 / 7', title: '双边保边滤波', desc: '平滑消除皮肤毛孔与天空杂噪，同时对睫毛、瞳孔反光与发丝边缘 100% 保持原始锐度。' },
+  tensor: { badge: '工序 3 / 7', title: '结构张量流向场', desc: '通过表面梯度二阶矩矩阵提取肌肉与起伏走势（洋流等高线状），引导刻刀顺形排线。' },
+  ridge: { badge: '工序 4 / 7', title: '1px 山脊骨架线', desc: '沿 4 向法线进行非极大值抑制（NMS），将数像素宽的边缘收敛为 1 像素精纯山脊骨架。' },
+  contour: { badge: '工序 5 / 7', title: '呼吸感矢量轮廓', desc: '双尺度滞后追踪骨架线，并在低反差阴影处节制断线（Lost-and-Found），打破死板铁丝感。' },
+  hatch: { badge: '工序 6 / 7', title: '形体排线与交叉网', desc: '沿曲率流场自适应排线（五官处压缩至 1.2px）并在暗部叠织 81° 交叉羽网，烘托三维体积。' }
+};
+panel.querySelectorAll('.stage-btn').forEach(btn => {
+  btn.onclick = () => {
+    currentStage = btn.dataset.stage;
+    panel.querySelectorAll('.stage-btn').forEach(b => b.classList.toggle('active', b === btn));
+    const meta = stageMetadata[currentStage] || stageMetadata.full;
+    if ($('stageBadge')) $('stageBadge').textContent = meta.badge;
+    if ($('stageTitle')) $('stageTitle').textContent = meta.title;
+    if ($('stageDesc')) $('stageDesc').textContent = meta.desc;
+    paintSelected();
+  };
+});
+if ($('onionSkinSlider')) {
+  $('onionSkinSlider').oninput = () => {
+    $('onionSkinValue').value = $('onionSkinSlider').value + '%';
+    paintSelected();
+  };
+}
+
 let recipes = [], results = [], selected = 0, favorites = [], updateTimer;
 
 let uiJob=0,generationPromise=null;
@@ -61,6 +112,7 @@ function currentResult() { return results[selected]; }
 function syncControls() {
   const r = currentRecipe(); if (!r) return;
   $('genMode').value = r.mode;
+  if ($('pipelineInspector')) $('pipelineInspector').hidden = r.mode !== 'photo';
   for (const [key, id] of Object.entries(controlIds)) { $(id).value = r.params[key] ?? generator.algorithmDefaults[key]; $(id + 'Value').value = $(id).value + '%'; }
   $('mazeAlgorithm').value = r.params.mazeAlgorithm || 'dfs'; $('designFinish').value=r.params.finish || 'raw'; $('designFinish').hidden=!['fluid','maze'].includes(r.mode); advanced.querySelector('label[for=designFinish]').hidden=$('designFinish').hidden;
   for (const key of Object.keys(generator.algorithmDefaults)) $('algo'+key+'Group').hidden = !((r.mode === 'fluid' ? ['swirl','viscosity','duration'] : r.mode === 'maze' ? ['bias','loops','warp'] : r.mode === 'photo' ? ['fidelity','randomness','detail','contrast'] : []).includes(key));
@@ -90,8 +142,23 @@ $('showGenerator').onclick = () => showWorkspace(true);
 $('showPlate').onclick = () => showWorkspace(false);
 function paintSelected() {
   const r = currentRecipe(), result = currentResult(); if (!r || !result) return;
-  generator.draw($('designCanvas').getContext('2d'), result);
+  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  const canvas = $('designCanvas');
+  const targetW = Math.round(900 * dpr), targetH = Math.round(660 * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+  if (r.mode === 'photo' && window.PhotoPro && window.PhotoPro.renderStage) {
+    PhotoPro.renderStage(canvas.getContext('2d'), r, result, currentStage, {
+      onionSkin: Number($('onionSkinSlider')?.value || 0) / 100,
+      strokeScale: window.printStrokeScale || 1
+    });
+  } else {
+    generator.draw(canvas.getContext('2d'), result);
+  }
   $('designSeed').textContent = 'SEED ' + r.seed + ' / V' + r.variation;
+
   const detail = r.mode === 'maze' ? `${result.stats.cells} 个网格 · ${result.stats.cycles} 个回路` : r.mode === 'fluid' ? `${result.stats.steps} 步演化 · ${result.paths.length} 处刻线细节` : `${result.paths.length} 条刻线`;
   if(r.mode==='photo') $('photoInfo').textContent=`${r.image.width} × ${r.image.height} 分析 · ${result.stats.contours||0} 段细轮廓 · 旧图升级需重新上传`; $('designInfo').textContent = `${modeNames[r.mode]} · ${detail} · 方案 ${selected + 1}`;
   $('modeDescription').textContent = {
@@ -107,10 +174,12 @@ function paintSelected() {
 }
 function paintCandidates() {
   const container = $('candidates'); container.replaceChildren();
+  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
   results.forEach((result, i) => {
     const b = document.createElement('button'); b.className = 'candidate';
     b.setAttribute('aria-label', `选择方案 ${i + 1}，${modeNames[recipes[i].mode]}`);
-    const c = document.createElement('canvas'); c.width = 360; c.height = 264;
+    const c = document.createElement('canvas'); c.width = Math.round(360 * dpr); c.height = Math.round(264 * dpr);
+    c.style.width = '100%'; c.style.height = 'auto';
     const title = document.createElement('span'); title.textContent = `变奏 ${i + 1} · ${result.paths.length} 条线`;
     b.append(c, title); b.onclick = async () => { await flushUpdate(); selected = i; syncControls(); paintSelected(); message('已回到这个变奏。'); };
     container.append(b); generator.draw(c.getContext('2d'), result);
@@ -120,7 +189,7 @@ function paintCandidates() {
 async function regenerateSelected() {
   clearTimeout(updateTimer); updateTimer = null;
   const current=currentRecipe(); if(!current)return; const r=cloneRecipe(current);
-  r.params=readParams(); if(r.mode==='photo'&&window.refinement)r.pro=window.refinement.recipe();
+  r.params=readParams(); if(r.mode==='photo'&&window.refinement){r.pro=window.refinement.recipe();if(r.pro?.style)r.params.style=r.pro.style;}
   if (!$('lockLayout').checked) {
     let hash = r.seed;
     for (const value of JSON.stringify(r.params)) hash = Math.imul(hash ^ value.charCodeAt(0), 16777619) >>> 0;
@@ -137,7 +206,8 @@ async function generateFour() {
   clearTimeout(updateTimer); updateTimer = null;
   if(!uploadedImage){message('请先上传一张 JPG 或 PNG 图片。');return false;}
   const params=readParams(),base=currentRecipe(),seed=base?.seed??freshSeed();
-  const recipe=base?{...cloneRecipe(base),variation:(base.variation+1)>>>0,params:{...params},image:uploadedImage,pro:window.refinement?.recipe(false)}:{version:1,mode:'photo',seed,layoutSeed:seed,variation:0,params:{...params},image:uploadedImage,pro:window.refinement?.recipe(true)};
+  const pro=window.refinement?.recipe(base?false:true);if(pro?.style)params.style=pro.style;
+  const recipe=base?{...cloneRecipe(base),variation:(base.variation+1)>>>0,params:{...params},image:uploadedImage,pro}:{version:1,mode:'photo',seed,layoutSeed:seed,variation:0,params:{...params},image:uploadedImage,pro};
   const draft=recipes.slice(),next=results.slice();
   if(draft.length>=4){draft.shift();next.shift();}
   draft.push(recipe);results=next;const index=draft.length-1;
