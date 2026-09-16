@@ -1,12 +1,15 @@
 /* Photo refinement pipeline. No DOM; usable in a worker and in node tests. */
 (function(root){
   'use strict';
-  const defaults={exposure:50,blackPoint:0,whitePoint:100,shadows:20,contour:85,hatch:100,maze:0,cross:65,contourSeed:1,hatchSeed:1,mazeSeed:1};
+  const defaults={exposure:50,blackPoint:0,whitePoint:100,shadows:20,contour:85,hatch:100,maze:0,cross:65,contourSeed:1,hatchSeed:1,mazeSeed:1,style:'engraving',curvature:75};
   const clone=x=>JSON.parse(JSON.stringify(x));
   function random(seed){let s=seed>>>0;return()=>{s+=0x6D2B79F5;let t=Math.imul(s^s>>>15,1|s);t^=t+Math.imul(t^t>>>7,61|t);return((t^t>>>14)>>>0)/4294967296;};}
   function valid(pro){
     if(!pro||pro.version!==1)return false;
-    for(const k of Object.keys(defaults)){const v=pro[k]??defaults[k];if(!Number.isFinite(v)||v<0||v>(k.endsWith('Seed')?4294967295:100))return false;}
+    for(const k of Object.keys(defaults)){
+      if(k==='style'){const s=pro[k]??defaults[k];if(!['engraving','woodcut'].includes(s))return false;continue;}
+      const v=pro[k]??defaults[k];if(!Number.isFinite(v)||v<0||v>(k.endsWith('Seed')?4294967295:100))return false;
+    }
     if((pro.blackPoint??0)>=(pro.whitePoint??100))return false;
     return !pro.edits||(Array.isArray(pro.edits)&&pro.edits.length<=300&&pro.edits.every(e=>['white','direction','cross','protect'].includes(e.type)&&[e.x,e.y,e.radius,e.angle].every(Number.isFinite)&&e.x>=0&&e.x<=900&&e.y>=0&&e.y<=660&&e.radius>=1&&e.radius<=150&&(!e.frozen||(Array.isArray(e.frozen)&&e.frozen.length<=20000&&e.frozen.every(validPath)))));
   }
@@ -29,22 +32,60 @@
       out[y*w+x]=Math.round((integral[b*(w+1)+r]-integral[t*(w+1)+r]-integral[b*(w+1)+l]+integral[t*(w+1)+l])/((r-l)*(b-t)));
     }return {width:w,height:h,pixels:out};
   }
+  function boxBlurFloat(src,w,h,r){
+    const out=new Float32Array(w*h),integral=new Float64Array((w+1)*(h+1));
+    for(let y=0;y<h;y++){let row=0,yw=y*w;for(let x=0;x<w;x++){row+=src[yw+x];integral[(y+1)*(w+1)+x+1]=integral[y*(w+1)+x+1]+row;}}
+    for(let y=0;y<h;y++){const t=Math.max(0,y-r),b=Math.min(h,y+r+1);for(let x=0;x<w;x++){const l=Math.max(0,x-r),rt=Math.min(w,x+r+1);out[y*w+x]=(integral[b*(w+1)+rt]-integral[t*(w+1)+rt]-integral[b*(w+1)+l]+integral[t*(w+1)+l])/((rt-l)*(b-t));}}
+    return out;
+  }
+  const tensorCache=new WeakMap();
+  function computeTensorField(image){
+    if(image&&typeof image==='object'&&tensorCache.has(image)){
+      const cached=tensorCache.get(image);
+      if(cached.width===image.width&&cached.height===image.height)return cached;
+    }
+    const {width:w,height:h}=image,n=w*h,smoothed=blur(image,Math.max(1,Math.round(w/300))).pixels;
+    const jxx=new Float32Array(n),jxy=new Float32Array(n),jyy=new Float32Array(n);
+    for(let y=1;y<h-1;y++){const yw=y*w;for(let x=1;x<w-1;x++){const i=yw+x,gx=(smoothed[i+1]-smoothed[i-1])*.5,gy=(smoothed[i+w]-smoothed[i-w])*.5;jxx[i]=gx*gx;jxy[i]=gx*gy;jyy[i]=gy*gy;}}
+    const r=Math.max(2,Math.round(w/150)),sJxx=boxBlurFloat(jxx,w,h,r),sJxy=boxBlurFloat(jxy,w,h,r),sJyy=boxBlurFloat(jyy,w,h,r);
+    const vx=new Float32Array(n),vy=new Float32Array(n),coherence=new Float32Array(n);
+    for(let i=0;i<n;i++){
+      const txx=sJxx[i],txy=sJxy[i],tyy=sJyy[i],diff=txx-tyy,trace=txx+tyy,det=txx*tyy-txy*txy;
+      const disc=Math.max(0,trace*trace-4*det),coh=trace>.0001?Math.sqrt(disc)/(trace+.0001):0;coherence[i]=coh;
+      const norm=Math.hypot(2*txy,diff);if(norm>.0001){vx[i]=-diff/norm*(.15+.85*coh);vy[i]=-2*txy/norm*(.15+.85*coh);}
+    }
+    let curVx=vx,curVy=vy;
+    for(let pass=0;pass<2;pass++){
+      const nVx=new Float32Array(n),nVy=new Float32Array(n);
+      for(let y=1;y<h-1;y++){const yw=y*w;for(let x=1;x<w-1;x++){
+        const i=yw+x,blend=1-coherence[i]*.75;
+        const sx=curVx[i]+(curVx[i-1]+curVx[i+1]+curVx[i-w]+curVx[i+w])*.25*blend;
+        const sy=curVy[i]+(curVy[i-1]+curVy[i+1]+curVy[i-w]+curVy[i+w])*.25*blend;
+        const len=Math.hypot(sx,sy);if(len>.0001){nVx[i]=sx/len;nVy[i]=sy/len;}else{nVx[i]=Math.cos(-1.36);nVy[i]=Math.sin(-1.36);}
+      }}curVx=nVx;curVy=nVy;
+    }
+    const field={width:w,height:h,vx:curVx,vy:curVy,coherence};
+    if(image&&typeof image==='object')tensorCache.set(image,field);
+    return field;
+  }
+  function sampleField(field,x,y){
+    const w=field.width,h=field.height,px=Math.max(0,Math.min(w-1,(x*w/900)|0)),py=Math.max(0,Math.min(h-1,(y*h/660)|0)),i=py*w+px;
+    return{vx:field.vx[i],vy:field.vy[i],coherence:field.coherence[i]};
+  }
   function sample(image,x,y){return image.pixels[Math.min(image.height-1,Math.max(0,Math.floor(y*image.height/660)))*image.width+Math.min(image.width-1,Math.max(0,Math.floor(x*image.width/900)))];}
   function hash(x,y,seed){let n=(Math.imul((x|0)+101,374761393)^Math.imul((y|0)+47,668265263)^seed)>>>0;n=Math.imul(n^(n>>>13),1274126177)>>>0;return(n>>>0)/4294967295;}
   function angleDelta(a,b){return Math.atan2(Math.sin(b-a),Math.cos(b-a));}
   function regionAngle(image,x,y,cross,seed){
-    const tileX=Math.floor(x/105),tileY=Math.floor(y/92),step=Math.max(2,Math.round(image.width/112));
-    const sx=x*image.width/900,sy=y*image.height/660,px=sx*900/image.width,py=sy*660/image.height;
-    const gx=sample(image,px+step*900/image.width,py)-sample(image,px-step*900/image.width,py);
-    const gy=sample(image,px,py+step*660/image.height)-sample(image,px,py-step*660/image.height);
-    const global=-.68+(hash(tileX,tileY,seed)-.5)*.28;
-    let tangent=Math.atan2(gy,gx)+Math.PI/2;if(Math.cos(tangent-global)<0)tangent+=Math.PI;
-    const structure=Math.min(.55,Math.hypot(gx,gy)/85),base=global+angleDelta(global,tangent)*structure;
-    return base+(cross?Math.PI*.43:0);
+    const field=computeTensorField(image),{vx,vy,coherence}=sampleField(field,x,y),tensorAngle=.5*Math.atan2(vy,vx);
+    const tileX=Math.floor(x/105),tileY=Math.floor(y/92),drift=(hash(tileX,tileY,seed)-.5)*.18*(1-coherence*.85);
+    return tensorAngle+drift+(cross?Math.PI*.45:0);
   }
   function localContrast(image,x,y){let lo=255,hi=0;for(const [dx,dy]of [[-4,0],[4,0],[0,-4],[0,4],[0,0]]){const v=sample(image,x+dx,y+dy);lo=Math.min(lo,v);hi=Math.max(hi,v);}return(hi-lo)/255;}
   function structureKind(image,x,y){const contrast=localContrast(image,x,y);if(contrast<.045)return'plane';if(contrast>.24)return'fragment';return'curve';}
   function engravingGrammar(input,image,seed,params={}){
+    if(params.style==='woodcut'){
+      return {paths:input,stats:{bundles:input.length,lostContours:0,deepLayer:0,brightGaps:0,planes:input.length,curves:0,fragments:0}};
+    }
     const out=[],stats={bundles:0,lostContours:0,deepLayer:0,brightGaps:0,planes:0,curves:0,fragments:0};
     for(let pathIndex=0;pathIndex<input.length;pathIndex++){
       const path=input[pathIndex];
@@ -180,15 +221,206 @@
       for(const path of coarse.paths)if(path.role==='contour')paths.push({...path,width:path.width*p.contour/100*.35,role:'contour-coarse'});
     }
     const styleSeed=(recipe.seed^recipe.variation^p.hatchSeed)>>>0,grammar=engravingGrammar(paths,image,styleSeed,recipe.params),detailWeight=(p.hatch*.65+p.contour*.35)/100;
-    const micro=microDetails(image,styleSeed^0x51f15e,recipe.params);for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
-    const background=backgroundField(image,styleSeed^0xa11ce,recipe.params);for(const path of background)grammar.paths.push({...path,width:path.width*p.hatch/100});
-    const masses=darkMasses(image,styleSeed^0xda4c,recipe.params);for(const path of masses)grammar.paths.push({...path,width:path.width*p.hatch/100});
+    const isWoodcut=recipe.params?.style==='woodcut';
+    const micro=isWoodcut?[]:microDetails(image,styleSeed^0x51f15e,recipe.params);for(const path of micro)grammar.paths.push({...path,width:path.width*detailWeight});
+    const background=isWoodcut?[]:backgroundField(image,styleSeed^0xa11ce,recipe.params);for(const path of background)grammar.paths.push({...path,width:path.width*p.hatch/100});
+    const masses=isWoodcut?[]:darkMasses(image,styleSeed^0xda4c,recipe.params);for(const path of masses)grammar.paths.push({...path,width:path.width*p.hatch/100});
     progress(75,'图片迷宫');let mazeRegions=0;
     if(p.maze>0){const maze=imageMaze(image,(p.mazeSeed^recipe.seed^recipe.variation)>>>0);mazeRegions=maze.regions.length;for(const path of maze.paths)grammar.paths.push({...path,width:path.width*p.maze/100/budget});}
     progress(90,'局部编辑');
     const edited=applyEdits(grammar.paths,p.edits);
     return {...base,paths:edited,recipe:clone(recipe),stats:{...base.stats,...grammar.stats,microDetails:micro.length,background:background.length,darkMasses:masses.length,mazeRegions,edits:(p.edits||[]).length,pro:true}};
   }
-  const api={defaults,valid,value,toneImage,autoLevels,imageMaze,structureKind,engravingGrammar,microDetails,backgroundField,darkMasses,generate,applyEdits,freeze,fragments};
+  const stageCache = new WeakMap();
+  function computeStages(image, params = {}) {
+    if (!image || !Array.isArray(image.pixels)) return null;
+    const detail = params.detail ?? 65;
+    if (stageCache.has(image)) {
+      const cached = stageCache.get(image);
+      if (cached && cached.detail === detail) return cached;
+    }
+    const { width: w, height: h, pixels } = image, n = w * h;
+    const grayPixels = pixels;
+    let tone = Float32Array.from(pixels, v => v / 255);
+    const smoothPasses = Math.round((100 - detail) / 24);
+    for (let pass = 0; pass < smoothPasses; pass++) {
+      const next = tone.slice();
+      for (let y = 1; y < h - 1; y++) {
+        const yw = y * w;
+        for (let x = 1; x < w - 1; x++) {
+          const i = yw + x, c = tone[i];
+          let sum = c * 4, weightSum = 4;
+          for (const o of [-1, 1, -w, w]) {
+            const val = tone[i + o], diff = Math.abs(val - c);
+            const wEdge = diff < 0.12 ? 1 - diff * 5 : 0.05;
+            sum += val * wEdge;
+            weightSum += wEdge;
+          }
+          next[i] = sum / weightSum;
+        }
+      }
+      tone = next;
+    }
+    const smoothPixels = new Uint8Array(n);
+    for (let i = 0; i < n; i++) smoothPixels[i] = Math.round(tone[i] * 255);
+
+    const field = computeTensorField(image);
+
+    const edge = new Float32Array(n), normal = new Uint8Array(n);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const gx = (tone[i + 1] - tone[i - 1]) * 0.5, gy = (tone[i + w] - tone[i - w]) * 0.5;
+      edge[i] = Math.hypot(gx, gy);
+      const a = (Math.atan2(gy, gx) * 180 / Math.PI + 180) % 180;
+      normal[i] = a < 22.5 || a >= 157.5 ? 0 : a < 67.5 ? 1 : a < 112.5 ? 2 : 3;
+    }
+    const ridgePixels = new Uint8Array(n);
+    const low = 0.012 + (100 - detail) * 0.0004, high = low * 2.2;
+    const offsets = [1, w + 1, w, w - 1];
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x, o = offsets[normal[i]], e = edge[i];
+      if (e > low && e >= edge[i - o] && e > edge[i + o]) {
+        ridgePixels[i] = e > high ? 2 : 1;
+      }
+    }
+
+    const stages = { width: w, height: h, detail, grayPixels, smoothPixels, tensorField: field, ridgePixels };
+    stageCache.set(image, stages);
+    return stages;
+  }
+  function renderStage(context, recipe, result, stageId = 'full', options = {}) {
+    if (!context || !context.canvas) return;
+    const canvas = context.canvas, w = canvas.width, h = canvas.height;
+    const onionSkin = Math.max(0, Math.min(1, options.onionSkin || 0));
+    const strokeScale = options.strokeScale || 1;
+    const stages = recipe?.image ? computeStages(recipe.image, recipe.params) : null;
+    const generator = (typeof module !== 'undefined' && module.exports) ? require('./generator.js') : root.PrintGenerator;
+
+    function makeOffscreen(srcPixels, pw, ph, colorFn) {
+      if (typeof document === 'undefined') return null;
+      const off = document.createElement('canvas');
+      off.width = pw; off.height = ph;
+      const offCtx = off.getContext('2d');
+      const im = offCtx.createImageData(pw, ph), d = im.data;
+      for (let i = 0; i < srcPixels.length; i++) {
+        const v = srcPixels[i];
+        if (colorFn) {
+          const [cr, cg, cb, ca] = colorFn(v, i);
+          d[i * 4] = cr; d[i * 4 + 1] = cg; d[i * 4 + 2] = cb; d[i * 4 + 3] = ca;
+        } else {
+          d[i * 4] = Math.round(v * 0.96 + 8);
+          d[i * 4 + 1] = Math.round(v * 0.93 + 6);
+          d[i * 4 + 2] = Math.round(v * 0.86 + 4);
+          d[i * 4 + 3] = 255;
+        }
+      }
+      offCtx.putImageData(im, 0, 0);
+      return off;
+    }
+
+    context.save();
+    context.clearRect(0, 0, w, h);
+
+    if (onionSkin > 0 && stages) {
+      const baseOff = makeOffscreen(stages.grayPixels, stages.width, stages.height);
+      if (baseOff) {
+        context.save();
+        context.globalAlpha = onionSkin;
+        context.drawImage(baseOff, 0, 0, w, h);
+        context.restore();
+      }
+    }
+
+    const stageAlpha = onionSkin > 0 ? Math.max(0.25, 1.0 - onionSkin * 0.65) : 1.0;
+    context.globalAlpha = stageAlpha;
+
+    switch (stageId) {
+      case 'gray': {
+        if (stages) {
+          const off = makeOffscreen(stages.grayPixels, stages.width, stages.height);
+          if (off) context.drawImage(off, 0, 0, w, h);
+        }
+        break;
+      }
+      case 'smooth': {
+        if (stages) {
+          const off = makeOffscreen(stages.smoothPixels, stages.width, stages.height);
+          if (off) context.drawImage(off, 0, 0, w, h);
+        }
+        break;
+      }
+      case 'tensor': {
+        if (stages && stages.tensorField) {
+          if (onionSkin === 0) {
+            context.fillStyle = '#1c201c';
+            context.fillRect(0, 0, w, h);
+          }
+          const field = stages.tensorField, fw = field.width, fh = field.height;
+          const step = Math.max(10, Math.round(14 * (w / 900)));
+          const lenBase = 8 * (w / 900);
+          for (let y = step * 0.5; y < h; y += step) {
+            for (let x = step * 0.5; x < w; x += step) {
+              const px = Math.max(0, Math.min(fw - 1, (x * fw / w) | 0));
+              const py = Math.max(0, Math.min(fh - 1, (y * fh / h) | 0));
+              const idx = py * fw + px;
+              const vx = field.vx[idx], vy = field.vy[idx], coh = field.coherence[idx];
+              if (coh < 0.035) continue;
+              const angle = 0.5 * Math.atan2(vy, vx);
+              const curLen = (lenBase + coh * 14 * (w / 900)) * (0.8 + coh * 0.5);
+              const dx = Math.cos(angle) * curLen * 0.5, dy = Math.sin(angle) * curLen * 0.5;
+              context.beginPath();
+              context.moveTo(x - dx, y - dy);
+              context.lineTo(x + dx, y + dy);
+              if (coh > 0.45) {
+                context.strokeStyle = `rgba(243, 198, 35, ${Math.min(1, 0.45 + coh * 0.55)})`;
+                context.lineWidth = Math.max(1.0, 1.8 * (w / 900));
+              } else if (coh > 0.18) {
+                context.strokeStyle = `rgba(214, 180, 85, ${0.35 + coh * 0.5})`;
+                context.lineWidth = Math.max(0.8, 1.3 * (w / 900));
+              } else {
+                context.strokeStyle = `rgba(145, 160, 138, ${0.25 + coh * 0.4})`;
+                context.lineWidth = Math.max(0.6, 0.9 * (w / 900));
+              }
+              context.stroke();
+            }
+          }
+        }
+        break;
+      }
+      case 'ridge': {
+        if (stages) {
+          if (onionSkin === 0) {
+            context.fillStyle = '#181b19';
+            context.fillRect(0, 0, w, h);
+          }
+          const off = makeOffscreen(stages.ridgePixels, stages.width, stages.height, v => {
+            if (v === 2) return [245, 215, 110, 255];
+            if (v === 1) return [231, 76, 60, 230];
+            return [0, 0, 0, 0];
+          });
+          if (off) context.drawImage(off, 0, 0, w, h);
+        }
+        break;
+      }
+      case 'contour': {
+        const contourPaths = (result?.paths || []).filter(p => p.role === 'contour' || p.role === 'contour-coarse');
+        generator.draw(context, { paths: contourPaths }, onionSkin === 0, strokeScale);
+        break;
+      }
+      case 'hatch': {
+        const hatchPaths = (result?.paths || []).filter(p => (p.role === 'hatch' && p.mark !== 'micro-detail') || p.role === 'cross');
+        generator.draw(context, { paths: hatchPaths }, onionSkin === 0, strokeScale);
+        break;
+      }
+      case 'full':
+      default: {
+        generator.draw(context, result, onionSkin === 0, strokeScale);
+        break;
+      }
+    }
+    context.restore();
+  }
+  const api={defaults,valid,value,toneImage,autoLevels,imageMaze,structureKind,engravingGrammar,microDetails,backgroundField,darkMasses,generate,applyEdits,freeze,fragments,computeTensorField,sampleField,regionAngle,computeStages,renderStage};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PhotoPro=api;
 })(globalThis);
+
