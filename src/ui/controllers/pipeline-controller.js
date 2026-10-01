@@ -4,7 +4,7 @@
  * PipelineRunner execution, StepFlowGrid rendering, and telemetry metrics.
  */
 
-import { AIServiceGateway } from '../../services/ai-service-gateway.js';
+import { AIServiceGateway } from '../../services/client/ai-service-gateway.js';
 
 export class PipelineController {
   constructor(options = {}) {
