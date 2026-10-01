@@ -93,10 +93,12 @@ class StepFlowGrid {
       viewport.title = '点击查看大图 (支持滚轮缩放与拖拽)';
       viewport.style.cursor = 'zoom-in';
       const canvas = document.createElement('canvas');
-      canvas.width = 720;
-      canvas.height = 500;
+      canvas.width = i === 6 ? 1400 : 900;
+      canvas.height = i === 6 ? Math.round(1400 * 660 / 900) : 660;
       canvas.style.width = '100%';
-      canvas.style.height = '100%';
+      canvas.style.height = 'auto';
+      canvas.style.display = 'block';
+      canvas.style.aspectRatio = '900 / 660';
       viewport.appendChild(canvas);
       viewport.onclick = (e) => {
         e?.stopPropagation?.();
@@ -159,6 +161,55 @@ class StepFlowGrid {
     this.container.querySelectorAll('.step-card').forEach((card, idx) => {
       card.classList.toggle('active-step', idx === stepIndex);
     });
+  }
+
+  /**
+   * Sets the adaptive aspect ratio for all 7 cards in the flow grid.
+   * Dynamically reconfigures canvas resolutions and CSS aspect-ratio so cards
+   * horizontally fill their columns and match the imported image's physical proportion.
+   * @param {number} width - Source image physical width
+   * @param {number} height - Source image physical height
+   */
+  setAspectRatio(width, height) {
+    if (!width || !height || width <= 0 || height <= 0) return;
+    const aspect = width / height;
+    this.currentAspect = aspect;
+    this.currentSrcWidth = width;
+    this.currentSrcHeight = height;
+
+    const baseW = 900;
+    const baseH = Math.max(1, Math.round(baseW / aspect));
+    const printW = 1400;
+    const printH = Math.max(1, Math.round(printW / aspect));
+
+    for (let i = 0; i <= 6; i++) {
+      const state = this.stepStates[i];
+      if (!state || !state.canvas) continue;
+      const cv = state.canvas;
+      const tw = (i === 6 ? printW : baseW);
+      const th = (i === 6 ? printH : baseH);
+
+      cv.width = tw;
+      cv.height = th;
+      cv.style.width = '100%';
+      cv.style.height = 'auto';
+      cv.style.display = 'block';
+      cv.style.aspectRatio = `${width} / ${height}`;
+
+      // Refresh canvas rendering if an image or paths was previously rendered
+      if (state.lastPaths && (i === 3 || i === 4 || i === 5 || i === 6)) {
+        this.updateStepPaths(i, state.lastPaths, width, height);
+      } else if (state.lastImage) {
+        this.updateStepPreview(i, state.lastImage);
+      } else if (state.status === 'COMPUTING') {
+        const ctx = cv.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, cv.width, cv.height);
+          ctx.fillStyle = '#faf8f5';
+          ctx.fillRect(0, 0, cv.width, cv.height);
+        }
+      }
+    }
   }
 
   /**

@@ -81,6 +81,9 @@ export class PipelineController {
             this.currentLoadedImage = { width: origW, height: origH, pixels, rawImg: tmpCanvas, file };
 
             if (this.stepGrid) {
+              if (typeof this.stepGrid.setAspectRatio === 'function') {
+                this.stepGrid.setAspectRatio(origW, origH);
+              }
               this.stepGrid.updateStepPreview(0, tmpCanvas);
               this.stepGrid.setStepStatus(0, 'DONE', `${origW} × ${origH} (原图比例)`);
             }
@@ -645,6 +648,9 @@ export class PipelineController {
     this.currentLoadedImage = { width: w, height: h, pixels, rawImg: demoCanvas };
 
     if (this.stepGrid) {
+      if (typeof this.stepGrid.setAspectRatio === 'function') {
+        this.stepGrid.setAspectRatio(w, h);
+      }
       this.stepGrid.updateStepPreview(0, demoCanvas);
       this.stepGrid.setStepStatus(0, 'DONE', '900 × 660 莫兰迪静物');
     }

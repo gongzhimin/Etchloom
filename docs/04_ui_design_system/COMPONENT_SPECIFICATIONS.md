@@ -25,7 +25,14 @@
     - `[04] 曲面排线` (Hatching, `grid-column: span 1` = 50%)
     - `[05] 母版合成` (Master Vector, `grid-column: span 1` = 50%)
   - **第 4 行**：
-    - `[06] 纯棉印样` (Paper Print Sample, `grid-column: 1 / -1` = 100% 独占底部通栏跨行展示，视口高度 460px+)
+    - `[06] 纯棉印样` (Paper Print Sample, `grid-column: 1 / -1` = 100% 独占底部通栏跨行展示)
+- **卡片比例自适应与横向全宽填充 (Dynamic Aspect Ratio & Full-Width Fill)**：
+  - 7 张卡片与 Canvas 的宽高比根据导入图片的物理比例（`origW / origH`）动态自适应；
+  - Canvas 声明 `width: 100%; height: auto; display: block;`，横向 100% 饱满铺满卡片视口，高度根据原图比例自洽伸展，杜绝留白边与黑条；
+  - 通过 `stepGrid.setAspectRatio(width, height)` 统一驱动 7 个卡片的分辨率与 CSS `aspect-ratio`。
+- **主工作区视口约束与平滑垂直滚动 (Scrollable Workspace Viewport)**：
+  - 顶层容器 `#app` 严格继承 `height: 100%; overflow: hidden;`，`main.app-main` 占满剩余视口净高；
+  - `.workspace-area` 设置 `overflow-y: auto; overflow-x: hidden;`，用户通过鼠标滚轮或滚动条可无阻碍向下纵览全部 2 列 4 行大卡片及底部日志控制台。
 - **计算中清空画布机制**：当卡片处于 `COMPUTING` 状态时，执行 `ctx.clearRect` 并注入淡雅占位底，彻底清空上一张图或静物范式的生成残留。
 - **物理倒角压痕 (Plate Bevel)**：第 06 步印样卡片与独立导出均真实模拟四周纸边留白（Paper Margin）与 45° 倒角压印凹痕（背光阴影/受光高光），无任何工作台辅助框杂质。
 - **响应式降级**：屏幕宽度 `< 860px` 时自动重排为单列垂直流。
