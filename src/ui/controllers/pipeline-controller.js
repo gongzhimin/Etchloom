@@ -5,7 +5,18 @@
  */
 
 import { AIServiceGateway } from '../../services/client/ai-service-gateway.js';
-import { getFrameGeometry, drawEngravedFrame } from '../components/step-flow-grid.js';
+
+const getFrameGeometry = (w, h, s) => {
+  const fn = (typeof window !== 'undefined' && window.getFrameGeometry) || (typeof globalThis !== 'undefined' && globalThis.getFrameGeometry);
+  if (typeof fn === 'function') return fn(w, h, s);
+  const m = Math.round(50 * Math.min(w, h) / 660);
+  return { art: { x: m, y: m, w: w - 2 * m, h: h - 2 * m }, style: s || 'none' };
+};
+
+const drawEngravedFrame = (ctx, w, h, geom, strokeColor) => {
+  const fn = (typeof window !== 'undefined' && window.drawEngravedFrame) || (typeof globalThis !== 'undefined' && globalThis.drawEngravedFrame);
+  if (typeof fn === 'function') return fn(ctx, w, h, geom, strokeColor);
+};
 
 export class PipelineController {
   constructor(options = {}) {

@@ -183,9 +183,6 @@ const transferWizard = new TransferWizardController({
     const mctx = mask.getContext('2d');
     mctx.clearRect(0, 0, W, H);
 
-    const srcW = pipelineController.currentLoadedImage?.width || 900;
-    const srcH = pipelineController.currentLoadedImage?.height || 660;
-
     // Leave plate margin so engraving lines are strictly INSIDE the frame rules!
     const frameMargin = Math.round(54 * W / 900);
     const artW = W - 2 * frameMargin;
