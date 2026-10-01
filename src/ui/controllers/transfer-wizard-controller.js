@@ -25,8 +25,10 @@ export class TransferWizardController {
       return;
     }
     const fn = (typeof window !== 'undefined' && window.logMessage) || (typeof globalThis !== 'undefined' && globalThis.logMessage);
+    const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
+    const cat = i18n ? i18n.t('console.wizard') : '向导';
     if (typeof fn === 'function') {
-      fn('向导', msg, 'warn');
+      fn(cat, msg, 'warn');
       return;
     }
     if (typeof alert === 'function') {
@@ -37,11 +39,16 @@ export class TransferWizardController {
   }
 
   bindEvents() {
+    const getWarnMsg = () => {
+      const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
+      return i18n ? i18n.t('wizard.warnGenerateFirst') : '请先载入照片或运行管线生成母版矢量线条！';
+    };
+
     if (this.openBtn) {
       this.openBtn.onclick = () => {
         const { masterPaths, contours } = this.getMasterData();
         if ((!masterPaths || !masterPaths.length) && (!contours || !contours.length)) {
-          this.notifyWarning('请先载入照片或运行管线生成母版矢量线条！');
+          this.notifyWarning(getWarnMsg());
           return;
         }
         this.open();
@@ -52,7 +59,7 @@ export class TransferWizardController {
       this.drawerOpenBtn.onclick = () => {
         const { masterPaths, contours } = this.getMasterData();
         if ((!masterPaths || !masterPaths.length) && (!contours || !contours.length)) {
-          this.notifyWarning('请先载入照片或运行管线生成母版矢量线条！');
+          this.notifyWarning(getWarnMsg());
           return;
         }
         this.open();
@@ -108,16 +115,28 @@ export class TransferWizardController {
     const cLen = contours?.length || 0;
     const hLen = hatching?.length || 0;
 
+    const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
+    const strokesUnit = i18n ? i18n.t('telemetry.strokesUnit') : '条';
+    const cTitle = i18n ? i18n.t('wizard.layerContours') : '空间轮廓';
+    const hTitle = i18n ? i18n.t('wizard.layerHatching') : '曲面排线';
+
     const statsEl = document.getElementById('wizardStats');
     if (statsEl) {
-      statsEl.textContent = `当前就绪矢量母版: 总计 ${mLen} 条线条 (空间轮廓 ${cLen} 条 · 曲面排线 ${hLen} 条)`;
+      const loc = i18n?.getLocale() || 'zh-CN';
+      if (loc === 'en-US') {
+        statsEl.textContent = `Current Ready Master: ${mLen} lines (${cTitle}: ${cLen} · ${hTitle}: ${hLen})`;
+      } else if (loc === 'vi-VN') {
+        statsEl.textContent = `Bản mẫu sẵn sàng: Tổng ${mLen} nét (${cTitle}: ${cLen} · ${hTitle}: ${hLen})`;
+      } else {
+        statsEl.textContent = `当前就绪矢量母版: 总计 ${mLen} 条线条 (${cTitle} ${cLen} 条 · ${hTitle} ${hLen} 条)`;
+      }
     }
     const allEl = document.getElementById('wizardAllCount');
-    if (allEl) allEl.textContent = `${mLen} 条线条`;
+    if (allEl) allEl.textContent = `${mLen} ${strokesUnit}`;
     const contEl = document.getElementById('wizardContoursCount');
-    if (contEl) contEl.textContent = `${cLen} 条线条`;
+    if (contEl) contEl.textContent = `${cLen} ${strokesUnit}`;
     const hatchEl = document.getElementById('wizardHatchingCount');
-    if (hatchEl) hatchEl.textContent = `${hLen} 条线条`;
+    if (hatchEl) hatchEl.textContent = `${hLen} ${strokesUnit}`;
 
     this.overlay.hidden = false;
   }
@@ -134,21 +153,32 @@ export class TransferWizardController {
 
     const { masterPaths, contours, hatching, loadedImage } = this.getMasterData();
 
+    const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
+    const strokesUnit = i18n ? i18n.t('telemetry.strokesUnit') : '条';
+
     let pathsToCarve = [];
     let layerLabel = '';
     if (selectedLayer === 'contours' && contours && contours.length) {
       pathsToCarve = contours;
-      layerLabel = `空间轮廓 (${contours.length} 条)`;
+      const cTitle = i18n ? i18n.t('wizard.layerContours') : '空间轮廓';
+      layerLabel = `${cTitle} (${contours.length} ${strokesUnit})`;
     } else if (selectedLayer === 'hatching' && hatching && hatching.length) {
       pathsToCarve = hatching;
-      layerLabel = `曲面排线 (${hatching.length} 条)`;
+      const hTitle = i18n ? i18n.t('wizard.layerHatching') : '曲面排线';
+      layerLabel = `${hTitle} (${hatching.length} ${strokesUnit})`;
     } else {
       pathsToCarve = (masterPaths && masterPaths.length) ? masterPaths : (contours || []);
-      layerLabel = `全部母版 (${pathsToCarve.length} 条)`;
+      const aTitle = i18n ? i18n.t('wizard.layerAll') : '全部母版';
+      layerLabel = `${aTitle} (${pathsToCarve.length} ${strokesUnit})`;
     }
 
     if (!pathsToCarve.length) {
-      alert('当前选择的图层尚无矢量线条可上版。请先载入图片或等待计算完成。');
+      const alertMsg = i18n ? i18n.t('wizard.alertNoLines') : '当前选择的图层尚无矢量线条可上版。请先载入图片或等待计算完成。';
+      if (typeof alert === 'function') {
+        alert(alertMsg);
+      } else {
+        console.warn(alertMsg);
+      }
       return;
     }
 

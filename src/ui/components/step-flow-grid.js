@@ -103,12 +103,12 @@ class StepFlowGrid {
       // Card Canvas Viewport - clicking image opens Lightbox with zoom and pan
       const viewport = document.createElement('div');
       viewport.className = 'card-viewport';
-      viewport.title = '点击查看大图 (支持滚轮缩放与拖拽)';
+      viewport.title = this.i18n ? this.i18n.t('card.clickInspect') : '点击查看大图 (支持滚轮缩放与拖拽)';
       viewport.style.cursor = 'zoom-in';
       const canvas = document.createElement('canvas');
       canvas.setAttribute?.('role', 'button');
       canvas.setAttribute?.('tabindex', '0');
-      canvas.setAttribute?.('aria-label', `${title.textContent}：特写检查`);
+      canvas.setAttribute?.('aria-label', `${title.textContent}：${this.i18n ? this.i18n.t('card.inspect') : '特写检查'}`);
       canvas.width = i === 6 ? 1400 : 900;
       canvas.height = i === 6 ? Math.round(1400 * 660 / 900) : 660;
       canvas.style.width = '100%';
@@ -134,8 +134,8 @@ class StepFlowGrid {
 
       const inspectBtn = document.createElement('button');
       inspectBtn.className = 'card-btn btn-inspect-layer';
-      inspectBtn.title = '特写检查 (支持滚轮缩放与拖拽)';
-      inspectBtn.innerHTML = '⛶ <span data-i18n="card.inspect">特写</span>';
+      inspectBtn.title = this.i18n ? this.i18n.t('card.clickInspect') : '特写检查 (支持滚轮缩放与拖拽)';
+      inspectBtn.innerHTML = '⛶ <span data-i18n="card.inspect">' + (this.i18n ? this.i18n.t('card.inspect') : '特写') + '</span>';
       inspectBtn.onclick = (e) => {
         e?.stopPropagation?.();
         this.setActiveStep(i);
@@ -147,8 +147,8 @@ class StepFlowGrid {
 
       const exportBtn = document.createElement('button');
       exportBtn.className = 'card-btn btn-export-layer';
-      exportBtn.title = '独立导出图层';
-      exportBtn.innerHTML = '⬇ <span data-i18n="card.download">导出</span>';
+      exportBtn.title = this.i18n ? this.i18n.t('card.download') : '独立导出图层';
+      exportBtn.innerHTML = '⬇ <span data-i18n="card.download">' + (this.i18n ? this.i18n.t('card.download') : '导出') + '</span>';
       exportBtn.onclick = (e) => {
         e?.stopPropagation?.();
         this.onStepExport(i);
@@ -165,7 +165,9 @@ class StepFlowGrid {
 
       const meta = document.createElement('span');
       meta.className = 'card-meta';
-      meta.textContent = i === 0 ? '原始像素基准' : '等待计算...';
+      meta.textContent = i === 0
+        ? (this.i18n ? this.i18n.t('card.pixelBase') : '原始像素基准')
+        : (this.i18n ? this.i18n.t('card.initMeta') : '等待计算...');
       footer.appendChild(meta);
       this.stepStates[i].metaEl = meta;
 
@@ -279,13 +281,13 @@ class StepFlowGrid {
     } else if (status === 'DONE') {
       card.classList.add('status-done');
       if (state.badgeEl) {
-        state.badgeEl.textContent = '✓ 完成';
+        state.badgeEl.textContent = this.i18n ? this.i18n.t('card.done') : '✓ 完成';
         state.badgeEl.className = 'card-badge badge-done';
       }
     } else if (status === 'ERROR') {
       card.classList.add('status-error');
       if (state.badgeEl) {
-        state.badgeEl.textContent = '异常';
+        state.badgeEl.textContent = this.i18n ? this.i18n.t('card.error') : '异常';
         state.badgeEl.className = 'card-badge badge-amber';
       }
     } else {
@@ -719,7 +721,15 @@ ${pathsXml}
       if (state && state.badgeEl) {
         if (state.status === 'COMPUTING') state.badgeEl.textContent = this.i18n.t('card.computing');
         else if (state.status === 'CACHED') state.badgeEl.textContent = this.i18n.t('card.cached');
+        else if (state.status === 'DONE') state.badgeEl.textContent = this.i18n.t('card.done');
+        else if (state.status === 'ERROR') state.badgeEl.textContent = this.i18n.t('card.error');
       }
+      const vp = this.container.querySelector(`.step-${i} .card-viewport`);
+      if (vp) vp.title = this.i18n.t('card.clickInspect');
+      const inspect = this.container.querySelector(`.step-${i} .btn-inspect-layer`);
+      if (inspect) inspect.title = this.i18n.t('card.clickInspect');
+      const exp = this.container.querySelector(`.step-${i} .btn-export-layer`);
+      if (exp) exp.title = this.i18n.t('card.download');
     }
     this.i18n.bindDom(this.container);
   }

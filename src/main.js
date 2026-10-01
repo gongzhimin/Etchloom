@@ -102,21 +102,22 @@ export function updateLocaleUI() {
     pipelineController.checkModelStatus(i18nManager.getLocale());
   }
 
-  const isEn = i18nManager.getLocale() === 'en-US';
   const telStatus = $('telemetryStatus');
   if (telStatus) {
-    if (isEn && telStatus.textContent === '运行就绪') telStatus.textContent = 'Ready';
-    if (!isEn && telStatus.textContent === 'Ready') telStatus.textContent = '运行就绪';
+    const raw = telStatus.textContent || '';
+    if (raw === 'Ready' || raw === '运行就绪' || raw === 'Sẵn sàng hoạt động') {
+      telStatus.textContent = i18nManager.t('status.ready');
+    }
   }
   const telCache = $('telemetryCache');
   if (telCache) {
-    if (isEn && telCache.textContent.includes('命中')) telCache.textContent = telCache.textContent.replace('命中', 'Hits');
-    if (!isEn && telCache.textContent.includes('Hits')) telCache.textContent = telCache.textContent.replace('Hits', '命中');
+    const hits = (telCache.textContent.match(/\d+\/\d+/) || ['0/5'])[0];
+    telCache.textContent = `${hits} ${i18nManager.t('telemetry.cacheUnit')}`;
   }
   const telStrokes = $('telemetryStrokes');
   if (telStrokes) {
-    if (isEn && telStrokes.textContent.includes('条')) telStrokes.textContent = telStrokes.textContent.replace('条', 'lines');
-    if (!isEn && telStrokes.textContent.includes('lines')) telStrokes.textContent = telStrokes.textContent.replace('lines', '条');
+    const count = (telStrokes.textContent.match(/\d+/) || ['0'])[0];
+    telStrokes.textContent = `${count} ${i18nManager.t('telemetry.strokesUnit')}`;
   }
 }
 
@@ -185,17 +186,18 @@ const pipelineController = new PipelineController({
     frameStyle: $('frameStyle')?.value
   }),
   onTelemetry: (metrics) => {
-    const isEn = i18nManager && i18nManager.getLocale() === 'en-US';
     if (metrics.status && $('telemetryStatus')) $('telemetryStatus').textContent = metrics.status;
     if (metrics.task && $('telemetryTask')) $('telemetryTask').textContent = metrics.task;
     if (metrics.duration != null && $('telemetryDuration')) $('telemetryDuration').textContent = `${metrics.duration}ms`;
     if (metrics.strokes != null && $('telemetryStrokes')) {
       const strokeCount = typeof metrics.strokes === 'number' ? metrics.strokes : String(metrics.strokes).replace(/[^0-9]/g, '');
-      $('telemetryStrokes').textContent = isEn ? `${strokeCount} lines` : `${strokeCount} 条`;
+      const unit = i18nManager ? i18nManager.t('telemetry.strokesUnit') : '条';
+      $('telemetryStrokes').textContent = `${strokeCount} ${unit}`;
     }
     if (metrics.cache && $('telemetryCache')) {
-      const cacheVal = isEn ? String(metrics.cache).replace('命中', 'Hits') : String(metrics.cache).replace('Hits', '命中');
-      $('telemetryCache').textContent = cacheVal;
+      const hits = (String(metrics.cache).match(/\d+\/\d+/) || [''])[0];
+      const unit = i18nManager ? i18nManager.t('telemetry.cacheUnit') : '命中';
+      $('telemetryCache').textContent = hits ? `${hits} ${unit}` : metrics.cache;
     }
   },
   onModelStatus: (statusData) => {
@@ -214,7 +216,7 @@ const pipelineController = new PipelineController({
 
 const transferWizard = new TransferWizardController({
   getMasterData: () => pipelineController.getMasterData(),
-  onWarning: (msg) => logMessage('向导', msg, 'warn'),
+  onWarning: (msg) => logMessage(i18nManager ? i18nManager.t('console.wizard') : '向导', msg, 'warn'),
   onExecuteTransfer: ({ pathsToCarve, selectedRes, selectedTechnique, needlePressure = 0.65, layerLabel }) => {
     stop();
     snapshot();
@@ -291,10 +293,15 @@ const transferWizard = new TransferWizardController({
     setView('plate');
     switchWorkflow('plate');
 
-    const techLabel = selectedTechnique === 'drypoint' ? '干刻直刻 (Drypoint)' : '蚀刻针划线 (Etching)';
-    const statusText = `已成功上版: ${pathsToCarve.length} 条线条 (${techLabel}, ${W} × ${H})`;
+    const techLabel = selectedTechnique === 'drypoint'
+      ? (i18nManager ? i18nManager.t('wizard.drypointTitle') : '干刻直刻 (Drypoint)')
+      : (i18nManager ? i18nManager.t('wizard.etchingTitle') : '蚀刻针划线 (Etching)');
+    const transferTitle = i18nManager ? i18nManager.t('stepper.transfer') : '上版';
+    const strokesUnit = i18nManager ? i18nManager.t('telemetry.strokesUnit') : '条';
+    const statusText = `${transferTitle}: ${pathsToCarve.length} ${strokesUnit} (${techLabel}, ${W} × ${H})`;
     if ($('status')) $('status').textContent = statusText;
-    logMessage('制版', `【图稿上版成功】工艺: ${techLabel} | 分辨率: ${W} × ${H} | 载入图层: ${layerLabel}。已转入虚拟铜版工坊！`, 'done');
+    const logCat = i18nManager ? i18nManager.t('console.plate') : '铜版';
+    logMessage(logCat, `【${transferTitle}】${techLabel} | ${W} × ${H} | ${layerLabel}`, 'done');
   }
 });
 
@@ -311,8 +318,8 @@ function initEventBindings() {
       i18nManager.toggleLocale();
       updateLocaleUI();
       logMessage(
-        i18nManager.getLocale() === 'zh-CN' ? '系统' : 'System',
-        i18nManager.getLocale() === 'zh-CN' ? '界面语言已切换为: 简体中文' : 'Language switched to English',
+        i18nManager.t('console.sys'),
+        i18nManager.t('console.switched'),
         'info'
       );
     };
@@ -323,7 +330,7 @@ function initEventBindings() {
     clearLogBtn.onclick = () => {
       const logEl = $('activityLog');
       if (logEl) logEl.innerHTML = '';
-      logMessage('系统', '日志已清空。');
+      logMessage(i18nManager ? i18nManager.t('console.sys') : '系统', i18nManager ? i18nManager.t('console.cleared') : '日志已清空。');
     };
   }
 
@@ -414,21 +421,21 @@ function initEventBindings() {
         mctx.fillText('Digital Intaglio & Copperplate Simulation Engine v2.0', 40, 130);
       }
       lightbox.open(
-        'Etchloom · 数字古典版画工坊 (Atelier Digital Printmaking Studio)',
+        i18nManager ? i18nManager.t('about.headerTitle') : 'Etchloom · 数字古典版画工坊',
         modalCanvas,
         `
-          <p><strong>系统设计架构 (Architecture Modules)</strong></p>
+          <p><strong>${i18nManager ? i18nManager.t('about.archTitle') : '系统设计架构'}</strong></p>
           <ul>
-            <li><strong>M1 视口引擎</strong>：Atelier Classical Dark 莫兰迪古典暗调美学，7阶段自适应响应式网格 (Step 0 ~ Step 6)。</li>
-            <li><strong>M2 算法管线</strong>：5阶段纯状态机（灰度线描感知 → 3D几何流场 → 空气透视轮廓 → 空间曲面几何排线 → 矢量母版合成）。</li>
-            <li><strong>M3 铜版工坊</strong>：4大正交物理工具（刻针、干刻针、防蚀漆、刮磨器）与 2D 偏微分酸液咬蚀化学仿真、纯手工棉纸凹版压痕印样。</li>
-            <li><strong>M4 调度编排</strong>：拓扑有向无环图哈希增量缓存、抢占式微任务调度、多格式图层导出 (SVG / CNC G-Code / Recipe JSON)。</li>
+            <li>${i18nManager ? i18nManager.t('about.m1') : 'M1 视口引擎'}</li>
+            <li>${i18nManager ? i18nManager.t('about.m2') : 'M2 算法管线'}</li>
+            <li>${i18nManager ? i18nManager.t('about.m3') : 'M3 铜版工坊'}</li>
+            <li>${i18nManager ? i18nManager.t('about.m4') : 'M4 调度编排'}</li>
           </ul>
-          <p><strong>快捷操作指南 (Shortcuts & Interaction)</strong></p>
+          <p><strong>${i18nManager ? i18nManager.t('about.shortcutsTitle') : '快捷操作指南'}</strong></p>
           <ul>
-            <li>点击主工作区任意步骤卡片或虚拟铜版画板：直接开启超高清全屏特写画廊（支持鼠标滚轮无级缩放与拖拽漫游）。</li>
-            <li>点击卡片右上角 <code>[⛶ 特写]</code>：唤出超高清全屏视口特写。</li>
-            <li>点击 <code>[雕刻至虚拟铜版 →]</code>：将母版计算所得的数千条矢量线条无缝转录为物理干刻针痕迹，直接进入酸液腐蚀工坊。</li>
+            <li>${i18nManager ? i18nManager.t('about.s1') : '点击主工作区任意步骤卡片或虚拟铜版画板'}</li>
+            <li>${i18nManager ? i18nManager.t('about.s2') : '点击卡片右上角 [⛶ 特写]'}</li>
+            <li>${i18nManager ? i18nManager.t('about.s3') : '点击 [雕刻至虚拟铜版 →]'}</li>
           </ul>
         `
       );
@@ -469,7 +476,10 @@ function initEventBindings() {
       stepGrid.setFrameStyle(style);
     }
     setPlateFrameStyle(style);
-    logMessage('版画', `版画外框风格已更新: ${style === 'double' ? '双层古典边框' : style === 'fine' ? '单线精细刻框' : style === 'rough' ? '手工古拙边框' : '无外框'}`);
+    const styleLabel = i18nManager ? i18nManager.t(`frame.${style}`) : style;
+    const cat = i18nManager ? i18nManager.t('console.frame') : '版画';
+    const msg = i18nManager ? `${i18nManager.t('status.frameUpdated')}: ${styleLabel}` : `版画外框风格已更新: ${styleLabel}`;
+    logMessage(cat, msg);
   };
   if (frameSelect) {
     frameSelect.addEventListener('change', () => handleFrameChange(frameSelect.value));
@@ -485,8 +495,10 @@ function initEventBindings() {
   const openPlateLightbox = () => {
     if (!canvas) return;
     const mode = (window.getPlateState ? window.getPlateState().view : 'plate') || 'plate';
-    const titles = { plate: '虚拟铜版 · 全屏特写', depth: '刻深图 · 全屏特写', print: '压印预览 · 全屏特写' };
-    lightbox.open(titles[mode] || '虚拟铜版 · 全屏特写', canvas, `${canvas.width} × ${canvas.height} 物理网格`);
+    const titleKey = mode === 'depth' ? 'lightbox.depthCloseUp' : mode === 'print' ? 'lightbox.printCloseUp' : 'lightbox.plateCloseUp';
+    const title = i18nManager ? i18nManager.t(titleKey) : (mode === 'depth' ? '刻深图 · 全屏特写' : mode === 'print' ? '压印预览 · 全屏特写' : '虚拟铜版 · 全屏特写');
+    const metaSuffix = i18nManager ? i18nManager.t('lightbox.gridMeta') : '物理网格';
+    lightbox.open(title, canvas, `${canvas.width} × ${canvas.height} ${metaSuffix}`);
   };
 
   if (plateFullscreenBtn) {

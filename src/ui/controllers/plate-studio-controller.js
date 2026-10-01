@@ -135,14 +135,16 @@ export function syncUndo() {
 export function stop() {
   const wasRunning = running;
   running = false;
-  const startText = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager.t('sec.3.startAcid') : '开始腐蚀';
+  const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+  const startText = i18n ? i18n.t('sec.3.startAcid') : '开始腐蚀';
   if ($('etch')) $('etch').textContent = startText;
   if ($('etchTopBtn')) $('etchTopBtn').textContent = startText;
   if ($('etchBtn')) $('etchBtn').textContent = startText;
-  if ($('status')) $('status').textContent = '已停止 · 可以继续制版或试印';
+  if ($('status')) $('status').textContent = i18n ? i18n.t('status.stopped') : '已停止 · 可以继续制版或试印';
   syncUndo();
   if (wasRunning && typeof logMessage === 'function') {
-    logMessage('铜版', `酸液腐蚀已停止，当前累计咬蚀时间: ${elapsed.toFixed(1)} 秒`, 'info');
+    const cat = i18n ? i18n.t('console.plate') : '铜版';
+    logMessage(cat, `酸液腐蚀已停止，当前累计咬蚀时间: ${elapsed.toFixed(1)} 秒`, 'info');
   }
 }
 
@@ -151,22 +153,24 @@ export function setView(v) {
   if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
     document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   }
+  const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
   const canvas = getCanvas();
   if (canvas) {
     if (v === 'print') {
       canvas.classList.add('cursor-zoom');
-      canvas.title = '点击查看全屏大图 (支持滚轮缩放与拖拽)';
+      canvas.title = i18n ? i18n.t('card.clickInspect') : '点击查看全屏大图 (支持滚轮缩放与拖拽)';
     } else {
       canvas.classList.remove('cursor-zoom');
-      canvas.title = '数字铜版绘图区 (双击或点击右上角按钮可全屏特写)';
+      canvas.title = i18n ? i18n.t('card.clickInspect') : '数字铜版绘图区 (双击或点击右上角按钮可全屏特写)';
     }
   }
   if ($('caption')) {
-    $('caption').textContent = {
-      plate: '制版 / 针尖划开保护层，等待酸液进入',
-      depth: '刻深 / 黑色为完整表面，亮度表示凹槽深度',
-      print: '印样 / 纯棉纸双线外框正向印痕，点击画布可全屏特写'
-    }[v] || '';
+    const captions = {
+      plate: i18n ? i18n.t('caption.plate') : '制版 / 针尖划开保护层，等待酸液进入',
+      depth: i18n ? i18n.t('caption.depth') : '刻深 / 黑色为完整表面，亮度表示凹槽深度',
+      print: i18n ? i18n.t('caption.print') : '印样 / 纯棉纸双线外框正向印痕，点击画布可全屏特写'
+    };
+    $('caption').textContent = captions[v] || '';
   }
   dirty = true;
 }
@@ -438,15 +442,17 @@ export function toggleEtch() {
   }
   snapshot();
   running = true;
-  const stopText = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager.t('sec.3.stopAcid') : '停止腐蚀';
+  const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+  const stopText = i18n ? i18n.t('sec.3.stopAcid') : '停止腐蚀';
   if ($('etch')) $('etch').textContent = stopText;
   if ($('etchTopBtn')) $('etchTopBtn').textContent = stopText;
   if ($('etchBtn')) $('etchBtn').textContent = stopText;
   setPlateStage(3);
-  if ($('status')) $('status').textContent = '酸液作用中 · 随时停止以保留细线';
+  if ($('status')) $('status').textContent = i18n ? i18n.t('status.etching') : '酸液作用中 · 随时停止以保留细线';
   syncUndo();
   if (typeof logMessage === 'function') {
-    logMessage('铜版', `开始酸液咬蚀物理仿真 (酸液强度: ${$('acid')?.value || 45}%, 金相颗粒: ${$('grain')?.value || 45}%)`, 'computing');
+    const cat = i18n ? i18n.t('console.plate') : '铜版';
+    logMessage(cat, `开始酸液咬蚀物理仿真 (酸液强度: ${$('acid')?.value || 45}%, 金相颗粒: ${$('grain')?.value || 45}%)`, 'computing');
   }
 }
 
@@ -462,7 +468,8 @@ export function updateAcidGauge() {
     }
   }
   const avgMicrons = count > 0 ? (totalD / count * 45).toFixed(1) : '0.0';
-  gauge.textContent = `腐蚀 ${elapsed.toFixed(1)}s · 深度 ${avgMicrons}μm`;
+  const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+  gauge.textContent = i18n ? i18n.t('plate.gauge', [elapsed.toFixed(1), avgMicrons]) : `腐蚀 ${elapsed.toFixed(1)}s · 深度 ${avgMicrons}μm`;
 }
 
 // Classical 5-Stage Stepper
@@ -616,9 +623,11 @@ export function bindPlateStudioEvents(options = {}) {
       plateSources = s.plateSources || [];
       if (s.designSession && typeof window !== 'undefined' && window.designSession) await window.designSession.restore(s.designSession);
       dirty = true;
-      if ($('status')) $('status').textContent = '虚拟版已载入';
+      const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+      if ($('status')) $('status').textContent = i18n ? i18n.t('status.loaded') : '虚拟版已载入';
     } catch (err) {
-      if ($('status')) $('status').textContent = '打开失败：' + err.message;
+      const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+      if ($('status')) $('status').textContent = (i18n ? i18n.t('status.loadFailed') : '打开失败') + '：' + err.message;
     }
     e.target.value = '';
   };
@@ -679,7 +688,8 @@ export function bindPlateStudioEvents(options = {}) {
     if ($('size')) $('size').value = sz;
     dirty = true;
     setView('plate');
-    if ($('status')) $('status').textContent = '静物练习版 · 可继续刻线或开始腐蚀';
+    const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+    if ($('status')) $('status').textContent = i18n ? i18n.t('status.demoLoaded') : '静物练习版 · 可继续刻线或开始腐蚀';
   };
 
   // Tool Selection Buttons
@@ -729,10 +739,13 @@ export function bindPlateStudioEvents(options = {}) {
         document.querySelectorAll('.resolution-selector .res-btn').forEach(b => {
           b.classList.toggle('active', Number(b.dataset.res) === res);
         });
+        const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
         if (typeof logMessage === 'function') {
-          logMessage('铜版', `版面物理网格分辨率切换为: ${W} × ${H} 像素`, 'info');
+          const cat = i18n ? i18n.t('console.plate') : '铜版';
+          logMessage(cat, `版面物理网格分辨率切换为: ${W} × ${H} 像素`, 'info');
         }
-        if ($('status')) $('status').textContent = `物理网格已切换为 ${W} × ${H}`;
+        const loc = i18n?.getLocale() || 'zh-CN';
+        if ($('status')) $('status').textContent = loc === 'en-US' ? `Grid resolution switched to ${W} × ${H}` : (loc === 'vi-VN' ? `Đã chuyển lưới vật lý sang ${W} × ${H}` : `物理网格已切换为 ${W} × ${H}`);
       };
     });
   }

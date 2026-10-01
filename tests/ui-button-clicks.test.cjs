@@ -173,22 +173,27 @@ test('UI Button Click: Header Mode Switch Buttons', () => {
 
 test('UI Button Click: Language Toggle Button', () => {
   const i18n = new I18nManager('zh-CN');
-  const langBtn = createMockElement('button', { id: 'langToggle', textContent: '中 / EN' });
+  const langBtn = createMockElement('button', { id: 'langToggle', textContent: i18n.t('lang.toggle') });
 
   langBtn.onclick = () => {
     i18n.toggleLocale();
-    const newLocale = i18n.getLocale();
-    langBtn.textContent = newLocale === 'zh-CN' ? '中 / EN' : 'EN / 中';
+    langBtn.textContent = i18n.t('lang.toggle');
   };
 
   assert.equal(i18n.getLocale(), 'zh-CN');
+  assert.equal(langBtn.textContent, 'English');
+
   langBtn.click();
   assert.equal(i18n.getLocale(), 'en-US');
-  assert.equal(langBtn.textContent, 'EN / 中');
+  assert.equal(langBtn.textContent, 'Tiếng Việt');
+
+  langBtn.click();
+  assert.equal(i18n.getLocale(), 'vi-VN');
+  assert.equal(langBtn.textContent, '中文');
 
   langBtn.click();
   assert.equal(i18n.getLocale(), 'zh-CN');
-  assert.equal(langBtn.textContent, '中 / EN');
+  assert.equal(langBtn.textContent, 'English');
 });
 
 test('UI Button Click: About Modal Open & Close Buttons', () => {

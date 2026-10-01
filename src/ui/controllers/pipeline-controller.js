@@ -89,12 +89,17 @@ export class PipelineController {
     if (metrics.status && $('telemetryStatus')) $('telemetryStatus').textContent = metrics.status;
     if (metrics.task && $('telemetryTask')) $('telemetryTask').textContent = metrics.task;
     if (metrics.duration != null && $('telemetryDuration')) $('telemetryDuration').textContent = `${metrics.duration}ms`;
+    const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
     if (metrics.strokes != null && $('telemetryStrokes')) {
-      const isEn = (typeof window !== 'undefined' && window.i18nManager && window.i18nManager.getLocale() === 'en-US');
       const strokeCount = typeof metrics.strokes === 'number' ? metrics.strokes : String(metrics.strokes).replace(/[^0-9]/g, '');
-      $('telemetryStrokes').textContent = isEn ? `${strokeCount} lines` : `${strokeCount} 条`;
+      const unit = i18n ? i18n.t('telemetry.strokesUnit') : '条';
+      $('telemetryStrokes').textContent = `${strokeCount} ${unit}`;
     }
-    if (metrics.cache && $('telemetryCache')) $('telemetryCache').textContent = metrics.cache;
+    if (metrics.cache && $('telemetryCache')) {
+      const hits = (String(metrics.cache).match(/\d+\/\d+/) || [''])[0];
+      const unit = i18n ? i18n.t('telemetry.cacheUnit') : '命中';
+      $('telemetryCache').textContent = hits ? `${hits} ${unit}` : metrics.cache;
+    }
   }
 
   setStepGrid(grid) {
@@ -112,18 +117,21 @@ export class PipelineController {
 
   async checkModelStatus(locale) {
     const health = await this.aiGateway.checkHealth();
-    const isEn = locale === 'en-US' || (typeof window !== 'undefined' && window.i18nManager && window.i18nManager.getLocale() === 'en-US');
-    let label = isEn ? 'Offline Mode (Geometric)' : '基础离线模式 (纯几何)';
+    const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
+    const loc = locale || i18n?.getLocale() || 'zh-CN';
+    let label = i18n ? i18n.t('model.offline') : '基础离线模式 (纯几何)';
     let badgeClass = 'badge badge-green';
 
     if (health.mode === 'remote-python') {
-      label = isEn ? `Local AI · ${health.device}` : `本机服务 · ${health.device}`;
+      const prefix = i18n ? i18n.t('model.localAi') : (loc === 'en-US' ? 'Local AI' : (loc === 'vi-VN' ? 'AI Cục bộ' : '本机服务'));
+      label = `${prefix} · ${health.device}`;
       badgeClass = 'badge badge-green';
     } else if (health.mode === 'browser-webai') {
-      label = isEn ? `Online Model · ${health.device}` : `联网模型 · ${health.device}`;
+      const prefix = i18n ? i18n.t('model.online') : (loc === 'en-US' ? 'Online Model' : (loc === 'vi-VN' ? 'Mô hình trực tuyến' : '联网模型'));
+      label = `${prefix} · ${health.device}`;
       badgeClass = 'badge badge-gold';
     } else {
-      label = isEn ? 'Offline Mode (Geometric)' : '基础离线模式 (纯几何)';
+      label = i18n ? i18n.t('model.offline') : (loc === 'en-US' ? 'Offline Mode (Geometric)' : (loc === 'vi-VN' ? 'Chế độ ngoại tuyến (Hình học thuần)' : '基础离线模式 (纯几何)'));
       badgeClass = 'badge badge-green';
     }
 
@@ -145,7 +153,8 @@ export class PipelineController {
       }
     }
 
-    this.log('系统', `AI 引擎状态: ${health.modeLabel || label}`, 'info');
+    const sysCat = i18n ? i18n.t('console.sys') : '系统';
+    this.log(sysCat, `AI 引擎状态: ${health.modeLabel || label}`, 'info');
     return statusData;
   }
 
@@ -910,18 +919,20 @@ export class PipelineController {
         bgTone: theme?.paperGround || '#f0ebd9',
         strokeColor: theme?.inkPrimary || '#1a1918'
       });
-      this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样仿真', 12.0);
+      const debossText = (typeof window !== 'undefined' && window.i18nManager) ? window.i18nManager.t('card.cottonDeboss') : '纯棉纸凹版印样仿真';
+      this.stepGrid.setStepStatus(6, 'DONE', debossText, 12.0);
     }
 
-    const isEn = (typeof window !== 'undefined' && window.i18nManager && window.i18nManager.getLocale() === 'en-US');
+    const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
     this.updateTelemetry({
-      status: isEn ? 'Ready' : '运行就绪',
+      status: i18n ? i18n.t('status.ready') : '运行就绪',
       task: 'IDLE',
       duration: '38.5',
       strokes: allPaths.length,
-      cache: isEn ? '5/5 Hits' : '5/5 命中'
+      cache: i18n ? `5/5 ${i18n.t('telemetry.cacheUnit')}` : '5/5 命中'
     });
 
-    this.log('系统', `古典版画工坊初始化完成，已载入莫兰迪静物示范母版 (${allPaths.length} 条矢量线条)，7 组步骤流画卷均已就绪。`, 'info');
+    const sysCat = i18n ? i18n.t('console.sys') : '系统';
+    this.log(sysCat, `古典版画工坊初始化完成，已载入莫兰迪静物示范母版 (${allPaths.length} 条矢量线条)，7 组步骤流画卷均已就绪。`, 'info');
   }
 }

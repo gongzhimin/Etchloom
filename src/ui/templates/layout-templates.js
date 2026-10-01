@@ -22,7 +22,7 @@ export const headerTemplate = `
 
     <!-- Header Actions -->
     <div class="header-actions">
-      <button id="langToggle" class="btn-secondary" data-i18n="lang.toggle">中 / EN</button>
+      <button id="langToggle" class="btn-secondary" data-i18n="lang.toggle">English</button>
       <button id="exportScheme" class="btn-secondary" data-i18n="action.exportScheme">导出配置</button>
       <button id="aboutBtn" class="btn-secondary" data-i18n="action.about">关于</button>
     </div>
@@ -94,13 +94,13 @@ export const sidebarTemplate = `
 
       <!-- Process A: 图稿上版 -->
       <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title">工序 A · 上版</div>
-        <button id="openTransferWizardBtn" class="primary u-mt-1">图稿上版向导...</button>
+        <div class="drawer-subgroup-title" data-i18n="sec.3.groupA">工序 A · 上版</div>
+        <button id="openTransferWizardBtn" class="primary u-mt-1" data-i18n="sec.3.wizardBtn">图稿上版向导...</button>
       </div>
 
       <!-- Process B: 版面刻绘与修版 -->
       <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title">工序 B · 刻绘修版</div>
+        <div class="drawer-subgroup-title" data-i18n="sec.3.groupB">工序 B · 刻绘修版</div>
         <div class="tools">
           <button class="active" data-tool="needle" data-i18n="tool.needle">刻针</button>
           <button data-tool="dry" data-i18n="tool.dry">干刻针</button>
@@ -120,7 +120,7 @@ export const sidebarTemplate = `
 
       <!-- Process C: 酸液腐蚀参数 -->
       <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title">工序 C · 酸液腐蚀</div>
+        <div class="drawer-subgroup-title" data-i18n="sec.3.groupC">工序 C · 酸液腐蚀</div>
         <label for="acid"><span data-i18n="sec.3.acid">酸液浓度</span> <output id="acidValue">45%</output></label>
         <input id="acid" type="range" min="1" max="100" value="45">
 
@@ -136,7 +136,7 @@ export const sidebarTemplate = `
 
       <!-- Process D: 填墨与压印试印 -->
       <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title">工序 D · 填墨试印</div>
+        <div class="drawer-subgroup-title" data-i18n="sec.3.groupD">工序 D · 填墨试印</div>
         <label for="ink"><span data-i18n="sec.3.ink">油墨饱满</span> <output id="inkValue">90%</output></label>
         <input id="ink" type="range" min="0" max="150" value="90">
 
@@ -196,7 +196,7 @@ export const masterWorkspaceTemplate = `
         <span id="logToggleIndicator" class="log-toggle-arrow">▲</span>
       </div>
       <div id="activityLog" class="activity-log-body">
-        <div class="log-line"><span class="log-time">[00:00:00]</span> <span class="log-cat">[系统]</span> Etchloom 版画工坊就绪。</div>
+        <div class="log-line"><span class="log-time">[00:00:00]</span> <span class="log-cat">[<span data-i18n="console.sys">系统</span>]</span> <span data-i18n="console.ready">Etchloom 版画工坊就绪。</span></div>
       </div>
     </div>
   </div>
@@ -209,27 +209,27 @@ export const plateWorkspaceTemplate = `
     <div id="plateStepper" class="plate-process-stepper">
       <div class="stepper-step active" data-step="1" id="stepTransfer">
         <span class="stepper-num">1</span>
-        <span>上版</span>
+        <span data-i18n="stepper.transfer">上版</span>
       </div>
       <span class="stepper-arrow">→</span>
       <div class="stepper-step" data-step="2" id="stepInscribe">
         <span class="stepper-num">2</span>
-        <span>刻绘</span>
+        <span data-i18n="stepper.inscribe">刻绘</span>
       </div>
       <span class="stepper-arrow">→</span>
       <div class="stepper-step" data-step="3" id="stepEtch">
         <span class="stepper-num">3</span>
-        <span>腐蚀</span>
+        <span data-i18n="stepper.etch">腐蚀</span>
       </div>
       <span class="stepper-arrow">→</span>
       <div class="stepper-step" data-step="4" id="stepInk">
         <span class="stepper-num">4</span>
-        <span>填墨</span>
+        <span data-i18n="stepper.ink">填墨</span>
       </div>
       <span class="stepper-arrow">→</span>
       <div class="stepper-step" data-step="5" id="stepPrint">
         <span class="stepper-num">5</span>
-        <span>试印</span>
+        <span data-i18n="stepper.print">试印</span>
       </div>
     </div>
 
@@ -244,21 +244,21 @@ export const plateWorkspaceTemplate = `
 
       <!-- Resolution Switcher (900, 1500 2K, 3000 3K) -->
       <div class="resolution-selector">
-        <span class="resolution-label">物理网格:</span>
+        <span class="resolution-label" data-i18n="plate.resLabel">物理网格:</span>
         <button class="res-btn" data-res="900">900px</button>
         <button class="res-btn active" data-res="1500">1500px (2K)</button>
         <button class="res-btn" data-res="3000">3000px (3K)</button>
       </div>
 
       <!-- Plate Fullscreen Button -->
-      <button id="plateFullscreenBtn" class="btn-plate-fullscreen" title="全屏特写检查">⛶ 全屏特写</button>
+      <button id="plateFullscreenBtn" class="btn-plate-fullscreen" data-i18n-title="plate.fullscreenTitle" data-i18n="plate.fullscreen">⛶ 全屏特写</button>
 
       <!-- Unified Acid Bite Console -->
       <div class="acid-console-wrap">
         <button id="etchBtn" class="primary btn-etch-top" data-i18n="sec.3.startAcid">开始腐蚀</button>
         <!-- Backward compatibility elements for tests -->
         <button id="etchTopBtn" hidden></button>
-        <div id="plateAcidGauge" class="gauge-badge">腐蚀 0.0s · 平均深 0.0μm</div>
+        <div id="plateAcidGauge" class="gauge-badge">腐蚀 0.0s · 深度 0.0μm</div>
         <span id="timerBadge" hidden>腐蚀累计 0.0 s</span>
         <span id="timer" hidden>腐蚀累计 0.0 s</span>
       </div>
@@ -267,7 +267,7 @@ export const plateWorkspaceTemplate = `
     <!-- High-Resolution Plate Canvas Frame (Default 1500x1100 2K) -->
     <div class="plate-canvas-frame" id="plateCanvasFrame">
       <div class="plate-canvas-actions">
-        <button id="plateCanvasInspectBtn" class="card-btn btn-inspect-layer" title="全屏特写 (支持滚轮缩放与拖拽)">⛶ <span data-i18n="card.inspect">全屏特写</span></button>
+        <button id="plateCanvasInspectBtn" class="card-btn btn-inspect-layer" data-i18n-title="card.clickInspect">⛶ <span data-i18n="card.inspect">全屏特写</span></button>
       </div>
       <canvas id="canvas" width="1500" height="1100" aria-label="数字铜版绘图区"></canvas>
     </div>
@@ -275,7 +275,7 @@ export const plateWorkspaceTemplate = `
     <!-- Studio Caption & Telemetry -->
     <div class="plate-caption">
       <span id="caption" data-i18n="caption.plate">针尖划开保护层，等待酸液咬蚀</span>
-      <span id="status" class="telemetry-status-val">就绪</span>
+      <span id="status" class="telemetry-status-val" data-i18n="status.ready">运行就绪</span>
     </div>
   </div>
 `;
@@ -284,7 +284,7 @@ export const telemetryFooterTemplate = `
   <footer class="telemetry-footer">
     <div class="u-flex-gap-2">
       <button id="activityLogToggle" class="card-btn log-drawer-trigger btn-compact-pad">📋 <span data-i18n="console.title">运行日志</span></button>
-      <span><span data-i18n="telemetry.status">状态</span>: <span id="telemetryStatus" class="telemetry-status-val">运行就绪</span></span> |
+      <span><span data-i18n="telemetry.status">状态</span>: <span id="telemetryStatus" class="telemetry-status-val" data-i18n="status.ready">运行就绪</span></span> |
       <span><span data-i18n="telemetry.task">活跃任务</span>: <span id="telemetryTask" class="telemetry-status-val">IDLE</span></span> |
       <span><span data-i18n="telemetry.duration">总耗时</span>: <span id="telemetryDuration" class="telemetry-status-val">0ms</span></span> |
       <span><span data-i18n="telemetry.strokes">矢量线条</span>: <span id="telemetryStrokes" class="telemetry-status-val">0 条</span></span> |
@@ -302,17 +302,17 @@ export const modalsTemplate = `
     <!-- Floating Translucent Control Header Capsule -->
     <header class="fullscreen-floating-header">
       <div class="fullscreen-header-info">
-        <h3 id="modalTitle" class="fullscreen-title">特写检查</h3>
+        <h3 id="modalTitle" class="fullscreen-title" data-i18n="lightbox.inspect">特写检查</h3>
         <span id="modalDescription" class="fullscreen-meta"></span>
       </div>
       <div class="fullscreen-toolbar">
-        <button id="lightboxZoomOut" class="fullscreen-btn" title="缩小 (−)">−</button>
+        <button id="lightboxZoomOut" class="fullscreen-btn" data-i18n-title="lightbox.zoomOut">−</button>
         <span id="lightboxZoomLevel" class="fullscreen-zoom-badge">100%</span>
-        <button id="lightboxZoomIn" class="fullscreen-btn" title="放大 (+)">+</button>
-        <button id="lightboxFit" class="fullscreen-btn" title="全屏自适应">自适应</button>
-        <button id="lightboxReset" class="fullscreen-btn" title="1:1 原始像素">1:1</button>
-        <button id="lightboxNativeFs" class="fullscreen-btn" title="真全屏切换 (F11)">⛶ 全屏</button>
-        <button id="modalClose" class="fullscreen-btn fullscreen-close-btn" title="退出特写 (ESC)">✕</button>
+        <button id="lightboxZoomIn" class="fullscreen-btn" data-i18n-title="lightbox.zoomIn">+</button>
+        <button id="lightboxFit" class="fullscreen-btn" data-i18n-title="lightbox.fitTitle" data-i18n="lightbox.fit">自适应</button>
+        <button id="lightboxReset" class="fullscreen-btn" data-i18n-title="lightbox.resetTitle" data-i18n="lightbox.reset">1:1</button>
+        <button id="lightboxNativeFs" class="fullscreen-btn" data-i18n-title="lightbox.nativeFsTitle" data-i18n="lightbox.nativeFs">⛶ 全屏</button>
+        <button id="modalClose" class="fullscreen-btn fullscreen-close-btn" data-i18n-title="lightbox.closeTitle">✕</button>
       </div>
     </header>
 
@@ -329,33 +329,33 @@ export const modalsTemplate = `
       <div class="modal-header">
         <div class="u-flex-gap-2">
           <h3 class="modal-title" data-i18n="wizard.title">母版图稿上版向导</h3>
-          <span class="badge badge-gold badge-caption">M1 → M3 物理转录</span>
+          <span class="badge badge-gold badge-caption" data-i18n="wizard.badge">M1 → M3 物理转录</span>
         </div>
         <button id="transferModalClose" class="card-btn btn-compact-pad">✕</button>
       </div>
       <div class="modal-body wizard-modal-body">
-        <div id="wizardStats" class="wizard-stats-box">
+        <div id="wizardStats" class="wizard-stats-box" data-i18n="wizard.statsReady">
           当前就绪母版: 检测中...
         </div>
 
         <!-- Section 1: 工艺技法 -->
         <div class="wizard-group">
-          <label class="wizard-label">
+          <label class="wizard-label" data-i18n="wizard.sec1">
             1. 选择雕刻转录工艺技法:
           </label>
           <div class="wizard-radio-grid wizard-radio-grid-2">
             <label class="wizard-card wizard-card-label active">
               <input type="radio" name="transferTechnique" value="etching" checked class="u-mt-1">
               <div>
-                <strong class="wizard-item-title">蚀刻针划线 (Etching)</strong>
-                <span class="wizard-item-desc">划破表面防蚀防酸保护漆，等待酸液咬蚀形成深沟。</span>
+                <strong class="wizard-item-title" data-i18n="wizard.etchingTitle">蚀刻针划线 (Etching)</strong>
+                <span class="wizard-item-desc" data-i18n="wizard.etchingDesc">划破表面防蚀防酸保护漆，等待酸液咬蚀形成深沟。</span>
               </div>
             </label>
             <label class="wizard-card wizard-card-label">
               <input type="radio" name="transferTechnique" value="drypoint" class="u-mt-1">
               <div>
-                <strong class="wizard-item-title">干刻直刻 (Drypoint)</strong>
-                <span class="wizard-item-desc">锋利钢针直接切削铜板，边缘翻起金属毛刺，暗部极深润。</span>
+                <strong class="wizard-item-title" data-i18n="wizard.drypointTitle">干刻直刻 (Drypoint)</strong>
+                <span class="wizard-item-desc" data-i18n="wizard.drypointDesc">锋利钢针直接切削铜板，边缘翻起金属毛刺，暗部极深润。</span>
               </div>
             </label>
           </div>
@@ -363,48 +363,48 @@ export const modalsTemplate = `
 
         <!-- Section 2: 目标物理铜版规格 -->
         <div class="wizard-group">
-          <label class="wizard-label">
+          <label class="wizard-label" data-i18n="wizard.sec2">
             2. 目标物理铜版规格:
           </label>
           <div class="wizard-radio-grid wizard-radio-grid-3">
             <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferRes" value="900">
               <strong class="wizard-spec-title">900 × 660</strong>
-              <span class="wizard-spec-sub">标准轻量</span>
+              <span class="wizard-spec-sub" data-i18n="wizard.resStandard">标准轻量</span>
             </label>
             <label class="wizard-card wizard-card-center active">
               <input type="radio" name="transferRes" value="1500" checked>
               <strong class="wizard-spec-title wizard-highlight">1500 × 1100</strong>
-              <span class="wizard-spec-sub">2K 高清 (推荐)</span>
+              <span class="wizard-spec-sub" data-i18n="wizard.res2k">2K 高清 (推荐)</span>
             </label>
             <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferRes" value="3000">
               <strong class="wizard-spec-title">3000 × 2200</strong>
-              <span class="wizard-spec-sub">3K 展品级</span>
+              <span class="wizard-spec-sub" data-i18n="wizard.res3k">3K 展品级</span>
             </label>
           </div>
         </div>
 
         <!-- Section 3: 转移图层选择 -->
         <div class="wizard-group">
-          <label class="wizard-label">
+          <label class="wizard-label" data-i18n="wizard.sec3">
             3. 选择转录矢量图层:
           </label>
           <div class="wizard-radio-grid wizard-radio-grid-3">
             <label class="wizard-card wizard-card-center active">
               <input type="radio" name="transferLayer" value="all" checked>
-              <strong class="wizard-spec-title">全部母版图稿</strong>
-              <span id="wizardAllCount" class="wizard-spec-sub">全部矢量线条</span>
+              <strong class="wizard-spec-title" data-i18n="wizard.layerAll">全部母版图稿</strong>
+              <span id="wizardAllCount" class="wizard-spec-sub" data-i18n="wizard.layerAllSub">全部矢量线条</span>
             </label>
             <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferLayer" value="contours">
-              <strong class="wizard-spec-title">仅空间轮廓</strong>
-              <span id="wizardContoursCount" class="wizard-spec-sub">骨干轮廓线</span>
+              <strong class="wizard-spec-title" data-i18n="wizard.layerContours">仅空间轮廓</strong>
+              <span id="wizardContoursCount" class="wizard-spec-sub" data-i18n="wizard.layerContoursSub">骨干轮廓线</span>
             </label>
             <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferLayer" value="hatching">
-              <strong class="wizard-spec-title">仅曲面排线</strong>
-              <span id="wizardHatchingCount" class="wizard-spec-sub">细密顺形排线</span>
+              <strong class="wizard-spec-title" data-i18n="wizard.layerHatching">仅曲面排线</strong>
+              <span id="wizardHatchingCount" class="wizard-spec-sub" data-i18n="wizard.layerHatchingSub">细密顺形排线</span>
             </label>
           </div>
         </div>
@@ -412,7 +412,7 @@ export const modalsTemplate = `
         <!-- Section 4: 针尖下压力度 -->
         <div class="wizard-group">
           <div class="wizard-range-row">
-            <label for="wizardNeedlePressure" class="wizard-label">针尖刻划下压力度:</label>
+            <label for="wizardNeedlePressure" class="wizard-label" data-i18n="wizard.sec4">4. 针尖刻划下压力度:</label>
             <output id="wizardNeedlePressureVal" class="wizard-output-mono">65%</output>
           </div>
           <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" class="u-w-full">
@@ -420,8 +420,8 @@ export const modalsTemplate = `
 
         <!-- Buttons -->
         <div class="wizard-footer-actions">
-          <button id="transferCancelBtn" class="card-btn btn-transfer-pad">取消</button>
-          <button id="transferConfirmBtn" class="primary btn-transfer-pad">确认转入铜版并刻绘 →</button>
+          <button id="transferCancelBtn" class="card-btn btn-transfer-pad" data-i18n="action.cancel">取消</button>
+          <button id="transferConfirmBtn" class="primary btn-transfer-pad" data-i18n="wizard.confirmBtn">确认转入铜版并刻绘 →</button>
         </div>
       </div>
     </div>
@@ -436,13 +436,13 @@ export const modalsTemplate = `
   <div id="aboutModalOverlay" class="etchloom-modal-overlay" hidden>
     <div class="etchloom-modal about-modal">
       <div class="modal-header">
-        <h3 class="modal-title" data-i18n="action.about">关于 Etchloom</h3>
+        <h3 class="modal-title" data-i18n="about.title">关于 Etchloom</h3>
         <button id="aboutClose" class="card-btn btn-compact-pad">✕</button>
       </div>
       <div class="modal-body about-modal-body">
-        <p><strong>Etchloom</strong> 是一套面向计算机图形学与计算摄影的数字古典铜版画工作室系统。</p>
-        <p>系统完全基于纯数学几何管线与连续物理介质数值模拟，解耦实现五阶段离散数学管线、PDE 酸液侧向咬蚀与凹版压印光影着色。</p>
-        <p class="about-meta-text">版本：v2.0.0 (Decoupled Pure ESM Architecture)<br>许可证：MIT License</p>
+        <p data-i18n-html="about.p1"><strong>Etchloom</strong> 是一套面向计算机图形学与计算摄影的数字古典铜版画工作室系统。</p>
+        <p data-i18n-html="about.p2">系统完全基于纯数学几何管线与连续物理介质数值模拟，解耦实现五阶段离散数学管线、PDE 酸液侧向咬蚀与凹版压印光影着色。</p>
+        <p class="about-meta-text" data-i18n-html="about.meta">版本：v2.0.0 (Decoupled Pure ESM Architecture)<br>许可证：MIT License</p>
       </div>
     </div>
   </div>
