@@ -121,6 +121,13 @@ powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
 ```
 Once the service is listening on port `7861`, the frontend gateway detects it automatically and promotes inference to the local CUDA engine.
 
+### 5.3 Standalone Desktop Application (GitHub Releases)
+To use Etchloom as a native offline desktop app without opening a browser:
+- Download the installer from the repository's **Releases** section;
+- **Windows**: Download `Etchloom-Setup.exe` or `.msi` (~15 MB, zero external dependencies);
+- **macOS**: Download `Etchloom.dmg`;
+- Operates out-of-the-box with pure offline geometry & WebGPU acceleration, with automatic hookup to local Python services if active.
+
 ---
 
 ## 6. Testing & Quality Assurance

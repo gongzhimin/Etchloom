@@ -118,6 +118,13 @@ powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
 ```
 服务成功拉起后，前端网关将自动探测并无缝升级至本机 CUDA 服务。
 
+### 5.3 跨平台桌面独立客户端 (Desktop Release)
+若需要脱离浏览器直接作为独立软件使用：
+- 前往 GitHub 仓库右侧 **Releases** 页面下载最新发布的安装包；
+- **Windows**: 下载 `Etchloom-Setup.exe` 或 `.msi`（体积仅 ~15 MB，开箱即用）；
+- **macOS**: 下载 `Etchloom.dmg`；
+- 桌面客户端原生支持离线纯几何模式与 WebGPU 本地加速，若后台开启了 Python 服务亦可自动连接。
+
 ---
 
 ## 6. 自动化测试与质量保障体系 (Testing & Quality Assurance)
