@@ -5,11 +5,6 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version tag (e.g. v0.1.0)'
-        required: false
-        default: 'v0.1.0'
 
 jobs:
   release:
@@ -18,11 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: 'windows-latest'
-            args: ''
-          - platform: 'macos-latest'
-            args: ''
+        platform: [windows-latest, macos-latest]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -51,8 +42,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
-          releaseName: 'Etchloom ${{ github.ref_type == "tag" && github.ref_name || inputs.version }}'
+          tagName: v__VERSION__
+          releaseName: 'Etchloom v__VERSION__'
           releaseBody: |
             ## Etchloom Desktop Release
 
@@ -66,4 +57,3 @@ jobs:
             - Automatic discovery & promotion to local Python CUDA service (`127.0.0.1:7861`)
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
