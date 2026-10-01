@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capabilities for the Etchloom desktop application","local":true,"windows":["main"],"permissions":["core:default","opener:default"]}}
