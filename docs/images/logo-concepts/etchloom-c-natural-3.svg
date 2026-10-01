@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C 自然版 3 — 开放印痕</title>
+  <desc id="desc">去掉方形底板，使用三道柔和手工印痕组成开放的字母 E。</desc>
+  <path d="M31 25c-2 26-2 54 0 79" fill="none" stroke="#314239" stroke-width="11" stroke-linecap="round"/>
+  <path d="M34 30c21-3 43-2 65 1M34 64c15-2 30-2 47-1M34 98c21 0 43 2 65-1" fill="none" stroke="#314239" stroke-width="11" stroke-linecap="round"/>
+  <path d="M50 41c12-1 25-1 37 0M50 75c8-1 16-1 23-1M50 109c12 0 25 0 37-1" fill="none" stroke="#9c755f" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>
+</svg>

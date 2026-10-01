@@ -22,7 +22,7 @@
  * @param {number} [options.ink=0.90] Ink density [0.0 ~ 1.0]
  * @param {number} [options.pressure=0.65] Press roller pressure [0.0 ~ 1.0]
  * @param {number} [options.tone=0.04] Surface plate wiping tone [0.0 ~ 1.0]
- * @param {'rough'|'smooth'} [options.paper='rough'] Cotton paper finish
+ * @param {'rough'|'smooth'|'linen'|'rosaspina'} [options.paper='rough'] Paper surface preset
  * @param {number} [options.seed=17] Print randomness seed
  * @param {Uint8ClampedArray} [targetBuffer] Optional pre-allocated buffer (W * H * 4) to avoid GC
  * @returns {{ width: number, height: number, pixels: Uint8ClampedArray }} Rendered bitmap container
@@ -44,7 +44,11 @@ function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null) {
   const ink = options.ink ?? 0.90;
   const pressure = options.pressure ?? 0.65;
   const tone = options.tone ?? 0.04;
-  const rough = options.paper !== 'smooth';
+  const paper = options.paper || 'rough';
+  const paperBase = paper === 'smooth' ? [252, 249, 243]
+    : paper === 'linen' ? [244, 238, 224]
+    : paper === 'rosaspina' ? [247, 242, 229]
+    : [247, 238, 219];
   const seed = options.seed ?? 17;
 
   const pm = Math.round(26 * W / 900);
@@ -81,10 +85,16 @@ function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null) {
         }
       } else {
         // 'print' mode: intaglio ink transfer onto rag cotton paper
-        const texture = rough ? noise * 9 : noise * 3.5;
-        const paperR = 248 - texture;
-        const paperG = 242 - texture;
-        const paperB = 226 - texture;
+        const fiber = (((x >> 3) * 37 ^ (y >> 3) * 91) & 15);
+        const cloud = (((x >> 5) * 23 ^ (y >> 5) * 41) & 15);
+        const strand = ((x & 31) < 2 && ((y >> 4) & 3) === 0) ? 4 : 0;
+        const texture = paper === 'smooth' ? noise * 2.5 + fiber * 0.12
+          : paper === 'linen' ? noise * 9 + fiber * 0.7 + strand
+          : paper === 'rosaspina' ? noise * 6 + fiber * 0.3 + cloud * 0.5
+          : noise * 13 + fiber * 0.9;
+        const paperR = paperBase[0] - texture;
+        const paperG = paperBase[1] - texture;
+        const paperB = paperBase[2] - texture;
 
         const dxLeft = x - pm;
         const dxRight = W - 1 - pm - x;
@@ -117,7 +127,11 @@ function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null) {
           const dryThreshold = Math.max(0, (0.65 - ink) * 1.65);
           const dryBreak = (dryThreshold > 0 && noise < dryThreshold) ? 0.0 : 1.0;
           const lineInk = (transferRate * (0.25 + 0.75 * ink) + burrInk) * dryBreak;
-          const variation = rough ? (0.75 + grainNoise[(i + seed * 997) % N] * 0.5) : 1.0;
+          const grain = grainNoise[(i + seed * 997) % N];
+          const variation = paper === 'smooth' ? 1.0
+            : paper === 'linen' ? 0.65 + grain * 0.7
+            : paper === 'rosaspina' ? 0.78 + grain * 0.42
+            : 0.68 + grain * 0.62;
           const surfaceTone = tone * ink * 0.32;
           const black = Math.min(0.98, lineInk * variation + surfaceTone);
 

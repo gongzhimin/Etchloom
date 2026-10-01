@@ -38,7 +38,7 @@ test('a superseded photo cannot replace the newer source or start its pipeline',
   }
 });
 
-test('oversized images are rejected before allocating a canvas', async () => {
+test('large images are downsampled before allocating processing buffers', async () => {
   const { PipelineController } = await import('file:///' + path.join(__dirname, '../src/ui/controllers/pipeline-controller.js').replace(/\\/g, '/'));
   const controller = new PipelineController({ log: () => {} });
   const originalReader = global.FileReader;
@@ -46,9 +46,20 @@ test('oversized images are rejected before allocating a canvas', async () => {
   const originalDocument = global.document;
   global.FileReader = class { readAsDataURL() { this.onload({ target: { result: 'large' } }); } };
   global.Image = class { constructor() { this.naturalWidth = 5000; this.naturalHeight = 5000; } set src(_) { this.onload(); } };
-  global.document = { createElement: () => { throw new Error('canvas allocated'); } };
+  let allocated = null;
+  global.document = { createElement: () => {
+    allocated = { width: 0, height: 0, getContext: () => ({ drawImage: () => {}, getImageData: () => ({ data: new Uint8ClampedArray(4) }) }) };
+    return allocated;
+  } };
+  controller.runPipelineOnLoadedPhoto = async () => {};
   try {
-    await assert.rejects(controller.handleImageFile({ name: 'large.png', size: 100 }), /1200 万像素/);
+    const image = await controller.handleImageFile({ name: 'large.png', size: 100 });
+    assert.equal(image.originalWidth, 5000);
+    assert.equal(image.originalHeight, 5000);
+    assert.ok(image.width * image.height <= 12000000);
+    assert.ok(image.width <= 4096 && image.height <= 4096);
+    assert.equal(allocated.width, image.width);
+    assert.equal(allocated.height, image.height);
   } finally {
     global.FileReader = originalReader;
     global.Image = originalImage;

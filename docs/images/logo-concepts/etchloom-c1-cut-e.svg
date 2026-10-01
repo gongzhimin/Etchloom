@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C1 — 刀切 E</title>
+  <desc id="desc">象牙纸色的粗线 E，笔画末端呈斜切刻痕。</desc>
+  <rect x="10" y="10" width="108" height="108" rx="19" fill="#314239"/>
+  <path d="M38 29v70M39 31h55M39 64h43M39 97h55" fill="none" stroke="#faf7f0" stroke-width="11" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="m88 26 10 10m-22 23 10 10m2 23 10 10" fill="none" stroke="#9c755f" stroke-width="3"/>
+</svg>

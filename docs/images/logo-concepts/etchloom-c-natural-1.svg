@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C 自然版 1 — 柔和刻线</title>
+  <desc id="desc">延续原始 E 图形，以微弯且粗细变化的刻线取代规整直线。</desc>
+  <path d="M29 13c21-3 50-2 72 1 10 1 16 7 17 17 2 21 1 50-1 70-1 10-8 16-18 17-22 2-49 1-70-1-10-1-16-8-17-18-2-21-2-49 0-69 1-10 7-16 17-17Z" fill="#314239"/>
+  <path d="M39 28c-2 19-2 48-1 71" fill="none" stroke="#faf7f0" stroke-width="9" stroke-linecap="round"/>
+  <path d="M41 33c17-2 35-1 52 1M41 64c13-1 26-1 39 0M40 96c17 0 35 1 53-1" fill="none" stroke="#faf7f0" stroke-width="9" stroke-linecap="round"/>
+  <path d="M52 44c9-1 19-1 28 0M51 75c7-1 13-1 20-1M52 106c9 0 19 0 28-1" fill="none" stroke="#9c755f" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>
+</svg>

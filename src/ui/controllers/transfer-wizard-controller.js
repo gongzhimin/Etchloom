@@ -3,6 +3,12 @@
  * Manages layer selection (contours, hatching, all), resolution allocation (900, 1500 2K, 3000 3K),
  * plate technique (etching vs drypoint), and authentic hairline needle rasterization.
  */
+export function transferStrokeWidth(pathWidth, imageScale, plateWidth, lineWidthScale = 1) {
+  const baseNeedleWidth = Math.max(0.6, (plateWidth / 1500) * 0.9);
+  const pathPixels = (pathWidth || 1) * imageScale * 0.75;
+  return Math.max(0.5, Math.min(baseNeedleWidth * 2, pathPixels)) * lineWidthScale;
+}
+
 export class TransferWizardController {
   constructor(options = {}) {
     this.overlay = document.getElementById(options.overlayId || 'transferModalOverlay') || document.getElementById('transferWizardOverlay');
@@ -94,6 +100,17 @@ export class TransferWizardController {
           pressureVal.textContent = pressureSlider.value + '%';
         };
       }
+      const lineWidthSlider = document.getElementById('wizardLineWidth');
+      const lineWidthVal = document.getElementById('wizardLineWidthVal');
+      if (lineWidthSlider && lineWidthVal) {
+        lineWidthSlider.oninput = () => {
+          lineWidthVal.textContent = `${lineWidthSlider.value}%`;
+          const stageSlider = document.getElementById('transferLineWidth');
+          if (stageSlider) stageSlider.value = lineWidthSlider.value;
+          const stageOutput = document.getElementById('transferLineWidthVal');
+          if (stageOutput) stageOutput.textContent = `${lineWidthSlider.value}%`;
+        };
+      }
     }
 
     if (this.confirmBtn) {
@@ -109,6 +126,13 @@ export class TransferWizardController {
       this.overlay = document.getElementById('transferModalOverlay') || document.getElementById('transferWizardOverlay');
     }
     if (!this.overlay) return;
+    const stageLineWidth = document.getElementById('transferLineWidth');
+    const wizardLineWidth = document.getElementById('wizardLineWidth');
+    if (stageLineWidth && wizardLineWidth) {
+      wizardLineWidth.value = stageLineWidth.value;
+      const output = document.getElementById('wizardLineWidthVal');
+      if (output) output.textContent = `${wizardLineWidth.value}%`;
+    }
 
     const { masterPaths, contours, hatching } = this.getMasterData();
     const mLen = masterPaths?.length || 0;
@@ -150,6 +174,7 @@ export class TransferWizardController {
     const selectedRes = Number(document.querySelector('input[name="transferRes"]:checked')?.value || 1500);
     const selectedTechnique = document.querySelector('input[name="transferTechnique"]:checked')?.value || 'etching';
     const pressure = Number(document.getElementById('wizardNeedlePressure')?.value || 65) / 100;
+    const lineWidthScale = Number(document.getElementById('wizardLineWidth')?.value || 100) / 100;
 
     const { masterPaths, contours, hatching, loadedImage } = this.getMasterData();
 
@@ -188,6 +213,7 @@ export class TransferWizardController {
       selectedRes,
       selectedTechnique,
       needlePressure: pressure,
+      lineWidthScale,
       loadedImage
     });
   }

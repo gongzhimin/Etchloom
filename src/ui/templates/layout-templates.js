@@ -10,19 +10,30 @@ export const headerTemplate = `
       <img class="brand-logo" src="docs/images/etchloom-logo.svg" alt="Etchloom Logo">
       <div>
         <h1 class="brand-title" data-i18n="app.title">Etchloom</h1>
-        <p class="brand-subtitle" data-i18n="app.subtitle">数字版画工坊</p>
+        <p class="brand-subtitle" data-i18n="app.subtitle">数字古典版画工坊</p>
       </div>
     </div>
 
-    <!-- Workflow Navigation -->
-    <nav class="workspace-tabs" aria-label="工作阶段">
-      <button id="showGenerator" class="active" data-i18n="tab.master">母版设计</button>
-      <button id="showPlate" data-i18n="tab.plate">虚拟铜版</button>
+    <!-- Two-Stage Master Stepper Navigation -->
+    <nav class="master-stepper" data-i18n-aria="nav.stages" aria-label="工作阶段">
+      <button id="showGenerator" class="step-pill active" data-i18n-title="nav.step1">
+        <span class="step-pill-num">1</span>
+        <span data-i18n="nav.step1">制作母版</span>
+      </button>
+      <span class="step-connector">────────</span>
+      <button id="showPlate" class="step-pill" data-i18n-title="nav.step2">
+        <span class="step-pill-num">2</span>
+        <span data-i18n="nav.step2">蚀刻铜版</span>
+      </button>
     </nav>
 
     <!-- Header Actions -->
     <div class="header-actions">
-      <button id="langToggle" class="btn-secondary" data-i18n="lang.toggle">English</button>
+      <div id="languageTabs" class="language-tabs" role="tablist" data-i18n-aria="lang.label" aria-label="界面语言">
+        <button type="button" class="language-tab" role="tab" data-locale="zh-CN" aria-selected="true">中文</button>
+        <button type="button" class="language-tab" role="tab" data-locale="en-US" aria-selected="false">English</button>
+        <button type="button" class="language-tab" role="tab" data-locale="vi-VN" aria-selected="false">Tiếng Việt</button>
+      </div>
       <button id="exportScheme" class="btn-secondary" data-i18n="action.exportScheme">导出配置</button>
       <button id="aboutBtn" class="btn-secondary" data-i18n="action.about">关于</button>
     </div>
@@ -30,169 +41,177 @@ export const headerTemplate = `
 `;
 
 export const sidebarTemplate = `
-  <aside class="app-sidebar">
-
-    <!-- Drawer 00: 图像感知 -->
-    <section id="drawer0">
-      <h2 class="drawer-title" data-i18n="sec.0.title">00 / 图像感知</h2>
-      <button id="uploadPhoto" class="primary" data-i18n="sec.0.upload">载入照片</button>
-      <input id="photoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
-      
-      <label class="checkbox-label">
-        <input id="lotus3D" type="checkbox" checked>
-        <span data-i18n="sec.0.lotus">3D几何增强</span>
-        <span id="modelStatus" class="badge badge-amber u-ml-auto">检测中…</span>
-      </label>
-
-      <label for="exposure"><span data-i18n="sec.0.exposure">曝光度</span> <output id="exposureVal">50%</output></label>
-      <input id="exposure" type="range" min="0" max="100" value="50">
-
-      <label for="blackPoint"><span data-i18n="sec.0.black">黑场</span> <output id="blackPointVal">0%</output></label>
-      <input id="blackPoint" type="range" min="0" max="50" value="0">
-
-      <label for="whitePoint"><span data-i18n="sec.0.white">白场</span> <output id="whitePointVal">100%</output></label>
-      <input id="whitePoint" type="range" min="50" max="100" value="100">
-    </section>
-
-    <!-- Drawer 01: 空间轮廓 -->
-    <section id="drawer1">
-      <h2 class="drawer-title" data-i18n="sec.1.title">01 / 空间轮廓</h2>
-      <label for="contourDetail"><span data-i18n="sec.1.contour">轮廓密度</span> <output id="contourDetailVal">75%</output></label>
-      <input id="contourDetail" type="range" min="0" max="100" value="75">
-
-      <label for="aerialStrength"><span data-i18n="sec.1.aerial">透视强度</span> <output id="aerialStrengthVal">60%</output></label>
-      <input id="aerialStrength" type="range" min="0" max="100" value="60">
-
-      <label for="needleWidth"><span data-i18n="sec.1.width">轮廓刀宽</span> <output id="needleWidthVal">0.8 mm</output></label>
-      <input id="needleWidth" type="range" min="1" max="30" value="8">
-    </section>
-
-    <!-- Drawer 02: 曲面排线 -->
-    <section id="drawer2">
-      <h2 class="drawer-title" data-i18n="sec.2.title">02 / 曲面排线</h2>
-      <label for="density"><span data-i18n="sec.2.hatch">排线密度</span> <output id="densityVal">80%</output></label>
-      <input id="density" type="range" min="0" max="100" value="80">
-
-      <label for="curvatureGate"><span data-i18n="sec.2.gate">曲率门控</span> <output id="curvatureGateVal">70%</output></label>
-      <input id="curvatureGate" type="range" min="0" max="100" value="70">
-
-      <label for="crossHatch"><span data-i18n="sec.2.cross">交叉排线</span> <output id="crossHatchVal">65%</output></label>
-      <input id="crossHatch" type="range" min="0" max="100" value="65">
-
-      <label for="frameStyle"><span data-i18n="sec.2.frame">版画外框</span></label>
-      <select id="frameStyle">
-        <option value="double" selected data-i18n="frame.double">双层古典边框</option>
-        <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
-        <option value="rough" data-i18n="frame.rough">手工古拙边框</option>
-        <option value="none" data-i18n="frame.none">无外框</option>
-      </select>
-    </section>
-
-    <!-- Drawer 03: 铜版工坊 -->
-    <section id="drawer3">
-      <h2 class="drawer-title" data-i18n="sec.3.title">03 / 铜版工坊</h2>
-
-      <!-- Process A: 图稿上版 -->
-      <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title" data-i18n="sec.3.groupA">工序 A · 上版</div>
-        <button id="openTransferWizardBtn" class="primary u-mt-1" data-i18n="sec.3.wizardBtn">图稿上版向导...</button>
-      </div>
-
-      <!-- Process B: 版面刻绘与修版 -->
-      <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title" data-i18n="sec.3.groupB">工序 B · 刻绘修版</div>
-        <div class="tools">
-          <button class="active" data-tool="needle" data-i18n="tool.needle">刻针</button>
-          <button data-tool="dry" data-i18n="tool.dry">干刻针</button>
-          <button data-tool="stop" data-i18n="tool.stop">防蚀漆</button>
-          <button data-tool="polish" data-i18n="tool.polish">刮磨器</button>
-        </div>
-
-        <label for="size"><span data-i18n="sec.3.size">工具直径</span> <output id="sizeValue">4 px</output></label>
-        <input id="size" type="range" min="1" max="50" value="4">
-
-        <div class="row u-mt-2">
-          <button id="undo" data-i18n="action.undo">撤销刻线</button>
-          <button id="clear" data-i18n="action.clear">清空版面</button>
-        </div>
-        <button id="demo" class="u-mt-2" data-i18n="action.demo">载入静物练习版</button>
-      </div>
-
-      <!-- Process C: 酸液腐蚀参数 -->
-      <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title" data-i18n="sec.3.groupC">工序 C · 酸液腐蚀</div>
-        <label for="acid"><span data-i18n="sec.3.acid">酸液浓度</span> <output id="acidValue">45%</output></label>
-        <input id="acid" type="range" min="1" max="100" value="45">
-
-        <label for="grain"><span data-i18n="sec.3.grain">金相颗粒</span> <output id="grainValue">45%</output></label>
-        <input id="grain" type="range" min="0" max="100" value="45">
-
-        <label class="checkbox-label u-mt-2">
-          <input id="irreversible" type="checkbox">
-          <span data-i18n="sec.3.irreversible">不可逆模式</span>
-        </label>
-        <button id="etch" hidden data-i18n="sec.3.startAcid">开始腐蚀</button>
-      </div>
-
-      <!-- Process D: 填墨与压印试印 -->
-      <div class="drawer-subgroup">
-        <div class="drawer-subgroup-title" data-i18n="sec.3.groupD">工序 D · 填墨试印</div>
-        <label for="ink"><span data-i18n="sec.3.ink">油墨饱满</span> <output id="inkValue">90%</output></label>
-        <input id="ink" type="range" min="0" max="150" value="90">
-
-        <label for="pressure"><span data-i18n="sec.3.pressure">压印压力</span> <output id="pressureValue">65%</output></label>
-        <input id="pressure" type="range" min="0" max="100" value="65">
-
-        <label for="tone"><span data-i18n="sec.3.plateTone">留墨调子</span> <output id="toneValue">4%</output></label>
-        <input id="tone" type="range" min="0" max="35" value="4">
-
-        <label for="paper" data-i18n="sec.3.paper">纸张材质</label>
-        <select id="paper">
-          <option value="rough" data-i18n="paper.rough">暖白 · 粗纹棉纸</option>
-          <option value="smooth" data-i18n="paper.smooth">象牙白 · 细纹纸</option>
-        </select>
-
-        <label for="plateFrameStyle" data-i18n="sec.3.frame">印样外框</label>
-        <select id="plateFrameStyle">
-          <option value="double" selected data-i18n="frame.double">双层古典边框</option>
-          <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
-          <option value="rough" data-i18n="frame.rough">手工古拙边框</option>
-          <option value="none" data-i18n="frame.none">无外框</option>
-        </select>
-
-        <button id="print" class="primary u-mt-2" data-i18n="sec.3.print">取一张印样</button>
-
-        <div class="row u-mt-2">
-          <button id="save" data-i18n="action.save">保存虚拟版</button>
-          <button id="load" data-i18n="action.load">打开虚拟版</button>
-        </div>
-        <input id="file" type="file" accept="application/json,.json" hidden>
-      </div>
-    </section>
-
+  <aside class="app-sidebar" hidden>
+    <!-- Hidden container preserved for backward compatibility -->
   </aside>
 `;
 
 export const masterWorkspaceTemplate = `
-  <!-- 1. Master Workspace (Step Flow Grid: Step 0 ~ Step 6) -->
-  <div id="masterWorkspace">
-    <div class="workspace-header">
-      <div>
-        <h2 data-i18n="tab.master">母版设计</h2>
-        <p data-i18n="step.intro">点击卡片可全屏特写或独立导出图层。</p>
+  <!-- 1. Master Workspace (Two-Stage Architecture: Hero Preview + 7-Stage Filmstrip + 3 Drawers) -->
+  <div id="masterWorkspace" class="master-workspace-wrap">
+    <section id="masterIntro" class="master-entry" aria-labelledby="masterIntroTitle">
+      <div class="master-entry-content">
+        <h2 id="masterIntroTitle" data-i18n="m1.initTitle">从照片开始</h2>
+        <p data-i18n="m1.initDesc">将照片转为可上版的线条母版。</p>
+        <p id="masterLoadError" class="master-load-error" role="alert" hidden></p>
+        <button id="selectPhotoBtn" type="button" class="btn-sage-primary" data-i18n="cta.selectPhoto">选择照片</button>
+        <button id="loadDemoBtn" type="button" class="master-demo-link" data-i18n="m1.loadDemo">试用示例图</button>
       </div>
-      <button id="transferToPlateBtn" class="primary btn-transfer-pad" data-i18n="action.transferToPlate">雕刻至铜版 →</button>
+    </section>
+    <section id="masterComputing" class="master-entry" aria-live="polite" hidden>
+      <div class="master-entry-content">
+        <img id="masterSourcePreview" class="master-source-preview" data-i18n-alt="m1.sourcePreview" alt="原图预览" hidden>
+        <h2 data-i18n="m1.compTitle">正在制作母版…</h2>
+        <progress class="master-computing-progress" aria-label="正在制作母版" data-i18n-aria="m1.compTitle"></progress>
+      </div>
+    </section>
+    <!-- Master Top Banner -->
+    <div class="master-top-banner" id="masterTopBanner" data-master-result hidden>
+      <div class="master-banner-info">
+        <div class="master-banner-title-row">
+          <h2 class="master-title-serif" data-i18n="m1.readyTitle">母版已完成</h2>
+          <span id="masterStrokesBadge" class="badge badge-green font-mono" data-i18n="m1.readyCount">3,892 条矢量线条</span>
+        </div>
+      </div>
+
+      <div class="master-banner-actions">
+        <button id="uploadPhoto" class="btn-atelier-secondary" data-i18n="m1.changePhoto">换一张照片</button>
+        <input id="photoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" hidden>
+        <button id="transferToPlateBtn" class="btn-sage-primary" data-i18n="cta.transferToPlate">制作铜版 →</button>
+      </div>
+    </div>
+    <div id="masterRedrawStatus" class="master-redraw-status" role="status" aria-live="polite" hidden>
+      <span data-i18n="m1.redrawing">正在重绘母版…</span>
+      <progress class="master-redraw-progress" data-i18n-aria="m1.redrawing" aria-label="正在重绘母版"></progress>
     </div>
 
-    <!-- 7-Stage Adaptive Grid (2 columns x 4 rows) -->
-    <div id="stepFlowGridContainer"></div>
+    <!-- Master Hero Preview Viewport -->
+    <div class="master-hero-viewport" id="masterHeroViewport" data-master-result hidden>
+      <div class="master-hero-frame">
+        <canvas id="masterHeroCanvas" class="master-hero-canvas" width="900" height="660" data-i18n-aria="m1.preview" aria-label="母版预览"></canvas>
+        <div class="master-hero-footer-row font-mono">
+          <span id="heroResolutionMeta">900 × 660 px</span>
+          <span id="masterHeroBrandLabel" data-i18n="m1.masterLabel">上版母稿</span>
+        </div>
+      </div>
+
+      <!-- Floating Action Capsule -->
+      <div class="floating-action-capsule">
+        <button id="heroInspectBtn" data-i18n="card.inspect">全屏特写</button>
+        <span class="u-text-muted">|</span>
+        <button id="heroExportBtn" data-i18n="card.download">导出母版 SVG</button>
+      </div>
+    </div>
+
+    <!-- Section: 7-Stage Pipeline Filmstrip Viewport -->
+    <details id="filmstripDetails" class="filmstrip-drawer" data-master-result hidden>
+      <summary class="filmstrip-summary">
+        <div class="filmstrip-summary-left">
+          <span data-i18n="m1.filmstripTitle">查看制作过程</span>
+        </div>
+        <span class="u-text-muted font-mono" aria-hidden="true">▾</span>
+      </summary>
+
+      <!-- Horizontal Scrollable Filmstrip Container -->
+      <div class="filmstrip-scroll">
+        <div id="stepFlowGridContainer"></div>
+      </div>
+    </details>
+
+    <!-- Section: Full Inventory of 25 Parameters in 3 Drawers -->
+    <div class="param-drawers-container" data-master-result hidden>
+      <!-- Drawer 1: 常用外观效果 (3 项默认展开) -->
+      <details class="param-drawer" open>
+        <summary>
+          <span data-i18n="m1.drawerAppearance">外观调整</span>
+          <span class="u-text-muted font-mono" aria-hidden="true">▾</span>
+        </summary>
+        <div class="param-grid-3">
+          <div>
+            <label for="frameStyle"><span data-i18n="sec.2.frame">版画外框</span></label>
+            <select id="frameStyle">
+              <option value="double" selected data-i18n="frame.double">双层古典边框</option>
+              <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
+              <option value="rough" data-i18n="frame.rough">手工古拙边框</option>
+              <option value="none" data-i18n="frame.none">无外框</option>
+            </select>
+          </div>
+          <div>
+            <label for="density"><span data-i18n="sec.2.hatch">排线密度</span> <output id="densityVal">80%</output></label>
+            <input id="density" type="range" min="0" max="100" value="80">
+          </div>
+          <div>
+            <label for="needleWidth"><span data-i18n="sec.1.width">轮廓刀宽</span> <output id="needleWidthVal">0.8 mm</output></label>
+            <input id="needleWidth" type="range" min="1" max="30" value="8">
+          </div>
+        </div>
+      </details>
+
+      <!-- Drawer 2: 高级光影参数 (3 项默认折叠) -->
+      <details class="param-drawer">
+        <summary>
+          <span data-i18n="m1.drawerTone">明暗调整</span>
+          <span class="u-text-muted font-mono" aria-hidden="true">▾</span>
+        </summary>
+        <div class="param-grid-3">
+          <div>
+            <label for="exposure"><span data-i18n="sec.0.exposure">曝光度</span> <output id="exposureVal">50%</output></label>
+            <input id="exposure" type="range" min="0" max="100" value="50">
+          </div>
+          <div>
+            <label for="blackPoint"><span data-i18n="sec.0.black">黑场</span> <output id="blackPointVal">0%</output></label>
+            <input id="blackPoint" type="range" min="0" max="50" value="0">
+          </div>
+          <div>
+            <label for="whitePoint"><span data-i18n="sec.0.white">白场</span> <output id="whitePointVal">100%</output></label>
+            <input id="whitePoint" type="range" min="50" max="100" value="100">
+          </div>
+        </div>
+      </details>
+
+      <!-- Drawer 3: 专家算法参数 (5 项默认折叠) -->
+      <details class="param-drawer">
+        <summary>
+          <span data-i18n="m1.drawerAlgorithm">进阶参数</span>
+          <span class="u-text-muted font-mono" aria-hidden="true">▾</span>
+        </summary>
+        <div>
+          <div class="param-lotus-row">
+            <label class="checkbox-label">
+              <input id="lotus3D" type="checkbox" checked>
+              <span data-i18n="sec.0.lotus">3D几何增强</span>
+              <span id="modelStatus" class="badge badge-amber u-ml-auto">检测中…</span>
+            </label>
+            <span class="filmstrip-tip" data-i18n="m1.lotusDesc">分析物体曲率张量，驱动排线顺形环绕</span>
+          </div>
+          <div class="param-grid-4">
+            <div>
+              <label for="contourDetail"><span data-i18n="sec.1.contour">轮廓密度</span> <output id="contourDetailVal">75%</output></label>
+              <input id="contourDetail" type="range" min="0" max="100" value="75">
+            </div>
+            <div>
+              <label for="aerialStrength"><span data-i18n="sec.1.aerial">透视强度</span> <output id="aerialStrengthVal">60%</output></label>
+              <input id="aerialStrength" type="range" min="0" max="100" value="60">
+            </div>
+            <div>
+              <label for="curvatureGate"><span data-i18n="sec.2.gate">曲率门控</span> <output id="curvatureGateVal">70%</output></label>
+              <input id="curvatureGate" type="range" min="0" max="100" value="70">
+            </div>
+            <div>
+              <label for="crossHatch"><span data-i18n="sec.2.cross">交叉排线</span> <output id="crossHatchVal">65%</output></label>
+              <input id="crossHatch" type="range" min="0" max="100" value="65">
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
 
     <!-- Atelier Slide-up Activity Log Console -->
-    <div id="activityLogWrap" class="activity-log-wrap collapsed">
+    <div id="activityLogWrap" class="activity-log-wrap collapsed" data-master-result hidden>
       <div class="activity-log-header">
         <span class="log-title" data-i18n="console.title">运行日志</span>
         <span id="logStatusBadge" class="badge badge-green">IDLE</span>
-        <button id="clearLogBtn" class="card-btn btn-compact-pad u-ml-auto" data-i18n="action.clear">清空</button>
+        <button id="clearLogBtn" class="card-btn btn-compact-pad u-ml-auto" data-i18n="action.clearLog">清空日志</button>
         <span id="logToggleIndicator" class="log-toggle-arrow">▲</span>
       </div>
       <div id="activityLog" class="activity-log-body">
@@ -203,79 +222,269 @@ export const masterWorkspaceTemplate = `
 `;
 
 export const plateWorkspaceTemplate = `
-  <!-- 2. Virtual Plate Studio Workspace (Interactive Copperplate Studio) -->
-  <div id="plateWorkspace" hidden class="plate-studio-wrap">
-    <!-- 5-Stage Classical Printmaking Stepper -->
-    <div id="plateStepper" class="plate-process-stepper">
-      <div class="stepper-step active" data-step="1" id="stepTransfer">
-        <span class="stepper-num">1</span>
-        <span data-i18n="stepper.transfer">上版</span>
+  <!-- 2. Virtual Plate Studio Workspace (Two-Stage Architecture: Sub-Stepper + Dynamic Substage Panels) -->
+  <div id="plateWorkspace" hidden class="plate-studio-wrap-v2">
+    <!-- Sub-Stepper Top Bar -->
+    <div class="plate-sub-header">
+      <div class="plate-process-stepper" id="plateStepper">
+        <div class="stepper-step active" data-step="1" id="stepTransfer">
+          <span class="stepper-num">1</span>
+          <span data-i18n="stepper.transfer">上版</span>
+        </div>
+        <span class="stepper-arrow">→</span>
+        <div class="stepper-step" data-step="2" id="stepInscribe">
+          <span class="stepper-num">2</span>
+          <span data-i18n="stepper.inscribe">刻绘</span>
+        </div>
+        <span class="stepper-arrow">→</span>
+        <div class="stepper-step" data-step="3" id="stepEtch">
+          <span class="stepper-num">3</span>
+          <span data-i18n="stepper.etch">腐蚀</span>
+        </div>
+        <span class="stepper-arrow">→</span>
+        <div class="stepper-step" data-step="4" id="stepPrint">
+          <span class="stepper-num">4</span>
+          <span data-i18n="stepper.print">试印</span>
+        </div>
+        <!-- Hidden backward-compatibility alias for test assertions -->
+        <div class="stepper-step u-hidden" data-step="4" id="stepInk">
+          <span data-i18n="stepper.ink">填墨</span>
+        </div>
       </div>
-      <span class="stepper-arrow">→</span>
-      <div class="stepper-step" data-step="2" id="stepInscribe">
-        <span class="stepper-num">2</span>
-        <span data-i18n="stepper.inscribe">刻绘</span>
-      </div>
-      <span class="stepper-arrow">→</span>
-      <div class="stepper-step" data-step="3" id="stepEtch">
-        <span class="stepper-num">3</span>
-        <span data-i18n="stepper.etch">腐蚀</span>
-      </div>
-      <span class="stepper-arrow">→</span>
-      <div class="stepper-step" data-step="4" id="stepInk">
-        <span class="stepper-num">4</span>
-        <span data-i18n="stepper.ink">填墨</span>
-      </div>
-      <span class="stepper-arrow">→</span>
-      <div class="stepper-step" data-step="5" id="stepPrint">
-        <span class="stepper-num">5</span>
-        <span data-i18n="stepper.print">试印</span>
-      </div>
+
+      <button id="backToMasterBtn" class="btn-link-atelier" data-i18n="m2.backToMaster">
+        ← 查看母版
+      </button>
     </div>
 
-    <!-- Workbench Top Bar -->
-    <div class="plate-top-bar">
-      <!-- View Modes -->
-      <div class="view-tabs">
-        <button class="active" data-view="plate" data-i18n="view.plate">虚拟铜版</button>
-        <button data-view="depth" data-i18n="view.depth">刻深图</button>
-        <button data-view="print" data-i18n="view.print">压印预览</button>
-      </div>
+    <!-- Main Workspace Body: Dynamic Left Sidebar + Right Canvas Area -->
+    <div class="plate-body">
+      <!-- Dynamic Left Sidebar with 4 Stage Panels -->
+      <aside class="plate-sidebar">
+        <!-- Panel 1: 工序 1 · 图稿上版 -->
+        <div id="plateStagePanel1" class="plate-stage-panel active">
+          <div>
+            <h3 class="plate-stage-title-serif" data-i18n="m2.step1Title">选择上版方式</h3>
+            <p class="plate-stage-desc" data-i18n="m2.step1Desc">先转入母版线条，再亲手刻绘。</p>
 
-      <!-- Resolution Switcher (900, 1500 2K, 3000 3K) -->
-      <div class="resolution-selector">
-        <span class="resolution-label" data-i18n="plate.resLabel">物理网格:</span>
-        <button class="res-btn" data-res="900">900px</button>
-        <button class="res-btn active" data-res="1500">1500px (2K)</button>
-        <button class="res-btn" data-res="3000">3000px (3K)</button>
-      </div>
+            <div class="plate-master-stats-card">
+              <div>
+                <div class="u-text-bold" data-i18n="m2.currentMaster">母版线条</div>
+                <div id="plateMasterStats" class="font-mono u-text-gold" data-i18n="m2.currentMasterLines">3,892 矢量线条</div>
+              </div>
+            </div>
 
-      <!-- Plate Fullscreen Button -->
-      <button id="plateFullscreenBtn" class="btn-plate-fullscreen" data-i18n-title="plate.fullscreenTitle" data-i18n="plate.fullscreen">⛶ 全屏特写</button>
+            <div class="wizard-radio-grid wizard-radio-grid-2">
+              <label class="wizard-card wizard-card-label active">
+                <input type="radio" name="stageTransferTechnique" value="etching" checked>
+                <div>
+                  <strong class="wizard-item-title" data-i18n="wizard.etchingTitle">标准蚀刻针划线 (推荐)</strong>
+                  <span class="wizard-item-desc" data-i18n="wizard.etchingDesc">划破防酸保护漆暴露裸铜(刻深 0μm)，进入工序2手工补线或补漆修抹。</span>
+                </div>
+              </label>
+              <label class="wizard-card wizard-card-label">
+                <input type="radio" name="stageTransferTechnique" value="drypoint">
+                <div>
+                  <strong class="wizard-item-title" data-i18n="wizard.drypointTitle">干刻直刻 (Drypoint)</strong>
+                  <span class="wizard-item-desc" data-i18n="wizard.drypointDesc">钢针直接在铜板起毛刺，进入工序2亲手在暗部反复深切加重。</span>
+                </div>
+              </label>
+            </div>
 
-      <!-- Unified Acid Bite Console -->
-      <div class="acid-console-wrap">
-        <button id="etchBtn" class="primary btn-etch-top" data-i18n="sec.3.startAcid">开始腐蚀</button>
-        <!-- Backward compatibility elements for tests -->
-        <button id="etchTopBtn" hidden></button>
-        <div id="plateAcidGauge" class="gauge-badge">腐蚀 0.0s · 深度 0.0μm</div>
-        <span id="timerBadge" hidden>腐蚀累计 0.0 s</span>
-        <span id="timer" hidden>腐蚀累计 0.0 s</span>
-      </div>
-    </div>
+          </div>
 
-    <!-- High-Resolution Plate Canvas Frame (Default 1500x1100 2K) -->
-    <div class="plate-canvas-frame" id="plateCanvasFrame">
-      <div class="plate-canvas-actions">
-        <button id="plateCanvasInspectBtn" class="card-btn btn-inspect-layer" data-i18n-title="card.clickInspect">⛶ <span data-i18n="card.inspect">全屏特写</span></button>
-      </div>
-      <canvas id="canvas" width="1500" height="1100" aria-label="数字铜版绘图区"></canvas>
-    </div>
+          <div class="u-pt-3 u-border-t">
+            <label for="transferLineWidth"><span data-i18n="wizard.lineWidth">上版线宽</span> <output id="transferLineWidthVal">100%</output></label>
+            <input id="transferLineWidth" type="range" min="50" max="200" step="10" value="100">
+            <button id="panel1ConfirmBtn" class="btn-sage-primary u-w-full" data-i18n="cta.confirmTransfer">上版，开始刻绘 →</button>
+            <button id="openTransferWizardBtn" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="sec.3.wizardBtn">调整上版细节</button>
+          </div>
+        </div>
 
-    <!-- Studio Caption & Telemetry -->
-    <div class="plate-caption">
-      <span id="caption" data-i18n="caption.plate">针尖划开保护层，等待酸液咬蚀</span>
-      <span id="status" class="telemetry-status-val" data-i18n="status.ready">运行就绪</span>
+        <!-- Panel 2: 工序 2 · 刻绘修版 -->
+        <div id="plateStagePanel2" class="plate-stage-panel">
+          <div>
+            <h3 class="plate-stage-title-serif" data-i18n="m2.step2Title">亲手刻绘</h3>
+            <p class="plate-stage-desc" data-i18n="m2.step2Desc">在铜版上补线或修整刻痕。</p>
+
+            <div class="tools">
+              <button class="active" data-tool="needle" data-i18n="tool.needle">刻针</button>
+              <button data-tool="polish" data-i18n="tool.polish">刮磨器</button>
+            </div>
+
+            <label for="size"><span data-i18n="sec.3.size">工具直径</span> <output id="sizeValue">4 px</output></label>
+            <input id="size" type="range" min="1" max="50" value="4">
+
+            <div class="row u-mt-2">
+              <button id="undo" class="btn-atelier-secondary" data-i18n="action.undo">撤销刻线</button>
+              <button id="clear" class="btn-atelier-secondary" data-i18n="action.clear">清空版面</button>
+            </div>
+
+            <details class="param-drawer u-mt-3">
+              <summary class="u-text-secondary">
+                <span data-i18n="m2.moreTools">更多工具</span>
+              </summary>
+              <div class="u-mt-2">
+                <div class="tools">
+                  <button data-tool="dry" data-i18n="tool.dry">干刻针</button>
+                  <button data-tool="stop" data-i18n="tool.stop">防蚀漆</button>
+                </div>
+                <label class="checkbox-label u-mt-2">
+                  <input id="irreversible" type="checkbox">
+                  <span data-i18n="sec.3.irreversible">不可逆模式</span>
+                </label>
+                <button id="demo" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="action.demo">载入静物练习版</button>
+              </div>
+            </details>
+          </div>
+
+          <div class="u-pt-3 u-border-t">
+            <button id="panel2EtchNavBtn" class="btn-sage-primary u-w-full" data-i18n="cta.startEtchNav">前往腐蚀 →</button>
+          </div>
+        </div>
+
+        <!-- Panel 3: 工序 3 · 酸液腐蚀 -->
+        <div id="plateStagePanel3" class="plate-stage-panel">
+          <div>
+            <h3 class="plate-stage-title-serif" data-i18n="m2.step3Title">控制腐蚀</h3>
+            <p class="plate-stage-desc" data-i18n="m2.step3Desc">开始后可随时暂停，保留当前刻深。</p>
+
+            <!-- Real-time Acid Metrics Card -->
+            <div class="acid-metrics-box">
+              <div class="row">
+                <span class="u-text-secondary" data-i18n="etch.timeLabel">累计腐蚀时间</span>
+                <span id="etchTimeVal" class="font-mono u-text-bold">0.0 秒</span>
+              </div>
+              <div class="row u-mt-1">
+                <span class="u-text-secondary" data-i18n="etch.depthLabel">平均刻槽深度</span>
+                <span id="etchDepthVal" class="font-mono u-text-bold">0.0 μm</span>
+              </div>
+              <div class="acid-progress-track">
+                <div id="etchProgressBar" class="acid-progress-fill"></div>
+              </div>
+            </div>
+
+            <!-- Start / Pause State Button -->
+            <div class="u-mb-3">
+              <button id="etchBtn" class="btn-sage-primary u-w-full" data-i18n="cta.startEtch">开始腐蚀</button>
+              <!-- Backward compatibility elements for tests -->
+              <button id="etch" hidden></button>
+              <button id="etchTopBtn" hidden></button>
+              <div id="plateAcidGauge" class="gauge-badge u-mt-2">腐蚀 0.0s · 深度 0.0μm</div>
+              <span id="timerBadge" hidden>腐蚀累计 0.0 s</span>
+              <span id="timer" hidden>腐蚀累计 0.0 s</span>
+            </div>
+
+            <details class="param-drawer">
+              <summary class="u-text-secondary">
+                <span data-i18n="etch.drawerSettings">腐蚀参数</span>
+              </summary>
+              <div class="u-mt-2">
+                <label for="acid"><span data-i18n="sec.3.acid">酸液浓度</span> <output id="acidValue">45%</output></label>
+                <input id="acid" type="range" min="1" max="100" value="45">
+
+                <label for="grain"><span data-i18n="sec.3.grain">金相颗粒</span> <output id="grainValue">45%</output></label>
+                <input id="grain" type="range" min="0" max="100" value="45">
+              </div>
+            </details>
+          </div>
+
+          <div class="u-pt-3 u-border-t">
+              <button id="panel3ProofNavBtn" class="btn-atelier-secondary u-w-full" data-i18n="cta.toProofPrint" disabled>前往试印 →</button>
+          </div>
+        </div>
+
+        <!-- Panel 4: 工序 4 · 填墨与试印 -->
+        <div id="plateStagePanel4" class="plate-stage-panel">
+          <div>
+            <h3 class="plate-stage-title-serif" data-i18n="m2.step4Title">填墨试印</h3>
+            <p class="plate-stage-desc" data-i18n="m2.step4Desc">选择纸张，检查印样。</p>
+
+            <label for="paper" data-i18n="sec.3.paper">纸张材质</label>
+            <select id="paper">
+              <option value="rough" data-i18n="paper.rough">暖白 · 粗纹棉纸</option>
+              <option value="smooth" data-i18n="paper.smooth">象牙白 · 细纹纸</option>
+              <option value="linen" data-i18n="paper.linen">麻棉混纺纸 · 粗纹</option>
+              <option value="rosaspina" data-i18n="paper.rosaspina">Rosaspina · 自然纹</option>
+            </select>
+            <p id="paperDescription" class="paper-description" data-i18n="paper.desc.rough">暖白色，表面纹理较明显。</p>
+
+            <div class="u-mt-3">
+              <button id="print" class="btn-sage-primary u-w-full" data-i18n="proof.download">下载印样 PNG</button>
+              <button id="proofBackToEtchBtn" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="proof.backToEtch">继续腐蚀</button>
+              <button id="proofBackToInscribeBtn" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="proof.backToInscribe">返回刻绘</button>
+              <button id="reprintBtn" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="cta.reprint">重新试印</button>
+            </div>
+
+            <details class="param-drawer u-mt-3">
+              <summary class="u-text-secondary">
+                <span data-i18n="proof.drawerInking">油墨与压印设置</span>
+              </summary>
+              <div class="u-mt-2">
+                <label for="ink"><span data-i18n="sec.3.ink">油墨饱满</span> <output id="inkValue">90%</output></label>
+                <input id="ink" type="range" min="0" max="150" value="90">
+
+                <label for="pressure"><span data-i18n="sec.3.pressure">压印压力</span> <output id="pressureValue">65%</output></label>
+                <input id="pressure" type="range" min="0" max="100" value="65">
+
+                <label for="tone"><span data-i18n="sec.3.plateTone">留墨调子</span> <output id="toneValue">4%</output></label>
+                <input id="tone" type="range" min="0" max="35" value="4">
+
+                <label for="plateFrameStyle" data-i18n="sec.3.frame">印样外框</label>
+                <select id="plateFrameStyle">
+                  <option value="double" selected data-i18n="frame.double">双层古典边框</option>
+                  <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
+                  <option value="rough" data-i18n="frame.rough">手工古拙边框</option>
+                  <option value="none" data-i18n="frame.none">无外框</option>
+                </select>
+
+                <div class="row u-mt-2">
+                  <button id="save" class="btn-atelier-secondary" data-i18n="action.save">保存虚拟版</button>
+                  <button id="load" class="btn-atelier-secondary" data-i18n="action.load">打开虚拟版</button>
+                </div>
+                <input id="file" type="file" accept="application/json,.json" hidden>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- Right Main Workspace Canvas Frame -->
+      <main class="plate-main">
+        <!-- Workbench Controls Bar -->
+        <div class="plate-top-bar u-w-full">
+          <!-- View Modes -->
+          <div class="view-tabs">
+            <button class="active" data-view="plate" data-i18n="view.plate">虚拟铜版</button>
+            <button data-view="depth" data-i18n="view.depth">刻深图</button>
+            <button data-view="print" data-i18n="view.print">压印预览</button>
+          </div>
+
+          <!-- Current plate resolution; change it through the guarded transfer flow. -->
+          <div class="resolution-selector">
+            <span class="resolution-label" data-i18n="plate.resLabel">当前精度</span>
+            <output id="plateResolutionValue">900 × 660</output>
+          </div>
+
+          <!-- Plate Fullscreen Button -->
+          <button id="plateFullscreenBtn" class="btn-plate-fullscreen" data-i18n-title="plate.fullscreenTitle" data-i18n="plate.fullscreen">⛶ 全屏特写</button>
+        </div>
+
+        <!-- High-Resolution Plate Canvas Frame (Default 1500x1100 2K) -->
+        <div class="plate-canvas-frame" id="plateCanvasFrame">
+          <div class="plate-canvas-actions">
+            <button id="plateCanvasInspectBtn" class="card-btn btn-inspect-layer" data-i18n-title="card.clickInspect">⛶ <span data-i18n="card.inspect">全屏特写</span></button>
+          </div>
+          <canvas id="canvas" width="900" height="660" data-i18n-aria="m2.canvas" aria-label="铜版绘图区"></canvas>
+        </div>
+
+        <!-- Studio Caption & Telemetry -->
+        <div class="plate-caption">
+          <span id="caption" data-i18n="caption.plate">针尖划开保护层，等待酸液咬蚀</span>
+          <span id="status" class="telemetry-status-val" data-i18n="status.ready">运行就绪</span>
+        </div>
+      </main>
     </div>
   </div>
 `;
@@ -291,7 +500,7 @@ export const telemetryFooterTemplate = `
       <span><span data-i18n="telemetry.cache">拓扑缓存命中</span>: <span id="telemetryCache" class="telemetry-status-val">0/5</span></span>
     </div>
     <div class="u-ml-auto">
-      <span class="telemetry-brand">Etchloom v2.0 Atelier</span>
+      <span class="telemetry-brand">Etchloom v2.1 Atelier</span>
     </div>
   </footer>
 `;
@@ -329,7 +538,6 @@ export const modalsTemplate = `
       <div class="modal-header">
         <div class="u-flex-gap-2">
           <h3 class="modal-title" data-i18n="wizard.title">母版图稿上版向导</h3>
-          <span class="badge badge-gold badge-caption" data-i18n="wizard.badge">M1 → M3 物理转录</span>
         </div>
         <button id="transferModalClose" class="card-btn btn-compact-pad">✕</button>
       </div>
@@ -418,6 +626,15 @@ export const modalsTemplate = `
           <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" class="u-w-full">
         </div>
 
+        <div class="wizard-group">
+          <div class="wizard-range-row">
+            <label for="wizardLineWidth" class="wizard-label" data-i18n="wizard.lineWidth">上版线宽</label>
+            <output id="wizardLineWidthVal" class="wizard-output-mono">100%</output>
+          </div>
+          <input type="range" id="wizardLineWidth" min="50" max="200" step="10" value="100" class="u-w-full">
+        </div>
+
+
         <!-- Buttons -->
         <div class="wizard-footer-actions">
           <button id="transferCancelBtn" class="card-btn btn-transfer-pad" data-i18n="action.cancel">取消</button>
@@ -432,17 +649,67 @@ export const modalsTemplate = `
   <button id="closeTransferWizardBtn" hidden></button>
   <button id="confirmTransferBtn" hidden></button>
 
+  <!-- Re-transfer Overwrite Modal (再次上版覆写安全拦截模态) -->
+  <div id="retransferModalOverlay" class="etchloom-modal-overlay" hidden>
+    <div class="etchloom-modal retransfer-modal">
+      <div class="modal-icon-badge">!</div>
+      <h3 class="modal-title font-serif-title" data-i18n="dialog.retransferTitle">重新上版将覆写当前铜版</h3>
+      <p class="modal-body-text" data-i18n="dialog.retransferDesc">当前铜版已包含手工刻绘痕迹或酸液咬蚀深度。再次执行上版将以新母版重写并清空当前版面数据。</p>
+      <div class="modal-footer-column">
+        <div class="modal-button-row">
+          <button id="retransferCancelBtn" class="btn-atelier-secondary" data-i18n="dialog.cancel">取消 (保留当前铜版)</button>
+          <button id="retransferSaveBtn" class="btn-sage-primary" data-i18n="dialog.saveAndOverwrite">备份保存当前版并覆盖</button>
+        </div>
+        <button id="retransferDirectBtn" class="btn-link-danger" data-i18n="dialog.directOverwrite">直接清空覆盖 (不备份) →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- About Modal Dialog -->
   <div id="aboutModalOverlay" class="etchloom-modal-overlay" hidden>
-    <div class="etchloom-modal about-modal">
+    <div class="etchloom-modal about-modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
       <div class="modal-header">
-        <h3 class="modal-title" data-i18n="about.title">关于 Etchloom</h3>
-        <button id="aboutClose" class="card-btn btn-compact-pad">✕</button>
+        <h3 id="aboutTitle" class="modal-title" data-i18n="about.title">关于 Etchloom</h3>
+        <button id="aboutClose" class="card-btn btn-compact-pad" type="button" data-i18n-aria="about.close" aria-label="关闭关于页面">✕</button>
       </div>
       <div class="modal-body about-modal-body">
-        <p data-i18n-html="about.p1"><strong>Etchloom</strong> 是一套面向计算机图形学与计算摄影的数字古典铜版画工作室系统。</p>
-        <p data-i18n-html="about.p2">系统完全基于纯数学几何管线与连续物理介质数值模拟，解耦实现五阶段离散数学管线、PDE 酸液侧向咬蚀与凹版压印光影着色。</p>
-        <p class="about-meta-text" data-i18n-html="about.meta">版本：v2.0.0 (Decoupled Pure ESM Architecture)<br>许可证：MIT License</p>
+        <p class="about-intro" data-i18n="about.intro">Etchloom 将照片转为线条母版，再让你亲手制作铜版与试印。</p>
+        <div class="about-stages">
+          <section>
+            <span class="about-step-number">01</span>
+            <h4 data-i18n="about.stage1Title">制作母版</h4>
+            <p data-i18n="about.stage1Body">选择照片，调整线条，检查生成的母版。</p>
+          </section>
+          <section>
+            <span class="about-step-number">02</span>
+            <h4 data-i18n="about.stage2Title">蚀刻铜版</h4>
+            <p data-i18n="about.stage2Body">将母版上版，亲手刻绘、腐蚀，并在不同纸张上试印。</p>
+          </section>
+        </div>
+        <section class="about-community" aria-labelledby="aboutCommunityTitle">
+          <h4 id="aboutCommunityTitle" data-i18n="about.communityTitle">项目与反馈</h4>
+          <p data-i18n="about.communityBody">在 GitHub 查看最新代码与下载说明；发现问题或有改进建议，欢迎提交 Issue。</p>
+          <div class="about-community-links">
+            <a href="https://github.com/gongzhimin/Etchloom" target="_blank" rel="noopener noreferrer" data-i18n="about.repositoryLink">查看 GitHub 仓库 ↗</a>
+            <a href="https://github.com/gongzhimin/Etchloom/issues" target="_blank" rel="noopener noreferrer" data-i18n="about.issuesLink">提交 Issue ↗</a>
+          </div>
+          <span class="about-repository-url">github.com/gongzhimin/Etchloom</span>
+        </section>
+        <div class="about-details">
+          <section>
+            <h4 data-i18n="about.guideTitle">操作提示</h4>
+            <ul>
+              <li data-i18n="about.guide1">从示例或自己的照片开始。</li>
+              <li data-i18n="about.guide2">上版前可调整铜版精度和转录线宽。</li>
+              <li data-i18n="about.guide3">刻绘时可调整笔触宽度；试印前可选择纸张。</li>
+            </ul>
+          </section>
+          <section>
+            <h4 data-i18n="about.outputTitle">保存与导出</h4>
+            <p data-i18n="about.outputBody">可导出母版 SVG、下载试印 PNG，并保存铜版进度。</p>
+          </section>
+        </div>
+        <p class="about-meta-text" data-i18n="about.meta">开源许可：MIT</p>
       </div>
     </div>
   </div>
@@ -456,7 +723,7 @@ export function mountAppLayout(container) {
   if (!container) return;
   container.innerHTML = `
     ${headerTemplate}
-    <main class="app-main">
+    <main class="app-main two-stage-mode">
       ${sidebarTemplate}
       <div class="workspace-area">
         ${masterWorkspaceTemplate}

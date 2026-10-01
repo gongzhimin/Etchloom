@@ -171,46 +171,33 @@ test('UI Button Click: Header Mode Switch Buttons', () => {
   assert.equal(showPlateBtn.classList.contains('active'), false);
 });
 
-test('UI Button Click: Language Toggle Button', () => {
+test('UI Button Click: Language Tab Selection', () => {
   const i18n = new I18nManager('zh-CN');
-  const langBtn = createMockElement('button', { id: 'langToggle', textContent: i18n.t('lang.toggle') });
-
-  langBtn.onclick = () => {
-    i18n.toggleLocale();
-    langBtn.textContent = i18n.t('lang.toggle');
-  };
+  const tabs = ['zh-CN', 'en-US', 'vi-VN'].map(locale => {
+    const tab = createMockElement('button', { dataset: { locale } });
+    tab.onclick = () => i18n.setLocale(tab.dataset.locale);
+    return tab;
+  });
 
   assert.equal(i18n.getLocale(), 'zh-CN');
-  assert.equal(langBtn.textContent, 'English');
-
-  langBtn.click();
+  tabs[1].click();
   assert.equal(i18n.getLocale(), 'en-US');
-  assert.equal(langBtn.textContent, 'Tiếng Việt');
-
-  langBtn.click();
+  tabs[2].click();
   assert.equal(i18n.getLocale(), 'vi-VN');
-  assert.equal(langBtn.textContent, '中文');
-
-  langBtn.click();
+  tabs[0].click();
   assert.equal(i18n.getLocale(), 'zh-CN');
-  assert.equal(langBtn.textContent, 'English');
 });
 
-test('UI Button Click: About Modal Open & Close Buttons', () => {
-  const modal = createMockElement('div', { id: 'aboutModal' });
-  modal.style.display = 'none';
-
-  const aboutBtn = createMockElement('button', { id: 'aboutBtn' });
-  const closeBtn = createMockElement('button', { id: 'modalClose' });
-
-  aboutBtn.onclick = () => { modal.style.display = 'flex'; };
-  closeBtn.onclick = () => { modal.style.display = 'none'; };
-
-  assert.equal(modal.style.display, 'none');
-  aboutBtn.click();
-  assert.equal(modal.style.display, 'flex');
-  closeBtn.click();
-  assert.equal(modal.style.display, 'none');
+test('About uses a dedicated dialog with two workflow sections', async () => {
+  const { modalsTemplate } = await import('../src/ui/templates/layout-templates.js');
+  assert.match(modalsTemplate, /id="aboutModalOverlay"[^>]*hidden/);
+  assert.match(modalsTemplate, /role="dialog" aria-modal="true" aria-labelledby="aboutTitle"/);
+  assert.match(modalsTemplate, /id="aboutClose"/);
+  assert.match(modalsTemplate, /data-i18n="about.stage1Title"/);
+  assert.match(modalsTemplate, /data-i18n="about.stage2Title"/);
+  assert.match(modalsTemplate, /href="https:\/\/github\.com\/gongzhimin\/Etchloom"[^>]*rel="noopener noreferrer"/);
+  assert.match(modalsTemplate, /href="https:\/\/github\.com\/gongzhimin\/Etchloom\/issues"/);
+  assert.doesNotMatch(modalsTemplate, /data-i18n-html="about\./);
 });
 
 test('UI Button Click: StepFlowGrid Card Actions (Loupe, Fullscreen, Export)', () => {
@@ -433,34 +420,11 @@ test('UI Button Click: Virtual Plate Studio 5-Stage Stepper Navigation', () => {
   assert.equal(stages[4].classList.contains('active'), true);
 });
 
-test('UI Button Click: Resolution Switcher (900, 1500 2K, 3000 3K)', () => {
-  let currentRes = 1500;
-  const resButtons = [900, 1500, 3000].map(r => {
-    const btn = createMockElement('button', {
-      className: `res-btn ${r === currentRes ? 'active' : ''}`,
-      dataset: { res: String(r) }
-    });
-    btn.onclick = () => {
-      currentRes = r;
-      resButtons.forEach(b => b.classList.toggle('active', Number(b.dataset.res) === r));
-    };
-    return btn;
-  });
-
-  assert.equal(currentRes, 1500);
-  assert.equal(resButtons[1].classList.contains('active'), true);
-
-  // Switch to 3000 (3K)
-  resButtons[2].click();
-  assert.equal(currentRes, 3000);
-  assert.equal(resButtons[2].classList.contains('active'), true);
-  assert.equal(resButtons[1].classList.contains('active'), false);
-
-  // Switch to 900
-  resButtons[0].click();
-  assert.equal(currentRes, 900);
-  assert.equal(resButtons[0].classList.contains('active'), true);
-  assert.equal(resButtons[2].classList.contains('active'), false);
+test('plate resolution is displayed without a destructive switcher', async () => {
+  const { plateWorkspaceTemplate } = await import('../src/ui/templates/layout-templates.js');
+  assert.match(plateWorkspaceTemplate, /id="plateResolutionValue"/);
+  assert.doesNotMatch(plateWorkspaceTemplate, /class="res-btn/);
+  assert.match(plateWorkspaceTemplate, /id="size" type="range"/);
 });
 
 test('UI Button Click: Transfer Wizard Modal (Open, Select Options, Confirm)', () => {
@@ -652,7 +616,7 @@ test('StepFlowGrid All 7 Stages Independent Export Dispatcher', () => {
       assert.ok(svg.data.length > 0);
       downloads.push('step5_master_vector.svg');
     } else if (stepIdx === 6) {
-      downloads.push('step6_plate_print.png');
+      downloads.push('step6_transfer_master.png');
     }
   }
 
@@ -667,7 +631,7 @@ test('StepFlowGrid All 7 Stages Independent Export Dispatcher', () => {
   assert.equal(downloads[3], 'step3_contours.svg');
   assert.equal(downloads[4], 'step4_hatching.svg');
   assert.equal(downloads[5], 'step5_master_vector.svg');
-  assert.equal(downloads[6], 'step6_plate_print.png');
+  assert.equal(downloads[6], 'step6_transfer_master.png');
 });
 
 

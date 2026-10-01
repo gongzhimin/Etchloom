@@ -10,9 +10,15 @@
 1. **结构彻底解耦**：将庞大界面模板从 `index.html` 剥离至 `templates/layout-templates.js`，`index.html` 保持在 60 行极简骨架；
 2. **纯原生 ESM 架构**：以 `src/main.js` 为唯一顶层装配入口，所有业务控制器严格采用 `import/export` 模块化通信；
 3. **单向响应式数据流**：通过 `store/app-store.js` 驱动视图更新，杜绝跨控制器直接操作 DOM；
-4. **国际化与无障碍**：`i18n/` 模块自动扫描 DOM `[data-i18n]` 标签并即时切换中英文，支持语义化快捷操作。
+4. **国际化与无障碍**：`i18n/` 模块扫描 DOM 翻译属性；顶栏使用中文、英文和越南语三个语言选项卡，并同步页面 `lang`、选中态与焦点顺序。双阶段入口与工序操作使用原生按钮。
 
-图片导入在 1200 万像素以内运行；同一会话连续选择图片时，旧来源的异步计算结果不会提交到新来源。侧栏范围控件及下拉框使用关联的可见标签。
+首次进入显示照片选择和示例入口；母版就绪后才显示预览、参数及铜版入口。七阶段胶片栏默认折叠。
+
+图片导入会在创建处理画布前按比例缩至不超过 1200 万像素、单边不超过 4096 像素；同一会话连续选择图片时，旧来源的异步计算结果不会提交到新来源。侧栏范围控件及下拉框使用关联的可见标签。
+入口卡片随视口缩放；母版预览、阶段卡片和铜版画布按源图比例适配可用空间。
+选中照片后，制作页显示原图缩略预览；参数重绘使用不确定进度条提示任务状态。外框切换同步更新阶段印样与母版主预览，结果页滚动条位于视口右缘。
+制作过程的七张卡片将底部说明保存为翻译键与实际数据；切换语言会重新生成已经完成的卡片说明。
+第 06 阶段以冷白底和定位标记呈现可上版母稿；纸张、压印与油墨效果仅出现在铜版试印流程。铜版工作区使用暖色工作台背景，两种试印纸张的色调和纹理有可见差异。
 
 ---
 
@@ -27,13 +33,13 @@ src/ui/
 │   └── transfer-wizard-controller.js
 ├── components/               # 原子级独立 UI 组件 (Layer 4)
 │   ├── loupe.js              # 160px 4x 双线性插值放大镜
-│   └── step-flow-grid.js     # 7 阶段卡片网格
+│   └── step-flow-grid.js     # 7 阶段胶片卡片
 ├── store/                    # 响应式状态中心 (Layer 3)
 │   └── app-store.js          # AppStore 订阅发布总线
 ├── templates/                # 动态 DOM 模板 (Layer 4)
 │   └── layout-templates.js   # mountAppLayout 挂载器
 ├── i18n/                     # 国际化语言管理 (Layer 3)
-│   └── i18n.js               # I18nManager 双语字典与属性绑定
+│   └── i18n.js               # I18nManager 三语字典与属性绑定
 └── docs/                     # UI 全局设计与单测规范
 ```
 
@@ -43,6 +49,7 @@ src/ui/
 
 - [`tests/ui.test.cjs`](../../tests/ui.test.cjs)（I18n 语言字典与 AppStore 单向数据流）
 - [`tests/ui-button-clicks.test.cjs`](../../tests/ui-button-clicks.test.cjs)（12 项：全量 UI 按钮点击与组件生命周期）
+- [`tests/two-stage-ui.test.cjs`](../../tests/two-stage-ui.test.cjs)（入口选择、模板翻译键与铜版工序状态）
 
 ---
 
@@ -51,3 +58,13 @@ src/ui/
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：解耦前端界面总装架构与数据流转
 - [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：前端界面总装与状态契约接口设计规范
 - [docs/TESTING.md](docs/TESTING.md)：无头 Mock DOM 测试规范与点击事件断言解析
+
+## 试印纸张更新
+
+试印提供 `rough`、`smooth`、`linen`、`rosaspina` 四种表面预设。后两者参考真实凹版纸的材质与纹理；实现通过底色、确定性空间纹理和着墨变化进行视觉区分，未对实体纸做物理标定。纸张选择会触发试印重绘，说明文案随 zh-CN、en-US、vi-VN 切换。`tests/virtual-plate-engine.test.cjs` 检查四种纸面的像素差异。
+
+蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。上版面板与上版细节弹窗的线宽控件同步，`lineWidthScale` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。
+
+关于页由 `aboutModalOverlay` 独立对话框承载，不再通过图像灯箱的纯文本说明字段显示 HTML。内容为两步工作流、操作提示及保存导出；使用 `data-i18n` 在 zh-CN、en-US、vi-VN 间同步切换。`tests/two-stage-ui.test.cjs` 核对翻译键和结构，`tests/ui-button-clicks.test.cjs` 核对对话框语义。
+
+关于页两步流程卡片之后提供 GitHub 仓库与 Issues 链接（`https://github.com/gongzhimin/Etchloom`）；链接以新标签打开，并使用 `noopener noreferrer`。三语文案不承诺存在 Release 安装包。

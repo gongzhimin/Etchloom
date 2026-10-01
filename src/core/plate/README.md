@@ -10,6 +10,7 @@
 1. **连续物理版面内存建模 (`engine/virtual-plate-engine.js`)**：分配 4 块一维行优先平铺连续 TypedArray（`depth`, `exposed`, `burr`, `blocked`），实现 100% 解耦的无 DOM 纯数据运算；
 2. **偏微分方程化学酸蚀仿真 (`physics/acid-simulator.js`)**：数值离散化求解侧向咬蚀各向同性扩散与纵向加深非线性方程，严格受防蚀漆掩膜守恒阻断；
 3. **纯位图凹版压印渲染 (`renderer/press-renderer.js`)**：仿真油墨填入凹槽、刮墨刀擦版与滚筒极压物理转印，支持水平镜像与纯位图 RGBA 像素合成；
+   `rough` 使用暖色高纹理纸基和较大的着墨变化，`smooth` 使用浅色低纹理纸基。
 4. **无损版面序列化 (`codecs/plate-codec.js`)**：与上级编解码器联动，实现 Float32Array 物理版面与 Base64 紧凑格式互转。
 
 ---
@@ -70,3 +71,7 @@ node --test tests/virtual-plate-engine.test.cjs tests/plate.test.cjs
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：一维连续 TypedArray 物理生命周期设计
 - [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：虚拟铜版引擎与偏微分物理仿真接口设计规范
 - [docs/TESTING.md](docs/TESTING.md)：物理守恒定律与单测断言解析
+
+## 试印纸张更新
+
+试印提供 `rough`、`smooth`、`linen`、`rosaspina` 四种表面预设。后两者参考真实凹版纸的材质与纹理；实现通过底色、确定性空间纹理和着墨变化进行视觉区分，未对实体纸做物理标定。纸张选择会触发试印重绘，说明文案随 zh-CN、en-US、vi-VN 切换。`tests/virtual-plate-engine.test.cjs` 检查四种纸面的像素差异。

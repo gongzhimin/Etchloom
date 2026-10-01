@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom — 刻针划痕</title>
+  <desc id="desc">一支刻针在铜版上划出一条有方向感的弧线。</desc>
+  <rect x="12" y="12" width="104" height="104" rx="18" fill="#faf7f0" stroke="#314239" stroke-width="5"/>
+  <path d="M27 91c19 4 37-1 54-17" fill="none" stroke="#9c755f" stroke-linecap="round" stroke-width="7"/>
+  <path d="M30 99c18 2 33-2 45-13" fill="none" stroke="#314239" stroke-linecap="round" stroke-width="2" opacity=".7"/>
+  <path d="m99 26 8 8-32 40-9 5 3-10z" fill="#314239"/>
+  <path d="m99 26 8 8-16 19-8-8z" fill="#9c755f"/>
+  <path d="m69 69 6 5-9 5z" fill="#faf7f0"/>
+</svg>

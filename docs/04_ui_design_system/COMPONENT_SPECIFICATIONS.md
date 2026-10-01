@@ -25,7 +25,7 @@
     - `[04] 曲面排线` (Hatching, `grid-column: span 1` = 50%)
     - `[05] 母版合成` (Master Vector, `grid-column: span 1` = 50%)
   - **第 4 行**：
-    - `[06] 纯棉印样` (Paper Print Sample, `grid-column: 1 / -1` = 100% 独占底部通栏跨行展示)
+    - `[06] 上版母稿` (Transfer Master, `grid-column: 1 / -1` = 100% 独占底部通栏跨行展示)
 - **卡片比例自适应与横向全宽填充 (Dynamic Aspect Ratio & Full-Width Fill)**：
   - 7 张卡片与 Canvas 的宽高比根据导入图片的物理比例（`origW / origH`）动态自适应；
   - Canvas 声明 `width: 100%; height: auto; display: block;`，横向 100% 饱满铺满卡片视口，高度根据原图比例自洽伸展，杜绝留白边与黑条；
@@ -100,7 +100,7 @@
       - `Step 3`（透视轮廓）：**真正参数化矢量多折线**（True Vector Polylines）；
       - `Step 4`（曲面排线）：**真正矢量积分流线**（True Vector Streamlines）；
       - `Step 5`（母版合成）：**真正分层统一矢量母版**（Unified Layered Vector Paths）；
-      - `Step 6`（纯棉印样）：**真正矢量版画印品**（Vector Print Layout，含纯棉纸基底 `<rect fill="#faf7f0">` + 选定外框纯矢量刀痕 `<g id="etchloom-frame">` + 安全呼吸区裁切内嵌画作 `<g id="etchloom-artwork">`）；
+      - `Step 6`（上版母稿）：矢量线稿（冷白底 `<rect fill="#f4f7f7">` + 定位标记 `<g id="etchloom-registration">` + 外框 `<g id="etchloom-frame">` + 画作 `<g id="etchloom-artwork">`）；纸张效果在铜版试印阶段渲染；
     - **矢量阶段（Step 3、4、5、6）SVG 原生渲染**：
       - 激活 `#modalSvgWrap`，直接向 DOM 注入带 `viewBox` 与 `shape-rendering: geometricPrecision` 的高精度标准矢量 SVG；
       - 鼠标滚轮缩放（80%~500%）与拖拽漫游直接作用于 SVG 矢量容器，**数学级保真，0% 模糊失真，无限放大绝无位图马赛克或模糊边缘**；

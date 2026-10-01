@@ -6,18 +6,6 @@
 
 import { AIServiceGateway } from '../../services/client/ai-service-gateway.js';
 
-const getFrameGeometry = (w, h, s) => {
-  const fn = (typeof window !== 'undefined' && window.getFrameGeometry) || (typeof globalThis !== 'undefined' && globalThis.getFrameGeometry);
-  if (typeof fn === 'function') return fn(w, h, s);
-  const m = Math.round(50 * Math.min(w, h) / 660);
-  return { art: { x: m, y: m, w: w - 2 * m, h: h - 2 * m }, style: s || 'none' };
-};
-
-const drawEngravedFrame = (ctx, w, h, geom, strokeColor) => {
-  const fn = (typeof window !== 'undefined' && window.drawEngravedFrame) || (typeof globalThis !== 'undefined' && globalThis.drawEngravedFrame);
-  if (typeof fn === 'function') return fn(ctx, w, h, geom, strokeColor);
-};
-
 export class PipelineController {
   constructor(options = {}) {
     this.aiGateway = new AIServiceGateway(options.aiServiceUrl || 'http://127.0.0.1:7861');
@@ -28,6 +16,9 @@ export class PipelineController {
     this.getParams = options.getParams || null;
     this.onTelemetry = options.onTelemetry || null;
     this.onModelStatus = options.onModelStatus || null;
+    this.onMasterReady = options.onMasterReady || null;
+    this.onRecomputeState = options.onRecomputeState || null;
+    this.recomputeRequest = 0;
 
     this.currentLoadedImage = null;
     this.currentDepthMap = null;
@@ -187,37 +178,40 @@ export class PipelineController {
             if (!isCurrent()) { resolve(null); return; }
             const origW = img.naturalWidth || img.width;
             const origH = img.naturalHeight || img.height;
-            if (!Number.isSafeInteger(origW) || !Number.isSafeInteger(origH) || origW <= 0 || origH <= 0 || origW * origH > 12000000) {
-              throw new Error('图片尺寸无效或超过 1200 万像素，请先缩小图片再导入');
+            if (!Number.isSafeInteger(origW) || !Number.isSafeInteger(origH) || origW <= 0 || origH <= 0 || !Number.isSafeInteger(origW * origH)) {
+              throw new Error('图片尺寸无效');
             }
+            const scale = Math.min(1, Math.sqrt(12000000 / (origW * origH)), 4096 / origW, 4096 / origH);
+            const workW = Math.max(1, Math.floor(origW * scale));
+            const workH = Math.max(1, Math.floor(origH * scale));
             const tmpCanvas = document.createElement('canvas');
-            tmpCanvas.width = origW;
-            tmpCanvas.height = origH;
+            tmpCanvas.width = workW;
+            tmpCanvas.height = workH;
             const tmpCtx = tmpCanvas.getContext('2d');
-            tmpCtx.drawImage(img, 0, 0, origW, origH);
-            const imgData = tmpCtx.getImageData(0, 0, origW, origH);
+            tmpCtx.drawImage(img, 0, 0, workW, workH);
+            const imgData = tmpCtx.getImageData(0, 0, workW, workH);
 
-            const pixels = new Uint8ClampedArray(origW * origH);
+            const pixels = new Uint8ClampedArray(workW * workH);
             const d = imgData.data;
             for (let i = 0; i < pixels.length; i++) {
               const idx = i * 4;
               pixels[i] = Math.round(d[idx] * 0.299 + d[idx + 1] * 0.587 + d[idx + 2] * 0.114);
             }
-            this.currentLoadedImage = { width: origW, height: origH, pixels, rawImg: tmpCanvas, file };
+            this.currentLoadedImage = { width: workW, height: workH, originalWidth: origW, originalHeight: origH, pixels, rawImg: tmpCanvas, file };
 
             if (typeof this.onAspectRatioChange === 'function') {
-              this.onAspectRatioChange(origW, origH);
+              this.onAspectRatioChange(workW, workH);
             }
 
             if (this.stepGrid) {
               if (typeof this.stepGrid.setAspectRatio === 'function') {
-                this.stepGrid.setAspectRatio(origW, origH);
+                this.stepGrid.setAspectRatio(workW, workH);
               }
               this.stepGrid.updateStepPreview(0, tmpCanvas);
-              this.stepGrid.setStepStatus(0, 'DONE', `${origW} × ${origH} (原图比例)`);
+              this.stepGrid.setStepStatus(0, 'DONE', { key: 'card.sourceSize', args: [origW, origH] });
             }
 
-            this.log('图像', `图像装载完成: ${origW} × ${origH} 原始物理规格，维持原图尺寸与比例。进入 5 阶段管线计算。`, 'done');
+            this.log('图像', `图像装载完成: ${origW} × ${origH}；处理尺寸 ${workW} × ${workH}。`, 'done');
             await this.runPipelineOnLoadedPhoto(file, sourceController.signal, sourceVersion);
             resolve(isCurrent() ? this.currentLoadedImage : null);
           } catch (err) {
@@ -326,23 +320,23 @@ export class PipelineController {
             if (stage === 1 && artifact) {
               this.lastStage1LineMap = artifact;
               this.stepGrid.updateStepPreview(1, artifact);
-              this.stepGrid.setStepStatus(1, 'DONE', neuralLineUsed ? 'Informative Drawings (CUDA)' : '线描感知', stageElapsed);
+              this.stepGrid.setStepStatus(1, 'DONE', { key: neuralLineUsed ? 'card.aiLine' : 'card.lineReady' }, stageElapsed);
               this.log('管线', `阶段 1 完成: 线描感知抽取 (${neuralLineUsed ? 'CUDA 神经网络' : '几何退避'})`, 'done');
             } else if (stage === 2 && artifact) {
               this.lastStage2Artifact = artifact;
               this.stepGrid.updateStepPreview(2, artifact);
-              this.stepGrid.setStepStatus(2, 'DONE', '3D几何等高流场', stageElapsed);
+              this.stepGrid.setStepStatus(2, 'DONE', { key: 'card.flowReady' }, stageElapsed);
               this.log('管线', '阶段 2 完成: 3D 几何等高流场与色调场合成', 'done');
             } else if (stage === 3 && artifact?.vectorContours) {
               this.lastContours = artifact.vectorContours;
               this.lastContourMask = artifact.contourMask;
               this.stepGrid.updateStepPaths(3, artifact.vectorContours, curW, curH);
-              this.stepGrid.setStepStatus(3, 'DONE', `${artifact.vectorContours.length} 条空间轮廓`, stageElapsed);
+              this.stepGrid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [artifact.vectorContours.length] }, stageElapsed);
               this.log('管线', `阶段 3 完成: 透视空间骨干轮廓 (${artifact.vectorContours.length} 条轮廓)`, 'done');
             } else if (stage === 4 && artifact?.hatchingPaths) {
               this.lastHatching = artifact.hatchingPaths;
               this.stepGrid.updateStepPaths(4, artifact.hatchingPaths, curW, curH);
-              this.stepGrid.setStepStatus(4, 'DONE', `${artifact.hatchingPaths.length} 条曲面排线`, stageElapsed);
+              this.stepGrid.setStepStatus(4, 'DONE', { key: 'card.hatchingCount', args: [artifact.hatchingPaths.length] }, stageElapsed);
               this.log('管线', `阶段 4 完成: 曲面空间几何排线 (${artifact.hatchingPaths.length} 条排线)`, 'done');
             }
             stageStart = _now();
@@ -376,7 +370,7 @@ export class PipelineController {
         if (this.stepGrid) {
           const stage5Elapsed = parseFloat((_now() - stageStart).toFixed(1));
           this.stepGrid.updateStepPaths(5, this.lastMasterPaths, curW, curH);
-          this.stepGrid.setStepStatus(5, 'DONE', `${this.lastMasterPaths.length} 矢量母版线条`, stage5Elapsed);
+          this.stepGrid.setStepStatus(5, 'DONE', { key: 'card.masterCount', args: [this.lastMasterPaths.length] }, stage5Elapsed);
           this.log('管线', `阶段 5 完成: 母版矢量合成 (${this.lastMasterPaths.length} 矢量线条)`, 'done');
 
           const renderStart = _now();
@@ -389,8 +383,9 @@ export class PipelineController {
             frameStyle: recipeParams.frameStyle
           });
           const renderElapsed = parseFloat((_now() - renderStart).toFixed(1));
-          this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', renderElapsed);
-          this.log('仿真', '阶段 6 完成: 纯棉纸凹版印样仿真完成', 'done');
+          this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' }, renderElapsed);
+          this.syncHeroMasterPreview(this.lastMasterPaths, curW, curH);
+          this.log('管线', '阶段 6 完成: 上版母稿已生成', 'done');
         }
 
         const tEnd = (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -495,71 +490,14 @@ export class PipelineController {
         stepCanvas.toBlob(b => b && download(b, 'step5_master_vector.png'));
       }
     } else if (stepIdx === 6) {
-      // Export pristine physical fine-art print on cotton paper with plate bevel
-      const expW = Math.max(1400, curW);
-      const expH = Math.max(1, Math.round(expW * curH / curW));
-      const c = document.createElement('canvas');
-      c.width = expW;
-      c.height = expH;
-      const ctx = c.getContext('2d');
-      if (ctx) {
-        const recipeParams = this.getRecipeParams();
-        const frameStyle = recipeParams.frameStyle || 'double';
-        const geom = getFrameGeometry(expW, expH, frameStyle);
-
-        const theme = (typeof ThemeBridge !== 'undefined' && ThemeBridge.getRenderTheme)
-          ? ThemeBridge.getRenderTheme()
-          : (globalThis.ThemeBridge?.getRenderTheme ? globalThis.ThemeBridge.getRenderTheme() : null);
-        const paperGround = theme?.paperGround || '#faf7f0';
-        const inkPrimary = theme?.inkPrimary || '#1a1918';
-
-        // Pure archival cotton paper
-        ctx.fillStyle = paperGround;
-        ctx.fillRect(0, 0, expW, expH);
-
-        // Draw impressed paper depression, plate bevel, and chosen frame style (outer, fine, rough)
-        drawEngravedFrame(ctx, expW, expH, geom, inkPrimary);
-
-        // Artwork Display Area strictly nested within inner frame clearance
-        const { x: artX, y: artY, w: artW, h: artH } = geom.art;
-
-        // Render intaglio ink strokes
-        if (this.lastMasterPaths && this.lastMasterPaths.length > 0) {
-          const scale = Math.min(artW / curW, artH / curH);
-          const offX = artX + Math.round((artW - curW * scale) / 2);
-          const offY = artY + Math.round((artH - curH * scale) / 2);
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(artX, artY, artW, artH);
-          ctx.clip();
-
-          ctx.strokeStyle = inkPrimary;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-
-          for (const path of this.lastMasterPaths) {
-            const pts = path.points || path;
-            if (!pts || pts.length < 2) continue;
-            ctx.beginPath();
-            ctx.lineWidth = Math.max(0.6, (path.width || 0.8) * scale);
-            ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
-            for (let j = 1; j < pts.length; j++) {
-              ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
-            }
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
-        c.toBlob(b => b && download(b, 'step6_plate_print.png'));
-      } else if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step6_plate_print.png'));
-      }
+      if (stepCanvas) stepCanvas.toBlob(b => b && download(b, 'step6_transfer_master.png'));
     }
   }
 
   scheduleParameterRun() {
     if (!this.currentLoadedImage) return;
+    const request = ++this.recomputeRequest;
+    this.onRecomputeState?.(true);
 
     if (!this.scheduler) {
       const SchedulerClass = (typeof TaskScheduler !== 'undefined' ? TaskScheduler : (globalThis.TaskScheduler || null));
@@ -567,12 +505,20 @@ export class PipelineController {
     }
 
     if (!this.scheduler) {
-      this.runPipelineOnLoadedPhoto();
+      Promise.resolve(this.runPipelineOnLoadedPhoto())
+        .catch(err => console.error('Parameter redraw failed:', err))
+        .finally(() => {
+          if (request === this.recomputeRequest) this.onRecomputeState?.(false);
+        });
       return;
     }
 
     this.scheduler.schedule(async (signal) => {
       await this._executeIncrementalRun(signal);
+    }).catch(err => {
+      console.error('Parameter redraw failed:', err);
+    }).finally(() => {
+      if (request === this.recomputeRequest) this.onRecomputeState?.(false);
     });
   }
 
@@ -670,16 +616,16 @@ export class PipelineController {
         if (stage === 2 && artifact) {
           this.lastStage2Artifact = artifact;
           this.stepGrid.updateStepPreview(2, artifact);
-          this.stepGrid.setStepStatus(2, 'DONE', '3D几何流场', stageElapsed);
+          this.stepGrid.setStepStatus(2, 'DONE', { key: 'card.flowReady' }, stageElapsed);
         } else if (stage === 3 && artifact?.vectorContours) {
           this.lastContours = artifact.vectorContours;
           this.lastContourMask = artifact.contourMask;
           this.stepGrid.updateStepPaths(3, artifact.vectorContours, curW, curH);
-          this.stepGrid.setStepStatus(3, 'DONE', `${artifact.vectorContours.length} 条空间轮廓`, stageElapsed);
+          this.stepGrid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [artifact.vectorContours.length] }, stageElapsed);
         } else if (stage === 4 && artifact?.hatchingPaths) {
           this.lastHatching = artifact.hatchingPaths;
           this.stepGrid.updateStepPaths(4, artifact.hatchingPaths, curW, curH);
-          this.stepGrid.setStepStatus(4, 'DONE', `${artifact.hatchingPaths.length} 条曲面排线`, stageElapsed);
+          this.stepGrid.setStepStatus(4, 'DONE', { key: 'card.hatchingCount', args: [artifact.hatchingPaths.length] }, stageElapsed);
         }
         stageStart = _now();
       });
@@ -692,7 +638,7 @@ export class PipelineController {
       if (this.stepGrid) {
         const s5Elapsed = parseFloat((_now() - stageStart).toFixed(1));
         this.stepGrid.updateStepPaths(5, masterPaths, curW, curH);
-        this.stepGrid.setStepStatus(5, 'DONE', `${masterPaths.length} 矢量母版线条`, s5Elapsed);
+        this.stepGrid.setStepStatus(5, 'DONE', { key: 'card.masterCount', args: [masterPaths.length] }, s5Elapsed);
 
         const theme = (typeof ThemeBridge !== 'undefined' && ThemeBridge.getRenderTheme)
           ? ThemeBridge.getRenderTheme()
@@ -702,7 +648,8 @@ export class PipelineController {
           strokeColor: theme?.inkPrimary || '#1a1918',
           frameStyle: recipeParams.frameStyle
         });
-        this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', parseFloat((_now() - stageStart).toFixed(1)));
+        this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' }, parseFloat((_now() - stageStart).toFixed(1)));
+        this.syncHeroMasterPreview(masterPaths, curW, curH);
       }
 
       if (this.stageCache) {
@@ -737,6 +684,7 @@ export class PipelineController {
 
   initBrowserDemo() {
     if (typeof window === 'undefined' || !window.location || !window.location.href || !document.getElementById('stepFlowGridContainer')) return;
+    const demoStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const w = 900, h = 660;
     const demoCanvas = document.createElement('canvas');
     demoCanvas.width = w;
@@ -791,7 +739,7 @@ export class PipelineController {
         this.stepGrid.setAspectRatio(w, h);
       }
       this.stepGrid.updateStepPreview(0, demoCanvas);
-      this.stepGrid.setStepStatus(0, 'DONE', '900 × 660 莫兰迪静物');
+      this.stepGrid.setStepStatus(0, 'DONE', { key: 'card.sourceSize', args: [w, h] });
     }
 
     const lineCanvas = document.createElement('canvas');
@@ -829,7 +777,7 @@ export class PipelineController {
 
     if (this.stepGrid) {
       this.stepGrid.updateStepPreview(1, lineCanvas);
-      this.stepGrid.setStepStatus(1, 'DONE', '神经感知线描', 18.5);
+      this.stepGrid.setStepStatus(1, 'DONE', { key: 'card.lineReady' });
     }
 
     const toneField = { width: w, height: h, tone: Float32Array.from(pixels, v => 1.0 - v / 255) };
@@ -849,7 +797,7 @@ export class PipelineController {
     }
     if (this.stepGrid) {
       this.stepGrid.updateStepPreview(2, { toneField, flowField });
-      this.stepGrid.setStepStatus(2, 'DONE', '3D几何等高流场', 34.0);
+      this.stepGrid.setStepStatus(2, 'DONE', { key: 'card.flowReady' });
     }
 
     const contours = [];
@@ -904,13 +852,13 @@ export class PipelineController {
 
     if (this.stepGrid) {
       this.stepGrid.updateStepPaths(3, contours, w, h);
-      this.stepGrid.setStepStatus(3, 'DONE', `${contours.length} 条空间骨干轮廓`, 22.0);
+      this.stepGrid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [contours.length] });
 
       this.stepGrid.updateStepPaths(4, hatchings, w, h);
-      this.stepGrid.setStepStatus(4, 'DONE', `${hatchings.length} 条曲面几何排线`, 54.0);
+      this.stepGrid.setStepStatus(4, 'DONE', { key: 'card.hatchingCount', args: [hatchings.length] });
 
       this.stepGrid.updateStepPaths(5, allPaths, w, h);
-      this.stepGrid.setStepStatus(5, 'DONE', `${allPaths.length} 矢量母版线条`, 14.0);
+      this.stepGrid.setStepStatus(5, 'DONE', { key: 'card.masterCount', args: [allPaths.length] });
 
       const theme = (typeof ThemeBridge !== 'undefined' && ThemeBridge.getRenderTheme)
         ? ThemeBridge.getRenderTheme()
@@ -919,20 +867,49 @@ export class PipelineController {
         bgTone: theme?.paperGround || '#f0ebd9',
         strokeColor: theme?.inkPrimary || '#1a1918'
       });
-      const debossText = (typeof window !== 'undefined' && window.i18nManager) ? window.i18nManager.t('card.cottonDeboss') : '纯棉纸凹版印样仿真';
-      this.stepGrid.setStepStatus(6, 'DONE', debossText, 12.0);
+      this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' });
+      this.syncHeroMasterPreview(allPaths, w, h);
     }
 
     const i18n = (typeof window !== 'undefined' && window.i18nManager) || (typeof globalThis !== 'undefined' && globalThis.i18nManager) || null;
     this.updateTelemetry({
       status: i18n ? i18n.t('status.ready') : '运行就绪',
       task: 'IDLE',
-      duration: '38.5',
+      duration: ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - demoStart).toFixed(1),
       strokes: allPaths.length,
-      cache: i18n ? `5/5 ${i18n.t('telemetry.cacheUnit')}` : '5/5 命中'
+      cache: '0/5'
     });
 
     const sysCat = i18n ? i18n.t('console.sys') : '系统';
     this.log(sysCat, `古典版画工坊初始化完成，已载入莫兰迪静物示范母版 (${allPaths.length} 条矢量线条)，7 组步骤流画卷均已就绪。`, 'info');
+  }
+
+  syncHeroMasterPreview(paths, w, h) {
+    if (typeof document === 'undefined') return;
+    const heroCanvas = document.getElementById('masterHeroCanvas');
+    const heroResMeta = document.getElementById('heroResolutionMeta');
+    const heroBadge = document.getElementById('masterStrokesBadge');
+    if (heroResMeta && w && h) {
+      heroResMeta.textContent = `${w} × ${h} px`;
+    }
+    if (heroBadge && paths) {
+      const i18n = (typeof window !== 'undefined' && window.i18nManager) || null;
+      const unit = i18n ? i18n.t('telemetry.strokesUnit') : '条矢量线条';
+      heroBadge.textContent = `${paths.length.toLocaleString()} ${unit}`;
+    }
+    if (!heroCanvas) return;
+    const srcCanvas = this.stepGrid?.stepStates[6]?.canvas || this.stepGrid?.stepStates[5]?.canvas;
+    if (srcCanvas) {
+      heroCanvas.width = srcCanvas.width;
+      heroCanvas.height = srcCanvas.height;
+      const ctx = heroCanvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+        ctx.drawImage(srcCanvas, 0, 0);
+      }
+    }
+    if (paths?.length && typeof this.onMasterReady === 'function') {
+      this.onMasterReady();
+    }
   }
 }

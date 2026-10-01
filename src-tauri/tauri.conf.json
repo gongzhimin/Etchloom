@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.etchloom.studio",
   "build": {
+    "beforeDevCommand": "npm start",
+    "devUrl": "http://127.0.0.1:4173",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },

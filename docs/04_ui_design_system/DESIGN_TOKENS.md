@@ -119,7 +119,7 @@
 
 | Token 变量 | 预设色值 (Hex) | 对应 CSS Token | 渲染应用组件 |
 | :--- | :--- | :--- | :--- |
-| `paperGround` | `#faf7f0` | `--render-paper-ground` | 步骤 06 纯棉纸凹版印样基底、印样压痕展台 |
+| `paperGround` | `#faf7f0` | `--render-paper-ground` | 纸张相关的渲染主题基色；步骤 06 上版母稿使用独立冷白底 `#f4f7f7` |
 | `plateGround` | `#1e2220` | `--render-plate-ground` | 步骤 03~05 虚拟暗色版面基底、全屏检查底色 |
 | `inkPrimary` | `#1a1918` | `--render-ink-primary` | 矢量母版油墨线条、古典双层与粗粝外框线条 |
 | `contourGold` | `#c8b67e` | `--render-contour-gold` | 步骤 03 空间骨干轮廓高亮金色 |

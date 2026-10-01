@@ -4,13 +4,14 @@
  */
 
 import { LightboxController } from './ui/controllers/lightbox-controller.js';
-import { TransferWizardController } from './ui/controllers/transfer-wizard-controller.js';
+import { TransferWizardController, transferStrokeWidth } from './ui/controllers/transfer-wizard-controller.js';
 import { PipelineController } from './ui/controllers/pipeline-controller.js';
 import {
   W, H, N, depth, exposed, blocked, burr,
-  allocatePlate, snapshot, stop, setView, line,
+  allocatePlate, snapshot, stop, resetEtchProgress, setView, line, render,
   setPlateStage, bindPlateStudioEvents, setPlateFrameStyle,
-  setPlateAspectRatio, setMirrorPrint
+  setPlateAspectRatio, setMirrorPrint,
+  hasPlateModifications, savePlateBackup, etchState
 } from './ui/controllers/plate-studio-controller.js';
 import { mountAppLayout } from './ui/templates/layout-templates.js';
 
@@ -86,14 +87,46 @@ if (I18nLib && I18nLib.I18nManager) {
 export function updateLocaleUI() {
   if (!i18nManager) return;
   i18nManager.bindDom();
-  const btn = $('langToggle');
-  if (btn) btn.textContent = i18nManager.t('lang.toggle');
+  const locale = i18nManager.getLocale();
+  document.documentElement.lang = locale;
+  document.querySelectorAll('#languageTabs .language-tab').forEach(tab => {
+    const selected = tab.dataset.locale === locale;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  });
 
   const running = window.getPlateState ? window.getPlateState().running : false;
-  const acidBtnText = running ? i18nManager.t('sec.3.stopAcid') : i18nManager.t('sec.3.startAcid');
-  if ($('etch')) $('etch').textContent = acidBtnText;
-  if ($('etchTopBtn')) $('etchTopBtn').textContent = acidBtnText;
+  const currentEtchState = window.getPlateState ? window.getPlateState().etchState : (running ? 1 : 0);
+  const acidBtnText = running ? i18nManager.t('cta.pauseEtch') : (currentEtchState === 2 ? i18nManager.t('cta.resumeEtch') : i18nManager.t('cta.startEtch'));
+  if ($('etch')) $('etch').textContent = running ? i18nManager.t('sec.3.stopAcid') : i18nManager.t('sec.3.startAcid');
+  if ($('etchTopBtn')) $('etchTopBtn').textContent = running ? i18nManager.t('sec.3.stopAcid') : i18nManager.t('sec.3.startAcid');
   if ($('etchBtn')) $('etchBtn').textContent = acidBtnText;
+
+  const badge = $('etchStateBadge');
+  if (badge) {
+    if (currentEtchState === 1) {
+      badge.textContent = i18nManager.t('etch.state.biting');
+    } else if (currentEtchState === 2) {
+      badge.textContent = i18nManager.t('etch.state.paused');
+    } else {
+      badge.textContent = i18nManager.t('etch.state.standby');
+    }
+  }
+
+  const mData = (typeof pipelineController !== 'undefined' && pipelineController && typeof pipelineController.getMasterData === 'function')
+    ? pipelineController.getMasterData()
+    : { masterPaths: [], contours: [] };
+  const mCount = (mData?.masterPaths?.length || mData?.contours?.length || 0);
+  const unit = i18nManager.t('telemetry.strokesUnit');
+
+  const heroCount = $('masterStrokesBadge');
+  if (heroCount) {
+    heroCount.textContent = `${mCount.toLocaleString()} ${unit}`;
+  }
+  const plateMasterStats = $('plateMasterStats');
+  if (plateMasterStats) {
+    plateMasterStats.textContent = `${mCount.toLocaleString()} ${unit}`;
+  }
 
   if (typeof stepGrid !== 'undefined' && stepGrid && typeof stepGrid.updateLocale === 'function') {
     stepGrid.updateLocale(i18nManager);
@@ -117,7 +150,7 @@ export function updateLocaleUI() {
   const telStrokes = $('telemetryStrokes');
   if (telStrokes) {
     const count = (telStrokes.textContent.match(/\d+/) || ['0'])[0];
-    telStrokes.textContent = `${count} ${i18nManager.t('telemetry.strokesUnit')}`;
+    telStrokes.textContent = `${count} ${unit}`;
   }
 }
 
@@ -142,6 +175,27 @@ export function switchWorkflow(mode) {
     if (masterWs) masterWs.hidden = false;
     if (plateWs) plateWs.hidden = true;
   }
+  const workspace = typeof document !== 'undefined' ? document.querySelector('.workspace-area') : null;
+  if (workspace) workspace.scrollTop = 0;
+}
+
+let currentMasterScreen = null;
+function setMasterScreen(screen) {
+  document.body.dataset.masterScreen = screen;
+  const intro = $('masterIntro');
+  const computing = $('masterComputing');
+  if (intro) intro.hidden = screen !== 'intro';
+  if (computing) computing.hidden = screen !== 'computing';
+  document.querySelectorAll('[data-master-result]').forEach(el => {
+    el.hidden = screen !== 'ready';
+  });
+  const plateNav = $('showPlate');
+  if (plateNav) plateNav.disabled = screen !== 'ready';
+  if (currentMasterScreen !== screen) {
+    const workspace = document.querySelector('.workspace-area');
+    if (workspace) workspace.scrollTop = 0;
+  }
+  currentMasterScreen = screen;
 }
 
 // 4. Initialize Controllers
@@ -172,6 +226,13 @@ if (gridContainer && StepFlowGridLib) {
 const pipelineController = new PipelineController({
   stepGrid,
   log: logMessage,
+  onMasterReady: () => setMasterScreen('ready'),
+  onRecomputeState: (active) => {
+    const status = $('masterRedrawStatus');
+    if (status) status.hidden = !active;
+    const preview = $('masterHeroViewport');
+    if (preview) preview.setAttribute('aria-busy', String(active));
+  },
   getParams: () => ({
     exposure: $('exposure')?.value,
     blackPoint: $('blackPoint')?.value,
@@ -214,95 +275,95 @@ const pipelineController = new PipelineController({
   }
 });
 
+export function executeTransfer({ pathsToCarve, selectedRes = 1500, selectedTechnique = 'etching', needlePressure = 0.65, lineWidthScale = 1, layerLabel = '' }) {
+  stop();
+  snapshot();
+
+  const srcW = pipelineController.currentLoadedImage?.width || 900;
+  const srcH = pipelineController.currentLoadedImage?.height || 660;
+  const targetH = Math.max(1, Math.round(selectedRes * srcH / srcW));
+
+  if (W !== selectedRes || H !== targetH) {
+    allocatePlate(selectedRes, targetH);
+  }
+
+  depth.fill(0);
+  exposed.fill(0);
+  blocked.fill(0);
+  burr.fill(0);
+  resetEtchProgress();
+
+  const mask = document.createElement('canvas');
+  mask.width = W;
+  mask.height = H;
+  const mctx = mask.getContext('2d');
+  mctx.clearRect(0, 0, W, H);
+
+  // Leave plate margin so engraving lines are strictly INSIDE the frame rules!
+  const frameMargin = Math.round(54 * W / 900);
+  const artW = W - 2 * frameMargin;
+  const artH = H - 2 * frameMargin;
+  const scale = Math.min(artW / srcW, artH / srcH);
+  const offX = frameMargin + Math.round((artW - srcW * scale) / 2);
+  const offY = frameMargin + Math.round((artH - srcH * scale) / 2);
+
+  mctx.strokeStyle = '#000000';
+  mctx.lineCap = 'round';
+  mctx.lineJoin = 'round';
+
+  for (const path of pathsToCarve) {
+    const pts = path.points;
+    if (!pts || pts.length < 2) continue;
+
+    mctx.lineWidth = transferStrokeWidth(path.width, scale, W, lineWidthScale);
+
+    mctx.beginPath();
+    mctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+    for (let k = 1; k < pts.length; k++) {
+      mctx.lineTo(offX + pts[k][0] * scale, offY + pts[k][1] * scale);
+    }
+    mctx.stroke();
+  }
+
+  const imgData = mctx.getImageData(0, 0, W, H).data;
+  const isDrypoint = selectedTechnique === 'drypoint';
+  const pressFactor = needlePressure || 0.65;
+
+  for (let i = 0; i < N; i++) {
+    const alpha = imgData[i * 4 + 3];
+    if (alpha > 0) {
+      const val = (alpha / 255) * (pressFactor / 0.65);
+      exposed[i] = Math.max(exposed[i], Math.min(1.0, val));
+      blocked[i] = 0;
+      if (isDrypoint) {
+        depth[i] = Math.min(1, depth[i] + val * 0.32);
+        burr[i] = Math.min(1, burr[i] + val * 0.42);
+      } else {
+        burr[i] = 0;
+      }
+    }
+  }
+
+  setPlateStage(2);
+  setView('plate');
+  switchWorkflow('plate');
+
+  const techLabel = selectedTechnique === 'drypoint'
+    ? (i18nManager ? i18nManager.t('wizard.drypointTitle') : '干刻直刻 (Drypoint)')
+    : (i18nManager ? i18nManager.t('wizard.etchingTitle') : '蚀刻针划线 (Etching)');
+  const transferTitle = i18nManager ? i18nManager.t('stepper.transfer') : '上版';
+  const strokesUnit = i18nManager ? i18nManager.t('telemetry.strokesUnit') : '条';
+  const statusText = `${transferTitle}: ${pathsToCarve.length} ${strokesUnit} (${techLabel}, ${W} × ${H})`;
+  if ($('status')) $('status').textContent = statusText;
+  const logCat = i18nManager ? i18nManager.t('console.plate') : '铜版';
+  logMessage(logCat, `【${transferTitle}】${techLabel} | ${W} × ${H} | ${layerLabel}`, 'done');
+}
+
 const transferWizard = new TransferWizardController({
+  openBtnId: 'openTransferWizardBtn',
   getMasterData: () => pipelineController.getMasterData(),
   onWarning: (msg) => logMessage(i18nManager ? i18nManager.t('console.wizard') : '向导', msg, 'warn'),
-  onExecuteTransfer: ({ pathsToCarve, selectedRes, selectedTechnique, needlePressure = 0.65, layerLabel }) => {
-    stop();
-    snapshot();
-
-    const srcW = pipelineController.currentLoadedImage?.width || 900;
-    const srcH = pipelineController.currentLoadedImage?.height || 660;
-    const targetH = Math.max(1, Math.round(selectedRes * srcH / srcW));
-
-    if (W !== selectedRes || H !== targetH) {
-      allocatePlate(selectedRes, targetH);
-    }
-
-    depth.fill(0);
-    exposed.fill(0);
-    blocked.fill(0);
-    burr.fill(0);
-
-    const mask = document.createElement('canvas');
-    mask.width = W;
-    mask.height = H;
-    const mctx = mask.getContext('2d');
-    mctx.clearRect(0, 0, W, H);
-
-    // Leave plate margin so engraving lines are strictly INSIDE the frame rules!
-    const frameMargin = Math.round(54 * W / 900);
-    const artW = W - 2 * frameMargin;
-    const artH = H - 2 * frameMargin;
-    const scale = Math.min(artW / srcW, artH / srcH);
-    const offX = frameMargin + Math.round((artW - srcW * scale) / 2);
-    const offY = frameMargin + Math.round((artH - srcH * scale) / 2);
-
-    mctx.strokeStyle = '#000000';
-    mctx.lineCap = 'round';
-    mctx.lineJoin = 'round';
-
-    const baseNeedleWidth = Math.max(0.6, (W / 1500) * 0.9);
-
-    for (const path of pathsToCarve) {
-      const pts = path.points;
-      if (!pts || pts.length < 2) continue;
-
-      const pWidth = (path.width || 1.0) * scale * 0.75;
-      const strokeW = Math.max(0.5, Math.min(baseNeedleWidth * 2.0, pWidth));
-      mctx.lineWidth = strokeW;
-
-      mctx.beginPath();
-      mctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
-      for (let k = 1; k < pts.length; k++) {
-        mctx.lineTo(offX + pts[k][0] * scale, offY + pts[k][1] * scale);
-      }
-      mctx.stroke();
-    }
-
-    const imgData = mctx.getImageData(0, 0, W, H).data;
-    const isDrypoint = selectedTechnique === 'drypoint';
-    const pressFactor = needlePressure || 0.65;
-
-    for (let i = 0; i < N; i++) {
-      const alpha = imgData[i * 4 + 3];
-      if (alpha > 0) {
-        const val = (alpha / 255) * (pressFactor / 0.65);
-        exposed[i] = Math.max(exposed[i], Math.min(1.0, val));
-        blocked[i] = 0;
-        if (isDrypoint) {
-          depth[i] = Math.min(1, depth[i] + val * 0.32);
-          burr[i] = Math.min(1, burr[i] + val * 0.42);
-        } else {
-          burr[i] = 0;
-        }
-      }
-    }
-
-    setPlateStage(2);
-    setView('plate');
-    switchWorkflow('plate');
-
-    const techLabel = selectedTechnique === 'drypoint'
-      ? (i18nManager ? i18nManager.t('wizard.drypointTitle') : '干刻直刻 (Drypoint)')
-      : (i18nManager ? i18nManager.t('wizard.etchingTitle') : '蚀刻针划线 (Etching)');
-    const transferTitle = i18nManager ? i18nManager.t('stepper.transfer') : '上版';
-    const strokesUnit = i18nManager ? i18nManager.t('telemetry.strokesUnit') : '条';
-    const statusText = `${transferTitle}: ${pathsToCarve.length} ${strokesUnit} (${techLabel}, ${W} × ${H})`;
-    if ($('status')) $('status').textContent = statusText;
-    const logCat = i18nManager ? i18nManager.t('console.plate') : '铜版';
-    logMessage(logCat, `【${transferTitle}】${techLabel} | ${W} × ${H} | ${layerLabel}`, 'done');
-  }
+  onExecuteTransfer: executeTransfer
 });
 
 // 5. Global Topbar & Drawer Event Bindings
@@ -312,16 +373,21 @@ function initEventBindings() {
   if (showGenBtn) showGenBtn.onclick = () => switchWorkflow('master');
   if (showPlateBtn) showPlateBtn.onclick = () => switchWorkflow('plate');
 
-  const langBtn = $('langToggle');
-  if (langBtn && i18nManager) {
-    langBtn.onclick = () => {
-      i18nManager.toggleLocale();
+  const languageTabs = Array.from(document.querySelectorAll('#languageTabs .language-tab'));
+  for (const tab of languageTabs) {
+    tab.onclick = () => {
+      i18nManager.setLocale(tab.dataset.locale);
       updateLocaleUI();
-      logMessage(
-        i18nManager.t('console.sys'),
-        i18nManager.t('console.switched'),
-        'info'
-      );
+    };
+    tab.onkeydown = event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const index = languageTabs.indexOf(tab);
+      const targetIndex = event.key === 'Home' ? 0
+        : event.key === 'End' ? languageTabs.length - 1
+          : (index + (event.key === 'ArrowRight' ? 1 : -1) + languageTabs.length) % languageTabs.length;
+      languageTabs[targetIndex].click();
+      languageTabs[targetIndex].focus();
     };
   }
 
@@ -358,13 +424,47 @@ function initEventBindings() {
   const uploadBtn = $('uploadPhoto');
   const photoFileInput = $('photoFile');
   if (uploadBtn && photoFileInput) {
-    uploadBtn.onclick = () => {
+    const sourcePreview = $('masterSourcePreview');
+    let sourcePreviewUrl = null;
+    const openPhotoPicker = () => {
       photoFileInput.value = '';
       photoFileInput.click();
     };
-    photoFileInput.onchange = e => {
+    uploadBtn.onclick = openPhotoPicker;
+    if ($('selectPhotoBtn')) $('selectPhotoBtn').onclick = openPhotoPicker;
+    photoFileInput.onchange = async e => {
       const file = e.target.files[0];
-      if (file) pipelineController.handleImageFile(file);
+      if (!file) return;
+      if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl);
+      sourcePreviewUrl = URL.createObjectURL(file);
+      if (sourcePreview) {
+        sourcePreview.src = sourcePreviewUrl;
+        sourcePreview.hidden = false;
+      }
+      if ($('masterLoadError')) $('masterLoadError').hidden = true;
+      setMasterScreen('computing');
+      try {
+        await pipelineController.handleImageFile(file);
+        if (!pipelineController.getMasterData().masterPaths?.length) {
+          setMasterScreen('intro');
+          if ($('masterLoadError')) {
+            $('masterLoadError').textContent = i18nManager ? i18nManager.t('wizard.alertNoLines') : '未能生成母版，请换一张照片重试。';
+            $('masterLoadError').hidden = false;
+          }
+        }
+      } catch (error) {
+        setMasterScreen('intro');
+        if ($('masterLoadError')) {
+          $('masterLoadError').textContent = error.message;
+          $('masterLoadError').hidden = false;
+        }
+      }
+    };
+  }
+  if ($('loadDemoBtn')) {
+    $('loadDemoBtn').onclick = () => {
+      setMasterScreen('computing');
+      requestAnimationFrame(() => pipelineController.initBrowserDemo());
     };
   }
 
@@ -404,42 +504,39 @@ function initEventBindings() {
   }
 
   const aboutBtn = $('aboutBtn');
-  if (aboutBtn) {
+  const aboutOverlay = $('aboutModalOverlay');
+  const aboutClose = $('aboutClose');
+  let aboutReturnFocus = null;
+  const closeAbout = () => {
+    if (!aboutOverlay || aboutOverlay.hidden) return;
+    aboutOverlay.hidden = true;
+    aboutReturnFocus?.focus?.();
+  };
+  if (aboutBtn && aboutOverlay) {
     aboutBtn.onclick = () => {
-      const modalCanvas = $('modalCanvas');
-      if (modalCanvas) {
-        modalCanvas.width = 720;
-        modalCanvas.height = 200;
-        const mctx = modalCanvas.getContext('2d');
-        mctx.fillStyle = '#191d1a';
-        mctx.fillRect(0, 0, 720, 200);
-        mctx.fillStyle = '#c8b67e';
-        mctx.font = '24px Georgia, serif';
-        mctx.fillText('Etchloom Classical Printmaking Studio', 40, 90);
-        mctx.font = '13px sans-serif';
-        mctx.fillStyle = '#ded9cc';
-        mctx.fillText('Digital Intaglio & Copperplate Simulation Engine v2.0', 40, 130);
-      }
-      lightbox.open(
-        i18nManager ? i18nManager.t('about.headerTitle') : 'Etchloom · 数字古典版画工坊',
-        modalCanvas,
-        `
-          <p><strong>${i18nManager ? i18nManager.t('about.archTitle') : '系统设计架构'}</strong></p>
-          <ul>
-            <li>${i18nManager ? i18nManager.t('about.m1') : 'M1 视口引擎'}</li>
-            <li>${i18nManager ? i18nManager.t('about.m2') : 'M2 算法管线'}</li>
-            <li>${i18nManager ? i18nManager.t('about.m3') : 'M3 铜版工坊'}</li>
-            <li>${i18nManager ? i18nManager.t('about.m4') : 'M4 调度编排'}</li>
-          </ul>
-          <p><strong>${i18nManager ? i18nManager.t('about.shortcutsTitle') : '快捷操作指南'}</strong></p>
-          <ul>
-            <li>${i18nManager ? i18nManager.t('about.s1') : '点击主工作区任意步骤卡片或虚拟铜版画板'}</li>
-            <li>${i18nManager ? i18nManager.t('about.s2') : '点击卡片右上角 [⛶ 特写]'}</li>
-            <li>${i18nManager ? i18nManager.t('about.s3') : '点击 [雕刻至虚拟铜版 →]'}</li>
-          </ul>
-        `
-      );
+      aboutReturnFocus = document.activeElement;
+      aboutOverlay.hidden = false;
+      aboutClose?.focus?.();
     };
+    if (aboutClose) aboutClose.onclick = closeAbout;
+    aboutOverlay.onclick = event => {
+      if (event.target === aboutOverlay) closeAbout();
+    };
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !aboutOverlay.hidden) closeAbout();
+      if (event.key === 'Tab' && !aboutOverlay.hidden) {
+        const focusable = [...aboutOverlay.querySelectorAll('button, a[href]')];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    });
   }
 
   // Transfer Wizard Drawer Trigger Button
@@ -475,6 +572,11 @@ function initEventBindings() {
     if (stepGrid) {
       stepGrid.setFrameStyle(style);
     }
+    const source = pipelineController.getMasterData().loadedImage;
+    const paths = pipelineController.getMasterData().masterPaths;
+    if (source && paths?.length) {
+      pipelineController.syncHeroMasterPreview(paths, source.width, source.height);
+    }
     setPlateFrameStyle(style);
     const styleLabel = i18nManager ? i18nManager.t(`frame.${style}`) : style;
     const cat = i18nManager ? i18nManager.t('console.frame') : '版画';
@@ -486,6 +588,33 @@ function initEventBindings() {
   }
   if (plateFrameSelect) {
     plateFrameSelect.addEventListener('change', () => handleFrameChange(plateFrameSelect.value));
+  }
+
+  // Master Hero Viewport Actions
+  const heroInspectBtn = $('heroInspectBtn');
+  if (heroInspectBtn) {
+    heroInspectBtn.onclick = () => {
+      const hCanvas = $('masterHeroCanvas') || stepGrid?.stepStates[6]?.canvas;
+      if (!hCanvas) return;
+      const title = i18nManager ? i18nManager.t('step.6.title') : '纯棉纸凹版印样';
+      const meta = $('heroResolutionMeta')?.textContent || '';
+      const vectorSvg = stepGrid ? stepGrid.getStepVectorSvg(6) : null;
+      lightbox.open(title, hCanvas, meta, { isVector: !!vectorSvg, vectorSvg });
+    };
+  }
+
+  const heroExportBtn = $('heroExportBtn');
+  if (heroExportBtn) {
+    heroExportBtn.onclick = () => {
+      pipelineController.downloadStepExport(6);
+    };
+  }
+
+  const heroCanvas = $('masterHeroCanvas');
+  if (heroCanvas) {
+    heroCanvas.onclick = () => {
+      if (heroInspectBtn) heroInspectBtn.click();
+    };
   }
 
   // Plate Fullscreen Lightbox Trigger (Replaces Loupe with full-viewport close-up)
@@ -517,6 +646,154 @@ function initEventBindings() {
     };
   }
 
+  // Two-Stage Workflow Actions: Transfer to Plate & Back to Master
+  const transferToPlateBtn = $('transferToPlateBtn');
+  if (transferToPlateBtn) {
+    transferToPlateBtn.onclick = () => {
+      switchWorkflow('plate');
+      setPlateStage(1);
+      const { masterPaths, contours } = pipelineController.getMasterData();
+      const count = (masterPaths?.length || contours?.length || 0);
+      const masterStats = $('plateMasterStats');
+      if (masterStats) {
+        const unit = i18nManager ? i18nManager.t('telemetry.strokesUnit') : '条矢量线条';
+        masterStats.textContent = `${count.toLocaleString()} ${unit}`;
+      }
+    };
+  }
+
+  const backToMasterBtn = $('backToMasterBtn');
+  if (backToMasterBtn) {
+    backToMasterBtn.onclick = () => {
+      switchWorkflow('master');
+    };
+  }
+
+  // Stage 1 Panel: Confirm Transfer
+  const transferLineWidth = $('transferLineWidth');
+  if (transferLineWidth) {
+    transferLineWidth.oninput = () => {
+      const output = $('transferLineWidthVal');
+      if (output) output.textContent = `${transferLineWidth.value}%`;
+    };
+  }
+  const performStage1Transfer = () => {
+    const { masterPaths, contours } = pipelineController.getMasterData();
+    const paths = (masterPaths && masterPaths.length) ? masterPaths : (contours || []);
+    if (!paths.length) {
+      logMessage(i18nManager ? i18nManager.t('console.wizard') : '向导', i18nManager ? i18nManager.t('wizard.alertNoLines') : '当前母版尚无矢量线条可上版。', 'warn');
+      return;
+    }
+    const techRadio = document.querySelector('input[name="stageTransferTechnique"]:checked');
+    const selectedTechnique = techRadio?.value || 'etching';
+    const nextBtn = $('panel2EtchNavBtn');
+    if (nextBtn) {
+      const key = selectedTechnique === 'drypoint' ? 'cta.toDrypointProof' : 'cta.startEtchNav';
+      nextBtn.dataset.i18n = key;
+      nextBtn.textContent = i18nManager ? i18nManager.t(key) : nextBtn.textContent;
+    }
+    executeTransfer({
+      pathsToCarve: paths,
+      selectedRes: 1500,
+      selectedTechnique,
+      needlePressure: 0.65,
+      lineWidthScale: Number(transferLineWidth?.value || 100) / 100,
+      layerLabel: i18nManager ? i18nManager.t('wizard.layerAll') : '全部母版'
+    });
+  };
+
+  const panel1ConfirmBtn = $('panel1ConfirmBtn');
+  if (panel1ConfirmBtn) {
+    panel1ConfirmBtn.onclick = () => {
+      if (hasPlateModifications()) {
+        const modal = $('retransferModalOverlay');
+        if (modal) modal.hidden = false;
+      } else {
+        performStage1Transfer();
+      }
+    };
+  }
+
+  // Retransfer Safety Intercept Modal Actions
+  const retransferModal = $('retransferModalOverlay');
+  const retransferCancelBtn = $('retransferCancelBtn');
+  const retransferSaveBtn = $('retransferSaveBtn');
+  const retransferDirectBtn = $('retransferDirectBtn');
+
+  if (retransferCancelBtn) {
+    retransferCancelBtn.onclick = () => {
+      if (retransferModal) retransferModal.hidden = true;
+    };
+  }
+  if (retransferSaveBtn) {
+    retransferSaveBtn.onclick = () => {
+      savePlateBackup();
+      if (retransferModal) retransferModal.hidden = true;
+      performStage1Transfer();
+    };
+  }
+  if (retransferDirectBtn) {
+    retransferDirectBtn.onclick = () => {
+      if (retransferModal) retransferModal.hidden = true;
+      performStage1Transfer();
+    };
+  }
+  if (retransferModal) {
+    retransferModal.onclick = (e) => {
+      if (e.target === retransferModal) retransferModal.hidden = true;
+    };
+  }
+
+  // Stage 2 Panel: Go to Acid Etch
+  const panel2EtchNavBtn = $('panel2EtchNavBtn');
+  if (panel2EtchNavBtn) {
+    panel2EtchNavBtn.onclick = () => {
+      const isDrypoint = document.querySelector('input[name="stageTransferTechnique"]:checked')?.value === 'drypoint';
+      setPlateStage(isDrypoint ? 4 : 3);
+      setView(isDrypoint ? 'print' : 'depth');
+    };
+  }
+
+  // Stage 3 Panel: Go to Proof Print
+  const panel3ProofNavBtn = $('panel3ProofNavBtn');
+  if (panel3ProofNavBtn) {
+    panel3ProofNavBtn.onclick = () => {
+      stop();
+      setPlateStage(4);
+      setView('print');
+    };
+  }
+
+  // Stage 4 Panel: Feedback loop - Back to Etch
+  const proofBackToEtchBtn = $('proofBackToEtchBtn');
+  if (proofBackToEtchBtn) {
+    proofBackToEtchBtn.onclick = () => {
+      setPlateStage(3);
+      setView('depth');
+    };
+  }
+
+  // Stage 4 Panel: Feedback loop - Back to Inscribe
+  const proofBackToInscribeBtn = $('proofBackToInscribeBtn');
+  if (proofBackToInscribeBtn) {
+    proofBackToInscribeBtn.onclick = () => {
+      setPlateStage(2);
+      setView('plate');
+    };
+  }
+
+  // Stage 4 Panel: Reprint
+  const reprintBtn = $('reprintBtn');
+  if (reprintBtn) {
+    reprintBtn.onclick = () => {
+      setView('print');
+      render();
+      if ($('status')) {
+        $('status').textContent = i18nManager ? i18nManager.t('caption.print') : '已刷新调墨印样预览';
+      }
+    };
+  }
+
   bindPlateStudioEvents({
     openTransferWizard: () => transferWizard.open(),
     onMasterParamChange: () => pipelineController.scheduleParameterRun(),
@@ -525,14 +802,18 @@ function initEventBindings() {
 }
 
 // 6. Application Bootstrap
-document.addEventListener('DOMContentLoaded', () => {
+function bootstrap() {
   switchWorkflow('master');
+  setMasterScreen('intro');
   initEventBindings();
   updateLocaleUI();
   pipelineController.checkModelStatus();
+}
 
-  // Launch initial demo on load
-  setTimeout(() => {
-    pipelineController.initBrowserDemo();
-  }, 10);
-});
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    bootstrap();
+  } else if (typeof document.addEventListener === 'function') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  }
+}

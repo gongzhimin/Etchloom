@@ -10,6 +10,7 @@
 | 测试用例名 | 被测组件 | 关键断言指标 |
 | :--- | :--- | :--- |
 | `UI Button Click: StepFlowGrid Card Actions` | `StepFlowGrid` | 验证卡片动作栏中放大镜、全屏特写、单步导出的点击事件冒泡与回调拦截 |
+| `StepFlowGrid recomposes completed card metadata when locale changes` | `StepFlowGrid` | 已完成卡片切换中文、英文、越南语后，说明文字翻译且数字保持不变 |
 | `Loupe Magnifier Activation` | `LoupeMagnifier` | 验证在源画布上的鼠标移动事件坐标计算与放大镜容器显示/隐藏状态切换 |
 
 ---

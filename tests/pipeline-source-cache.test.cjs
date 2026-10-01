@@ -32,3 +32,24 @@ test('loading a new photo invalidates cached stages and changes source version',
     global.document = previousDocument;
   }
 });
+
+test('parameter redraw reports pending work until the latest scheduled run settles', async () => {
+  const { PipelineController } = await import('file:///' + path.join(__dirname, '../src/ui/controllers/pipeline-controller.js').replace(/\\/g, '/'));
+  const states = [];
+  const completions = [];
+  const controller = new PipelineController({ log: () => {}, onRecomputeState: active => states.push(active) });
+  controller.currentLoadedImage = { width: 2, height: 2 };
+  controller.scheduler = {
+    schedule: () => new Promise(resolve => completions.push(resolve))
+  };
+  controller._executeIncrementalRun = async () => {};
+  controller.scheduleParameterRun();
+  controller.scheduleParameterRun();
+  assert.deepEqual(states, [true, true]);
+  completions[0]({ aborted: true });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(states, [true, true]);
+  completions[1]({ aborted: false });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(states, [true, true, false]);
+});

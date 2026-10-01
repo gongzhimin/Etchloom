@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C2 — 三道版画线</title>
+  <desc id="desc">三条双线刻痕与一条竖线组成字母 E。</desc>
+  <rect x="10" y="10" width="108" height="108" rx="19" fill="#faf7f0" stroke="#314239" stroke-width="5"/>
+  <path d="M36 27v74M36 31h60M36 64h45M36 97h60" fill="none" stroke="#314239" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M47 37h42M47 70h27M47 103h42" fill="none" stroke="#9c755f" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

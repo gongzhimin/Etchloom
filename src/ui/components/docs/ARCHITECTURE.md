@@ -38,6 +38,7 @@ $$	ext{ctx.drawImage}(	ext{sourceCanvas}, x_{	ext{src}} - 20, y_{	ext{src}} - 20
 7. **阶段 5：矢量母版合成 (Master Print Synthesis)**
 
 每张卡片均内建独立的操作浮层：
+- **底部说明**：`setStepStatus` 接收 `{ key, args }` 并保存到 `stepStates[i].metaSpec`；`updateLocale` 用当前字典和实际尺寸、线条数量重新生成说明，已完成的卡片也随语言切换更新；
 - **键盘特写**：聚焦画布后按 Enter 或空格打开灯箱；关闭时焦点返回原控件；
 - **点击图片**：直接触发大图特写；
 - **放大镜按钮**：唤起 160px 4x 悬停放大镜；

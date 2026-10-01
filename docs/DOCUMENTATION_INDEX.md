@@ -30,6 +30,7 @@ docs/
 │   ├── TEST_MATRIX_AND_FIXTURES.md      # 20个测试套件矩阵与基准样本
 │   └── PERCEPTUAL_DIFF_TOLERANCE.md     # 数值确定性容差与规划基准
 ├── 04_ui_design_system/                 # 界面设计系统
+│   ├── TWO_STAGE_PROGRESSIVE_UI_SPEC.md # 双阶段渐进披露 UI/UX 详细设计规范
 │   ├── DESIGN_TOKENS.md                 # 真实 CSS 变量对照字典 (1:1 提取)
 │   ├── COMPONENT_SPECIFICATIONS.md      # 步骤网格、放大镜与模态框组件
 │   └── INTERACTION_AND_A11Y_SPEC.md     # 鼠标与快捷键交互规范

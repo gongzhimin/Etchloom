@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C 自然版 2 — 手刻刀锋</title>
+  <desc id="desc">深绿色柔边版面上的 E 刻线具有轻微刀锋起收与不对称留白。</desc>
+  <path d="M27 14c25-3 52-2 74 1 10 2 15 8 16 18 2 21 2 47-1 68-1 10-7 16-17 17-21 2-49 2-70-1-11-1-17-7-18-18-2-22-1-49 1-69 1-9 6-15 15-16Z" fill="#314239"/>
+  <path d="M39 29c-2 22-2 47 0 69 0 3 3 5 6 3l3-2c-2-22-2-47-1-70-2-3-6-3-8 0Z" fill="#faf7f0"/>
+  <path d="M42 31c17-2 35-1 53 1 4 0 5 4 1 6-16 2-34 2-52 1ZM43 61c13-2 27-2 39-1 4 1 5 5 1 7-12 2-26 3-40 3ZM43 93c16-1 33 0 51 1 4 1 5 5 1 7-17 2-34 2-52 1Z" fill="#faf7f0"/>
+  <path d="M53 45c9-1 18-1 27 0M51 76c8-1 15-1 22-2M53 108c11 0 21 0 32-1" fill="none" stroke="#9c755f" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+</svg>

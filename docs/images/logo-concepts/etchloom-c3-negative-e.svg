@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C3 — 留白印痕</title>
+  <desc id="desc">深色铜版上的留白形成字母 E，右侧保留一道铜色印痕。</desc>
+  <rect x="10" y="10" width="108" height="108" rx="19" fill="#314239"/>
+  <path d="M35 25h61v13H49v19h34v13H49v20h47v13H35z" fill="#faf7f0"/>
+  <path d="M94 49v30" fill="none" stroke="#9c755f" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -37,7 +37,8 @@ class StepFlowGrid {
       badgeEl: null,
       timeEl: null,
       lastImage: null,
-      lastPaths: null
+      lastPaths: null,
+      metaSpec: { key: idx === 0 ? 'card.pixelBase' : 'card.initMeta' }
     }));
 
     if (this.container) {
@@ -197,6 +198,7 @@ class StepFlowGrid {
    */
   setAspectRatio(width, height) {
     if (!width || !height || width <= 0 || height <= 0) return;
+    this.container?.style?.setProperty('--source-aspect-ratio', `${width} / ${height}`);
     const aspect = width / height;
     this.currentAspect = aspect;
     this.currentSrcWidth = width;
@@ -251,6 +253,11 @@ class StepFlowGrid {
 
     const state = this.stepStates[stepIndex];
     state.status = status;
+    if (status === 'COMPUTING' && !meta) {
+      state.metaSpec = { key: 'card.computing' };
+    } else if (meta) {
+      state.metaSpec = meta;
+    }
 
     card.classList.remove('status-computing', 'status-cached', 'status-done', 'status-error');
 
@@ -299,9 +306,15 @@ class StepFlowGrid {
       state.timeEl.style.display = 'inline-block';
     }
 
-    if (meta && state.metaEl) {
-      state.metaEl.textContent = meta;
+    if (state.metaEl && state.metaSpec) {
+      state.metaEl.textContent = this.formatMeta(state.metaSpec);
     }
+  }
+
+  formatMeta(spec) {
+    if (typeof spec === 'string') return spec;
+    if (!spec?.key) return '';
+    return this.i18n ? this.i18n.t(spec.key, spec.args || []) : spec.key;
   }
 
   /**
@@ -527,14 +540,14 @@ class StepFlowGrid {
     const theme = getTheme();
 
     if (stepIndex === 6) {
-      // Step 6: Authentic Hand-printed Intaglio Sample on Cotton Rag Paper
+      // Step 6: flat transfer master; paper and ink effects appear only after plate printing.
       this.lastSrcWidth = sw;
       this.lastSrcHeight = sh;
 
       const frameStyle = options.frameStyle || this.frameStyle || 'double';
       const geom = getFrameGeometry(cw, ch, frameStyle);
-      const paperGround = options.bgTone || theme.paperGround || '#faf7f0';
-      const inkPrimary = options.strokeColor || theme.inkPrimary || '#1a1918';
+      const paperGround = '#f4f7f7';
+      const inkPrimary = '#253a3d';
 
       // 1. Paper ground
       ctx.fillStyle = paperGround;
@@ -542,6 +555,22 @@ class StepFlowGrid {
 
       // 2. Draw impressed paper depression, plate bevel, and chosen frame style (outer, fine, rough)
       drawEngravedFrame(ctx, cw, ch, geom, inkPrimary);
+      const markInset = Math.max(12, Math.round(geom.pm / 2));
+      const markLength = Math.max(5, Math.round(geom.pm / 5));
+      ctx.save();
+      ctx.strokeStyle = '#8a9b9d';
+      ctx.lineWidth = 1;
+      for (const x of [markInset, cw - markInset]) {
+        for (const y of [markInset, ch - markInset]) {
+          ctx.beginPath();
+          ctx.moveTo(x - markLength, y);
+          ctx.lineTo(x + markLength, y);
+          ctx.moveTo(x, y - markLength);
+          ctx.lineTo(x, y + markLength);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
 
       // 3. Artwork nesting area strictly inside the innermost frame clearance
       // Guarantees artwork NEVER extends outside the frame rules (outer frame is strictly outside artwork)
@@ -647,10 +676,17 @@ class StepFlowGrid {
       const ch = Math.max(1, Math.round(cw * sh / sw));
       const frameStyle = options.frameStyle || this.frameStyle || 'double';
       const geom = getFrameGeometry(cw, ch, frameStyle);
-      const strokeColor = options.strokeColor || theme.inkPrimary || '#1a1918';
-      const bgTone = options.bgTone || theme.paperGround || '#faf7f0';
+      const strokeColor = '#253a3d';
+      const bgTone = '#f4f7f7';
 
       const frameXml = generateFrameSvg(cw, ch, geom, strokeColor);
+      const markInset = Math.max(12, Math.round(geom.pm / 2));
+      const markLength = Math.max(5, Math.round(geom.pm / 5));
+      const marksXml = [markInset, cw - markInset].flatMap(x =>
+        [markInset, ch - markInset].map(y =>
+          `<path d="M ${x - markLength} ${y} L ${x + markLength} ${y} M ${x} ${y - markLength} L ${x} ${y + markLength}" />`
+        )
+      ).join('\n');
 
       const { x: artX, y: artY, w: artW, h: artH } = geom.art;
       const scale = Math.min(artW / sw, artH / sh);
@@ -669,8 +705,11 @@ class StepFlowGrid {
       <rect x="${artX}" y="${artY}" width="${artW}" height="${artH}" />
     </clipPath>
   </defs>
-  <!-- Archival Cotton Paper Ground -->
+  <!-- Flat transfer master ground -->
   <rect width="100%" height="100%" fill="${bgTone}" />
+  <g id="etchloom-registration" fill="none" stroke="#8a9b9d" stroke-width="1">
+${marksXml}
+  </g>
   <!-- Classical Frame Border -->
   <g id="etchloom-frame">
 ${frameXml}
@@ -713,11 +752,12 @@ ${pathsXml}
    */
   updateLocale(i18n) {
     if (i18n) this.i18n = i18n;
-    if (!this.container || !this.i18n) return;
+    if (!this.container || !this.i18n || typeof this.container.querySelector !== 'function') return;
     for (let i = 0; i <= 6; i++) {
       const title = this.container.querySelector(`.step-${i} .step-title`);
       if (title) title.textContent = this.i18n.t(`step.${i}.title`);
       const state = this.stepStates[i];
+      if (state?.metaEl && state.metaSpec) state.metaEl.textContent = this.formatMeta(state.metaSpec);
       if (state && state.badgeEl) {
         if (state.status === 'COMPUTING') state.badgeEl.textContent = this.i18n.t('card.computing');
         else if (state.status === 'CACHED') state.badgeEl.textContent = this.i18n.t('card.cached');

@@ -22,6 +22,8 @@
 
 ## 2. 测试样本夹具与前置条件 (Fixtures & Preconditions)
 
+`tests/virtual-plate-engine.test.cjs` 中的 `rough and smooth print papers produce distinct base color and texture` 比较两种纸张在相同版面上的基色与纹理变化。
+
 - **纯无 DOM 环境要求**：被测引擎在无任何浏览器 DOM（无 `window`, 无 `document`, 无 `HTMLCanvasElement`）的纯 Node.js 进程中直接实例化执行；
 - **测试夹具尺寸**：
   - 标准仿真网格：宽 $W = 100$, 高 $H = 80$（用于快速 PDE 迭代验证）；
@@ -91,3 +93,7 @@
    - 检查 `virtual-plate-engine.js` 的快照深拷贝逻辑是否遗漏了 `burrField.slice()`；
 3. **若 `PlateCodec` 报 Base64 解码长度不匹配**：
    - 检查当前网格 $W \times H$ 与传入状态的 `width * height` 是否一致，确认 `Float32Array` 是否按 4 字节字节对齐。
+
+## 试印纸张更新
+
+试印提供 `rough`、`smooth`、`linen`、`rosaspina` 四种表面预设。后两者参考真实凹版纸的材质与纹理；实现通过底色、确定性空间纹理和着墨变化进行视觉区分，未对实体纸做物理标定。纸张选择会触发试印重绘，说明文案随 zh-CN、en-US、vi-VN 切换。`tests/virtual-plate-engine.test.cjs` 检查四种纸面的像素差异。

@@ -114,6 +114,29 @@ test('VirtualPlateEngine: Pure headless rendering and horizontal mirroring', () 
   assert.ok(rightPrintLum < 100, 'Right side on paper receives mirrored dark intaglio ink');
 });
 
+test('rough and smooth print papers produce distinct base color and texture', () => {
+  const engine = new VirtualPlateEngine(900);
+  const rough = engine.render('print', { paper: 'rough' }).pixels;
+  const smooth = engine.render('print', { paper: 'smooth' }).pixels;
+  const points = [[80, 80], [88, 80], [96, 80], [104, 80]];
+  const sample = (pixels, x, y, channel) => pixels[(y * 900 + x) * 4 + channel];
+  const roughBlue = points.map(([x, y]) => sample(rough, x, y, 2));
+  const smoothBlue = points.map(([x, y]) => sample(smooth, x, y, 2));
+  assert.ok(smoothBlue.every((v, i) => v - roughBlue[i] > 10));
+  assert.ok(new Set(roughBlue).size > 1);
+});
+
+test('linen and Rosaspina presets have distinct paper surfaces', () => {
+  const engine = new VirtualPlateEngine(900);
+  const papers = ['rough', 'smooth', 'linen', 'rosaspina'];
+  const samples = papers.map(paper => {
+    const pixels = engine.render('print', { paper }).pixels;
+    return [pixels[(80 * 900 + 80) * 4], pixels[(80 * 900 + 80) * 4 + 2]];
+  });
+  assert.equal(new Set(samples.map(rgb => rgb.join(','))).size, papers.length);
+  assert.ok(samples[2][1] < samples[3][1], 'coarse cotton–linen appears warmer than Rosaspina');
+});
+
 test('VirtualPlateEngine: Snapshot and Undo Stack', () => {
   const engine = new VirtualPlateEngine(900);
   const idx = 100 * 900 + 100;

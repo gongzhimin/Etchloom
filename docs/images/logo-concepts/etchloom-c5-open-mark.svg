@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C5 — 开放字标</title>
+  <desc id="desc">无外框的字母 E，以深墨色主线和铜色细刻线组成。</desc>
+  <path d="M34 24v80M35 27h67M35 64h52M35 101h67" fill="none" stroke="#314239" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M48 37h39M48 74h25M48 111h39" fill="none" stroke="#9c755f" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -6,29 +6,29 @@ const { AppStore } = require('../src/ui/store/app-store.js');
 test('I18nManager: Translation and Locale Switching (zh-CN -> en-US -> vi-VN)', () => {
   const i18n = new I18nManager('zh-CN');
   assert.equal(i18n.getLocale(), 'zh-CN');
-  assert.equal(i18n.t('app.title'), 'Etchloom · 数字古典版画工坊');
-  assert.equal(i18n.t('tool.needle'), '蚀刻针 (Needle)');
+  assert.equal(i18n.t('app.title'), 'Etchloom');
+  assert.equal(i18n.t('tool.needle'), '蚀刻针');
   assert.equal(i18n.t('sec.3.acid'), '酸液浓度');
 
   // Toggle locale to en-US
   i18n.toggleLocale();
   assert.equal(i18n.getLocale(), 'en-US');
-  assert.equal(i18n.t('app.title'), 'Etchloom · Digital Printmaking Studio');
+  assert.equal(i18n.t('app.title'), 'Etchloom');
   assert.equal(i18n.t('tool.needle'), 'Etching Needle');
   assert.equal(i18n.t('sec.3.acid'), 'Acid Strength');
 
   // Toggle locale to vi-VN
   i18n.toggleLocale();
   assert.equal(i18n.getLocale(), 'vi-VN');
-  assert.equal(i18n.t('app.title'), 'Etchloom · Xưởng in tranh khắc kim loại số');
-  assert.equal(i18n.t('tool.needle'), 'Kim khắc axít (Needle)');
+  assert.equal(i18n.t('app.title'), 'Etchloom');
+  assert.equal(i18n.t('tool.needle'), 'Kim khắc axit');
   assert.equal(i18n.t('sec.3.acid'), 'Nồng độ dung dịch axít');
   assert.equal(i18n.t('stepper.transfer'), 'Lên bản');
 
   // Toggle locale back to zh-CN
   i18n.toggleLocale();
   assert.equal(i18n.getLocale(), 'zh-CN');
-  assert.equal(i18n.t('app.title'), 'Etchloom · 数字古典版画工坊');
+  assert.equal(i18n.t('app.title'), 'Etchloom');
 
   // Direct setLocale and parameter substitution
   i18n.setLocale('vi-VN');
@@ -53,7 +53,7 @@ test('I18nManager: DOM Data Attribute Binding across Locales', () => {
   };
 
   i18n.bindDom(fakeDocument);
-  assert.equal(titleEl.textContent, 'Etchloom · Xưởng in tranh khắc kim loại số');
+  assert.equal(titleEl.textContent, 'Etchloom');
   assert.equal(inputEl.placeholder, 'Tải ảnh lên');
 });
 
@@ -69,10 +69,10 @@ test('I18nManager: Vietnamese vocabulary integrity and completeness', () => {
   }
 
   // Verify all 4 orthogonal tools
-  assert.equal(i18n.t('tool.needle'), 'Kim khắc axít (Needle)');
+  assert.equal(i18n.t('tool.needle'), 'Kim khắc axit');
   assert.equal(i18n.t('tool.dry'), 'Kim khắc khô (Drypoint)');
   assert.equal(i18n.t('tool.stop'), 'Sơn phủ chống axít');
-  assert.equal(i18n.t('tool.polish'), 'Dao mài bóng (Burnisher)');
+  assert.equal(i18n.t('tool.polish'), 'Dao mài');
 
   // Verify 4 frames
   assert.equal(i18n.t('frame.double'), 'Khung cổ điển hai lớp');

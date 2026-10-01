@@ -3,7 +3,28 @@ const assert = require('node:assert/strict');
 
 // Import StepFlowGrid from universal module
 const { StepFlowGrid, getFrameGeometry, generateFrameSvg } = require('../src/ui/components/step-flow-grid.js');
+const { I18nManager } = require('../src/ui/i18n/i18n.js');
 const { LightboxController } = require('../src/ui/controllers/lightbox-controller.js');
+
+test('StepFlowGrid recomposes completed card metadata when locale changes', () => {
+  const i18n = new I18nManager('zh-CN');
+  const grid = new StepFlowGrid(null, { i18n });
+  const card = { classList: { add() {}, remove() {} } };
+  grid.container = {
+    querySelector: selector => selector === '.step-3' ? card : null,
+    querySelectorAll: () => []
+  };
+  grid.stepStates[3].metaEl = { textContent: '' };
+  grid.stepStates[3].badgeEl = { textContent: '', className: '' };
+  grid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [42] });
+  assert.equal(grid.stepStates[3].metaEl.textContent, '42 条轮廓');
+  i18n.setLocale('en-US');
+  grid.updateLocale(i18n);
+  assert.equal(grid.stepStates[3].metaEl.textContent, '42 contours');
+  i18n.setLocale('vi-VN');
+  grid.updateLocale(i18n);
+  assert.equal(grid.stepStates[3].metaEl.textContent, '42 nét viền');
+});
 
 function createMockElement(tag, props = {}) {
   const listeners = {};
@@ -131,7 +152,8 @@ test('StepFlowGrid: Vector SVG generation for Stages 3..6 and raster rejection f
   assert.ok(typeof svg6Double === 'string');
   assert.ok(svg6Double.includes('id="etchloom-frame"'));
   assert.ok(svg6Double.includes('id="etchloom-artwork"'));
-  assert.ok(svg6Double.includes('fill="#faf7f0"')); // Archival cotton paper ground
+  assert.ok(svg6Double.includes('fill="#f4f7f7"')); // Flat transfer master ground
+  assert.ok(svg6Double.includes('id="etchloom-registration"'));
   assert.ok(svg6Double.includes('<rect x=')); // Double frame rects
 
   // Update Step 6 with 'rough' artisanal chisel frame

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom 线条节奏 2 — 流动</title>
+  <desc id="desc">厚重竖刻线托起两道直线，中间曲线向右伸展并逐渐变细。</desc>
+  <path d="M35 16c-4 20-6 39-6 58-1 15 0 28 3 40 1 5 10 5 11 0-2-17-2-34-1-50 1-16 2-32 4-47 1-7-9-8-11-1Z" fill="#2d4036"/>
+  <path d="M41 27c19-3 39-3 61-1 4 1 5 5 1 7-20 3-42 3-63 5Z" fill="#2d4036"/>
+  <path d="M39 96c20-2 41-2 62 1 5 1 5 6 0 8-21 2-43 2-62 1Z" fill="#2d4036"/>
+  <path d="M40 60c12 2 23 7 35 4 10-2 18-10 28-18 4-3 8-4 12-3-12 6-21 21-34 28-12 7-27 4-42 1Z" fill="#2d4036"/>
+  <path d="M51 46c10-1 21-1 33-2M51 80c12 3 22 3 31-1 6-3 12-7 16-11M51 114c13 1 25 0 37-1" fill="none" stroke="#9c755f" stroke-width="2.25" stroke-linecap="round" opacity=".8"/>
+</svg>

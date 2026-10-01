@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom C4 — 手刻线条</title>
+  <desc id="desc">略带刀锋起收变化的三道刻线构成字母 E。</desc>
+  <rect x="10" y="10" width="108" height="108" rx="19" fill="#314239"/>
+  <path d="M37 27c-2 20-2 51 0 74" fill="none" stroke="#faf7f0" stroke-width="8" stroke-linecap="round"/>
+  <path d="M38 32c16-2 37-2 59 0l-7 6H38zM38 63c13-2 28-2 45 0l-7 6H38zM38 94c16-2 37-2 59 0l-7 6H38z" fill="#faf7f0"/>
+  <path d="M50 42h28M50 73h18M50 104h28" fill="none" stroke="#9c755f" stroke-width="2" stroke-linecap="round"/>
+</svg>

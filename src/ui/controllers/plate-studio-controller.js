@@ -33,6 +33,7 @@ export let grainNoise = new Float32Array(N);
 export let plateFrameStyle = 'double';
 export let mirrorPrint = false;
 export let sourceAspectRatio = null;
+export let etchState = 0; // 0: Standby (待开始), 1: Biting (腐蚀中), 2: Paused (已暂停)
 
 export function setPlateFrameStyle(style) {
   plateFrameStyle = style || 'double';
@@ -58,7 +59,7 @@ export function setPlateAspectRatio(width, height) {
 }
 
 if (typeof window !== 'undefined') {
-  window.getPlateState = () => ({ W, H, N, depth, exposed, burr, blocked, tool, view, running, elapsed });
+  window.getPlateState = () => ({ W, H, N, depth, exposed, burr, blocked, tool, view, running, elapsed, etchState });
 }
 
 export function resetGrain() {
@@ -97,11 +98,8 @@ export function allocatePlate(width, height = null) {
   next = new Float32Array(N);
   resetGrain();
   dirty = true;
-  if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
-    document.querySelectorAll('.resolution-selector .res-btn').forEach(b => {
-      b.classList.toggle('active', Number(b.dataset.res) === W);
-    });
-  }
+  const resolutionValue = $('plateResolutionValue');
+  if (resolutionValue) resolutionValue.textContent = `${W} × ${H}`;
 }
 
 export const val = id => Number($(id)?.value || 0) / 100;
@@ -135,17 +133,51 @@ export function syncUndo() {
 export function stop() {
   const wasRunning = running;
   running = false;
+  if (wasRunning || elapsed > 0) {
+    etchState = 2; // Paused
+  } else {
+    etchState = 0; // Standby
+  }
   const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
-  const startText = i18n ? i18n.t('sec.3.startAcid') : '开始腐蚀';
-  if ($('etch')) $('etch').textContent = startText;
-  if ($('etchTopBtn')) $('etchTopBtn').textContent = startText;
-  if ($('etchBtn')) $('etchBtn').textContent = startText;
+  const resumeText = i18n ? i18n.t('cta.resumeEtch') : '继续腐蚀';
+  const startText = i18n ? i18n.t('cta.startEtch') : '开始腐蚀';
+  const btnText = etchState === 2 ? resumeText : startText;
+
+  if ($('etch')) $('etch').textContent = btnText;
+  if ($('etchTopBtn')) $('etchTopBtn').textContent = btnText;
+  if ($('etchBtn')) $('etchBtn').textContent = btnText;
+
+  const badge = $('etchStateBadge');
+  if (badge && badge.classList) {
+    badge.classList.remove('status-biting', 'status-standby', 'status-paused');
+    if (etchState === 2) {
+      badge.classList.add('status-paused');
+      badge.textContent = i18n ? i18n.t('etch.state.paused') : '已暂停';
+    } else {
+      badge.classList.add('status-standby');
+      badge.textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+    }
+  }
+
   if ($('status')) $('status').textContent = i18n ? i18n.t('status.stopped') : '已停止 · 可以继续制版或试印';
+  if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = etchState !== 2;
   syncUndo();
   if (wasRunning && typeof logMessage === 'function') {
     const cat = i18n ? i18n.t('console.plate') : '铜版';
     logMessage(cat, `酸液腐蚀已停止，当前累计咬蚀时间: ${elapsed.toFixed(1)} 秒`, 'info');
   }
+}
+
+export function resetEtchProgress() {
+  running = false;
+  elapsed = 0;
+  etchState = 0;
+  const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+  if ($('etchBtn')) $('etchBtn').textContent = i18n ? i18n.t('cta.startEtch') : '放入酸槽，开始腐蚀';
+  if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = true;
+  if ($('etchStateBadge')) $('etchStateBadge').textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+  updateAcidGauge();
+  dirty = true;
 }
 
 export function setView(v) {
@@ -239,15 +271,16 @@ export function point(e) {
 
 export function etch(dt) {
   let strength = val('acid'), g = val('grain');
+  const reactionDt = dt * 0.4;
   next.set(exposed);
   for (let y = 1; y < H - 1; y++) {
     for (let x = 1; x < W - 1; x++) {
       let i = y * W + x;
       if (blocked[i]) continue;
       let edge = Math.max(exposed[i - 1], exposed[i + 1], exposed[i - W], exposed[i + W]);
-      next[i] = Math.min(1, exposed[i] + Math.max(0, edge - exposed[i]) * dt * strength * (0.14 + g * grainNoise[i] * 0.55));
-      depth[i] = Math.min(1, depth[i] + next[i] * dt * strength * 0.058 * (1 + g * (grainNoise[i] - 0.5)));
-      if (burr[i] > 0) burr[i] = Math.max(0, burr[i] - dt * strength * 0.14);
+      next[i] = Math.min(1, exposed[i] + Math.max(0, edge - exposed[i]) * reactionDt * strength * (0.14 + g * grainNoise[i] * 0.55));
+      depth[i] = Math.min(1, depth[i] + next[i] * reactionDt * strength * 0.058 * (1 + g * (grainNoise[i] - 0.5)));
+      if (burr[i] > 0) burr[i] = Math.max(0, burr[i] - reactionDt * strength * 0.14);
     }
   }
   exposed.set(next);
@@ -262,7 +295,11 @@ export function render(target = getCtx(), mode = view) {
   let ink = val('ink');
   let pressure = val('pressure');
   let tone = val('tone');
-  let rough = $('paper')?.value === 'rough';
+  const paper = $('paper')?.value || 'rough';
+  const paperBase = paper === 'smooth' ? [252, 249, 243]
+    : paper === 'linen' ? [244, 238, 224]
+    : paper === 'rosaspina' ? [247, 242, 229]
+    : [247, 238, 219];
   let pm = Math.round(26 * W / 900);
   let bw = Math.round(7 * W / 900);
 
@@ -291,8 +328,16 @@ export function render(target = getCtx(), mode = view) {
           b *= 0.20;
         }
       } else {
-        let texture = rough ? noise * 9 : noise * 3.5;
-        let paperR = 248 - texture, paperG = 242 - texture, paperB = 226 - texture;
+        const fiber = (((x >> 3) * 37 ^ (y >> 3) * 91) & 15);
+        const cloud = (((x >> 5) * 23 ^ (y >> 5) * 41) & 15);
+        const strand = ((x & 31) < 2 && ((y >> 4) & 3) === 0) ? 4 : 0;
+        const texture = paper === 'smooth' ? noise * 2.5 + fiber * 0.12
+          : paper === 'linen' ? noise * 9 + fiber * 0.7 + strand
+          : paper === 'rosaspina' ? noise * 6 + fiber * 0.3 + cloud * 0.5
+          : noise * 13 + fiber * 0.9;
+        let paperR = paperBase[0] - texture;
+        let paperG = paperBase[1] - texture;
+        let paperB = paperBase[2] - texture;
         let dropOut = 0.07 * (1 - pressure);
         let effD = Math.max(0, d - dropOut);
         let transferRate = effD > 0 ? (1 - Math.exp(-effD * (1.8 + 13.0 * pressure))) : 0;
@@ -300,7 +345,11 @@ export function render(target = getCtx(), mode = view) {
         let dryThreshold = Math.max(0, (0.65 - ink) * 1.65);
         let dryBreak = (dryThreshold > 0 && noise < dryThreshold) ? 0.0 : 1.0;
         let lineInk = (transferRate * (0.25 + 0.75 * ink) + burrInk) * dryBreak;
-        let variation = rough ? (0.75 + grainNoise[(i + seed * 997) % N] * 0.5) : 1;
+        const grain = grainNoise[(i + seed * 997) % N];
+        let variation = paper === 'smooth' ? 1
+          : paper === 'linen' ? 0.65 + grain * 0.7
+          : paper === 'rosaspina' ? 0.78 + grain * 0.42
+          : 0.68 + grain * 0.62;
         let surfaceTone = tone * ink * 0.32;
         let black = Math.min(0.98, lineInk * variation + surfaceTone);
         let pressedR = paperR - 1.5, pressedG = paperG - 1.5, pressedB = paperB - 1;
@@ -442,11 +491,22 @@ export function toggleEtch() {
   }
   snapshot();
   running = true;
+  etchState = 1;
+  if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = true;
   const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
   const stopText = i18n ? i18n.t('sec.3.stopAcid') : '停止腐蚀';
+  const pauseText = i18n ? i18n.t('cta.pauseEtch') : '取出铜版，暂停腐蚀';
   if ($('etch')) $('etch').textContent = stopText;
   if ($('etchTopBtn')) $('etchTopBtn').textContent = stopText;
-  if ($('etchBtn')) $('etchBtn').textContent = stopText;
+  if ($('etchBtn')) $('etchBtn').textContent = pauseText;
+
+  const badge = $('etchStateBadge');
+  if (badge && badge.classList) {
+    badge.classList.remove('status-standby', 'status-paused');
+    badge.classList.add('status-biting');
+    badge.textContent = i18n ? i18n.t('etch.state.biting') : '腐蚀中';
+  }
+
   setPlateStage(3);
   if ($('status')) $('status').textContent = i18n ? i18n.t('status.etching') : '酸液作用中 · 随时停止以保留细线';
   syncUndo();
@@ -457,8 +517,6 @@ export function toggleEtch() {
 }
 
 export function updateAcidGauge() {
-  const gauge = $('plateAcidGauge');
-  if (!gauge) return;
   let totalD = 0, count = 0;
   const step = Math.max(1, Math.floor(N / 500));
   for (let i = 0; i < N; i += step) {
@@ -469,24 +527,54 @@ export function updateAcidGauge() {
   }
   const avgMicrons = count > 0 ? (totalD / count * 45).toFixed(1) : '0.0';
   const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
-  gauge.textContent = i18n ? i18n.t('plate.gauge', [elapsed.toFixed(1), avgMicrons]) : `腐蚀 ${elapsed.toFixed(1)}s · 深度 ${avgMicrons}μm`;
+  const gauge = $('plateAcidGauge');
+  if (gauge) {
+    gauge.textContent = i18n ? i18n.t('plate.gauge', [elapsed.toFixed(1), avgMicrons]) : `腐蚀 ${elapsed.toFixed(1)}s · 深度 ${avgMicrons}μm`;
+  }
+  const timeVal = $('etchTimeVal');
+  if (timeVal) {
+    const sUnit = i18n?.getLocale() === 'en-US' ? 's' : (i18n?.getLocale() === 'vi-VN' ? 'giây' : '秒');
+    timeVal.textContent = `${elapsed.toFixed(1)} ${sUnit}`;
+  }
+  const depthVal = $('etchDepthVal');
+  if (depthVal) {
+    depthVal.textContent = `${avgMicrons} μm`;
+  }
+  const progressBar = $('etchProgressBar');
+  if (progressBar && progressBar.style) {
+    const pct = Math.min(100, Math.round(Number(avgMicrons) / 25.0 * 100));
+    progressBar.style.width = `${pct}%`;
+  }
 }
 
-// Classical 5-Stage Stepper
+// Classical 4-Stage Progressive Workflow
 export let currentPlateStage = 1;
 export function setPlateStage(stageNum) {
+  if (stageNum > 4) stageNum = 4;
+  if (stageNum < 1) stageNum = 1;
   currentPlateStage = stageNum;
   if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
   const steps = document.querySelectorAll('#plateStepper .stepper-step');
-  steps.forEach(step => {
-    const num = Number(step.dataset.step);
-    step.classList.remove('active', 'done');
-    if (num < stageNum) {
-      step.classList.add('done');
-    } else if (num === stageNum) {
-      step.classList.add('active');
+  if (steps && steps.forEach) {
+    steps.forEach(step => {
+      const num = Number(step.dataset?.step || step.getAttribute?.('data-step') || 0);
+      if (step.classList) {
+        step.classList.remove('active', 'done');
+        if (num < stageNum) {
+          step.classList.add('done');
+        } else if (num === stageNum) {
+          step.classList.add('active');
+        }
+      }
+    });
+  }
+
+  for (let i = 1; i <= 4; i++) {
+    const panel = $('plateStagePanel' + i);
+    if (panel && panel.classList) {
+      panel.classList.toggle('active', i === stageNum);
     }
-  });
+  }
 }
 
 // Bind DOM event listeners for buttons and canvas
@@ -655,6 +743,20 @@ export function bindPlateStudioEvents(options = {}) {
     burr.fill(0);
     elapsed = 0;
     plateSources = [];
+    etchState = 0;
+    const badge = $('etchStateBadge');
+    if (badge && badge.classList) {
+      badge.classList.remove('status-biting', 'status-paused');
+      badge.classList.add('status-standby');
+      const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+      badge.textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+    }
+    const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+    const startText = i18n ? i18n.t('cta.startEtch') : '开始腐蚀';
+    if ($('etch')) $('etch').textContent = startText;
+    if ($('etchTopBtn')) $('etchTopBtn').textContent = startText;
+    if ($('etchBtn')) $('etchBtn').textContent = startText;
+    updateAcidGauge();
     dirty = true;
   };
 
@@ -668,6 +770,14 @@ export function bindPlateStudioEvents(options = {}) {
     burr.fill(0);
     elapsed = 0;
     plateSources = [];
+    etchState = 0;
+    const badge = $('etchStateBadge');
+    if (badge && badge.classList) {
+      badge.classList.remove('status-biting', 'status-paused');
+      badge.classList.add('status-standby');
+      const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+      badge.textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+    }
     let old = tool, sz = $('size')?.value || 4;
     tool = 'dry';
     if ($('size')) $('size').value = 2;
@@ -706,58 +816,51 @@ export function bindPlateStudioEvents(options = {}) {
       b.onclick = () => setView(b.dataset.view);
     });
 
-    // Stepper Steps
+    // Stepper Steps (4-stage progressive flow)
     document.querySelectorAll('#plateStepper .stepper-step').forEach(step => {
       step.onclick = () => {
         const num = Number(step.dataset.step);
         if (num === 1) {
-          if (typeof options.openTransferWizard === 'function') options.openTransferWizard();
+          setPlateStage(1);
+          setView('plate');
         } else if (num === 2) {
           setPlateStage(2);
           setView('plate');
         } else if (num === 3) {
           setPlateStage(3);
           setView('depth');
-        } else if (num === 4) {
+        } else if (num === 4 || num === 5) {
           setPlateStage(4);
-          setView('plate');
-        } else if (num === 5) {
-          setPlateStage(5);
           setView('print');
         }
       };
     });
 
-    // Resolution Switcher
-    document.querySelectorAll('.resolution-selector .res-btn').forEach(btn => {
-      btn.onclick = () => {
-        const res = Number(btn.dataset.res);
-        if (![900, 1500, 3000].includes(res)) return;
-        if (W === res) return;
-        snapshot();
-        allocatePlate(res);
-        document.querySelectorAll('.resolution-selector .res-btn').forEach(b => {
-          b.classList.toggle('active', Number(b.dataset.res) === res);
-        });
-        const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
-        if (typeof logMessage === 'function') {
-          const cat = i18n ? i18n.t('console.plate') : '铜版';
-          logMessage(cat, `版面物理网格分辨率切换为: ${W} × ${H} 像素`, 'info');
-        }
-        const loc = i18n?.getLocale() || 'zh-CN';
-        if ($('status')) $('status').textContent = loc === 'en-US' ? `Grid resolution switched to ${W} × ${H}` : (loc === 'vi-VN' ? `Đã chuyển lưới vật lý sang ${W} × ${H}` : `物理网格已切换为 ${W} × ${H}`);
-      };
-    });
   }
 
   // Sliders binding with output tags & pipeline reactive hooks
+  const paperSelect = $('paper');
+  if (paperSelect && typeof paperSelect.addEventListener === 'function') {
+    const updatePaper = () => {
+      dirty = true;
+      const description = $('paperDescription');
+      const key = `paper.desc.${paperSelect.value}`;
+      if (description) {
+        description.setAttribute?.('data-i18n', key);
+        description.textContent = ((typeof window !== 'undefined' && window.i18nManager) || globalThis.i18nManager)?.t(key) || description.textContent;
+      }
+    };
+    paperSelect.addEventListener('change', updatePaper);
+  }
   const masterParamIds = ['exposure', 'blackPoint', 'whitePoint', 'contourDetail', 'aerialStrength', 'needleWidth', 'density', 'curvatureGate', 'crossHatch'];
   for (const id of ['size', 'acid', 'grain', 'ink', 'pressure', 'tone', ...masterParamIds]) {
     const el = $(id);
     const out = $(id + 'Val') || $(id + 'Value');
     if (el && out) {
       const updateVal = () => {
-        out.value = el.value + (id === 'size' ? ' px' : id === 'needleWidth' ? ' mm' : '%');
+        out.value = id === 'needleWidth'
+          ? `${(Number(el.value) / 10).toFixed(1)} mm`
+          : el.value + (id === 'size' ? ' px' : '%');
         dirty = true;
       };
       const handleInput = () => {
@@ -804,6 +907,39 @@ export function bindPlateStudioEvents(options = {}) {
   if (typeof requestAnimationFrame === 'function') {
     requestAnimationFrame(frame);
   }
+}
+
+// Guarded Retransfer: check if copperplate has manual carvings or acid depth
+export function hasPlateModifications() {
+  if (elapsed > 0) return true;
+  for (let i = 0; i < N; i++) {
+    if (depth[i] > 0 || burr[i] > 0 || exposed[i] > 0) return true;
+  }
+  return false;
+}
+
+// Guarded Retransfer: backup current plate state to JSON before overwrite
+export function savePlateBackup() {
+  const PlateCodecLib = (typeof PlateCodec !== 'undefined' ? PlateCodec : (typeof window !== 'undefined' ? window.PlateCodec : null));
+  download(
+    new Blob([
+      JSON.stringify({
+        version: W === 900 ? 1 : 2,
+        width: W,
+        height: H,
+        depth: W === 900 ? Array.from(depth) : (PlateCodecLib && PlateCodecLib.encode ? PlateCodecLib.encode(depth) : Array.from(depth)),
+        exposed: W === 900 ? Array.from(exposed) : (PlateCodecLib && PlateCodecLib.encode ? PlateCodecLib.encode(exposed) : Array.from(exposed)),
+        blocked: W === 900 ? Array.from(blocked) : (PlateCodecLib && PlateCodecLib.encode ? PlateCodecLib.encode(blocked) : Array.from(blocked)),
+        burr: W === 900 ? Array.from(burr) : (PlateCodecLib && PlateCodecLib.encode ? PlateCodecLib.encode(burr) : Array.from(burr)),
+        paperMM: (typeof window !== 'undefined' && window.printPaperMM) || 254,
+        elapsed,
+        seed,
+        plateSources,
+        timestamp: new Date().toISOString()
+      })
+    ], { type: 'application/json' }),
+    'Etchloom-plate-backup-' + Date.now() + '.json'
+  );
 }
 
 // Auto-bind if loaded in browser or test harness

@@ -22,6 +22,12 @@ function app() {
   vm.runInContext(source, context);
   return { context, el, run: s => vm.runInContext(s, context) };
 }
+test('acid bite depth grows slowly while elapsed time stays in real seconds', () => {
+  const a = app();
+  a.run('exposed[W + 1] = 1; grainNoise[W + 1] = 0.5; etch(10)');
+  assert.ok(Math.abs(a.run('depth[W + 1]') - 0.1044) < 0.00001);
+  assert.equal(a.run('elapsed'), 10);
+});
 test('virtual plate saves and restores engraving, source recipes and selection; undo restores previous source', async () => {
   const a = app(); a.context.recipe = recipe;
   a.run('depth[100]=.35;exposed[100]=.75;blocked[200]=1;elapsed=12;plateSources=[recipe]; download=(blob)=>{savedBlob=blob};');
@@ -92,5 +98,18 @@ test('4 plate-making tools have authentic, orthogonal physical behaviors', () =>
   assert.equal(a.run(`blocked[${idx}]`), 1, 'Stop-out blocks area');
   assert.equal(a.run(`exposed[${idx}]`), 0, 'Stop-out covers exposed area');
   assert.equal(a.run(`burr[${idx}]`), 0, 'Stop-out coats burr');
+});
+
+test('engraving needle diameter changes the actual stroke footprint', () => {
+  const a = app();
+  a.el('size').value = 2;
+  a.run("tool='needle'; dab(400, 300, 1)");
+  const narrow = a.run('exposed[300 * W + 405]');
+  a.run('exposed.fill(0)');
+  a.el('size').value = 16;
+  a.run('dab(400, 300, 1)');
+  const wide = a.run('exposed[300 * W + 405]');
+  assert.equal(narrow, 0);
+  assert.ok(wide > 0);
 });
 
