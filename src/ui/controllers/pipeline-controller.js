@@ -87,7 +87,11 @@ export class PipelineController {
     if (metrics.status && $('telemetryStatus')) $('telemetryStatus').textContent = metrics.status;
     if (metrics.task && $('telemetryTask')) $('telemetryTask').textContent = metrics.task;
     if (metrics.duration != null && $('telemetryDuration')) $('telemetryDuration').textContent = `${metrics.duration}ms`;
-    if (metrics.strokes != null && $('telemetryStrokes')) $('telemetryStrokes').textContent = `${metrics.strokes} 条`;
+    if (metrics.strokes != null && $('telemetryStrokes')) {
+      const isEn = (typeof window !== 'undefined' && window.i18nManager && window.i18nManager.getLocale() === 'en-US');
+      const strokeCount = typeof metrics.strokes === 'number' ? metrics.strokes : String(metrics.strokes).replace(/[^0-9]/g, '');
+      $('telemetryStrokes').textContent = isEn ? `${strokeCount} lines` : `${strokeCount} 条`;
+    }
     if (metrics.cache && $('telemetryCache')) $('telemetryCache').textContent = metrics.cache;
   }
 
@@ -104,19 +108,20 @@ export class PipelineController {
     };
   }
 
-  async checkModelStatus() {
+  async checkModelStatus(locale) {
     const health = await this.aiGateway.checkHealth();
-    let label = '基础离线模式 (纯几何)';
+    const isEn = locale === 'en-US' || (typeof window !== 'undefined' && window.i18nManager && window.i18nManager.getLocale() === 'en-US');
+    let label = isEn ? 'Offline Mode (Geometric)' : '基础离线模式 (纯几何)';
     let badgeClass = 'badge badge-green';
 
     if (health.mode === 'remote-python') {
-      label = `本机服务 · ${health.device}`;
+      label = isEn ? `Local AI · ${health.device}` : `本机服务 · ${health.device}`;
       badgeClass = 'badge badge-green';
     } else if (health.mode === 'browser-webai') {
-      label = `联网模型 · ${health.device}`;
+      label = isEn ? `Online Model · ${health.device}` : `联网模型 · ${health.device}`;
       badgeClass = 'badge badge-gold';
     } else {
-      label = '基础离线模式 (纯几何)';
+      label = isEn ? 'Offline Mode (Geometric)' : '基础离线模式 (纯几何)';
       badgeClass = 'badge badge-green';
     }
 
@@ -874,12 +879,13 @@ export class PipelineController {
       this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样仿真', 12.0);
     }
 
+    const isEn = (typeof window !== 'undefined' && window.i18nManager && window.i18nManager.getLocale() === 'en-US');
     this.updateTelemetry({
-      status: '运行就绪',
+      status: isEn ? 'Ready' : '运行就绪',
       task: 'IDLE',
       duration: '38.5',
       strokes: allPaths.length,
-      cache: '5/5 命中'
+      cache: isEn ? '5/5 Hits' : '5/5 命中'
     });
 
     this.log('系统', `古典版画工坊初始化完成，已载入莫兰迪静物示范母版 (${allPaths.length} 条矢量线条)，7 组步骤流画卷均已就绪。`, 'info');

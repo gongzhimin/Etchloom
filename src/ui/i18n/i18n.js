@@ -193,7 +193,16 @@ class I18nManager {
     this.dict = DICTIONARY;
     let saved = null;
     try {
-      if (typeof localStorage !== 'undefined') {
+      if (typeof window !== 'undefined' && window.location && window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        const queryLang = params.get('lang') || params.get('locale');
+        if (queryLang) {
+          const norm = queryLang.toLowerCase();
+          if (norm.startsWith('en')) saved = 'en-US';
+          else if (norm.startsWith('zh')) saved = 'zh-CN';
+        }
+      }
+      if (!saved && typeof localStorage !== 'undefined') {
         saved = localStorage.getItem('etchloom_locale');
       }
     } catch (_) {}

@@ -78,6 +78,9 @@ let i18nManager = null;
 const I18nLib = (typeof I18n !== 'undefined' ? I18n : (typeof window !== 'undefined' ? window.I18n : null));
 if (I18nLib && I18nLib.I18nManager) {
   i18nManager = new I18nLib.I18nManager();
+  if (typeof window !== 'undefined') {
+    window.i18nManager = i18nManager;
+  }
 }
 
 export function updateLocaleUI() {
@@ -94,6 +97,26 @@ export function updateLocaleUI() {
 
   if (typeof stepGrid !== 'undefined' && stepGrid && typeof stepGrid.updateLocale === 'function') {
     stepGrid.updateLocale(i18nManager);
+  }
+  if (typeof pipelineController !== 'undefined' && pipelineController && typeof pipelineController.checkModelStatus === 'function') {
+    pipelineController.checkModelStatus(i18nManager.getLocale());
+  }
+
+  const isEn = i18nManager.getLocale() === 'en-US';
+  const telStatus = $('telemetryStatus');
+  if (telStatus) {
+    if (isEn && telStatus.textContent === '运行就绪') telStatus.textContent = 'Ready';
+    if (!isEn && telStatus.textContent === 'Ready') telStatus.textContent = '运行就绪';
+  }
+  const telCache = $('telemetryCache');
+  if (telCache) {
+    if (isEn && telCache.textContent.includes('命中')) telCache.textContent = telCache.textContent.replace('命中', 'Hits');
+    if (!isEn && telCache.textContent.includes('Hits')) telCache.textContent = telCache.textContent.replace('Hits', '命中');
+  }
+  const telStrokes = $('telemetryStrokes');
+  if (telStrokes) {
+    if (isEn && telStrokes.textContent.includes('条')) telStrokes.textContent = telStrokes.textContent.replace('条', 'lines');
+    if (!isEn && telStrokes.textContent.includes('lines')) telStrokes.textContent = telStrokes.textContent.replace('lines', '条');
   }
 }
 
@@ -162,11 +185,18 @@ const pipelineController = new PipelineController({
     frameStyle: $('frameStyle')?.value
   }),
   onTelemetry: (metrics) => {
+    const isEn = i18nManager && i18nManager.getLocale() === 'en-US';
     if (metrics.status && $('telemetryStatus')) $('telemetryStatus').textContent = metrics.status;
     if (metrics.task && $('telemetryTask')) $('telemetryTask').textContent = metrics.task;
     if (metrics.duration != null && $('telemetryDuration')) $('telemetryDuration').textContent = `${metrics.duration}ms`;
-    if (metrics.strokes != null && $('telemetryStrokes')) $('telemetryStrokes').textContent = `${metrics.strokes} 条`;
-    if (metrics.cache && $('telemetryCache')) $('telemetryCache').textContent = metrics.cache;
+    if (metrics.strokes != null && $('telemetryStrokes')) {
+      const strokeCount = typeof metrics.strokes === 'number' ? metrics.strokes : String(metrics.strokes).replace(/[^0-9]/g, '');
+      $('telemetryStrokes').textContent = isEn ? `${strokeCount} lines` : `${strokeCount} 条`;
+    }
+    if (metrics.cache && $('telemetryCache')) {
+      const cacheVal = isEn ? String(metrics.cache).replace('命中', 'Hits') : String(metrics.cache).replace('Hits', '命中');
+      $('telemetryCache').textContent = cacheVal;
+    }
   },
   onModelStatus: (statusData) => {
     const badge = $('modelStatus');
