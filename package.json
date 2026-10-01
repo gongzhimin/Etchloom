@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node scripts/serve.cjs",
     "model:start": "powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1",
-    "test": "node --test tests/*.test.cjs",
+    "test": "node scripts/test-runner.cjs",
     "benchmark": "node scripts/benchmark.cjs",
     "build:desktop": "node scripts/prepare-desktop.cjs",
     "icons:generate": "node scripts/generate-icons.cjs"
