@@ -4,13 +4,14 @@
   "version": "0.1.0",
   "identifier": "com.etchloom.studio",
   "build": {
-    "beforeBuildCommand": "node ../scripts/prepare-desktop.cjs",
+    "beforeBuildCommand": "node scripts/prepare-desktop.cjs",
     "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Etchloom · Digital Classical Printmaking Studio",
         "width": 1440,
         "height": 920,
@@ -34,11 +35,6 @@
       "icons/icon_512.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ],
-    "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    }
+    ]
   }
 }
