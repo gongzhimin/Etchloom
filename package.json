@@ -11,6 +11,11 @@
     "build:desktop": "node scripts/prepare-desktop.cjs",
     "icons:generate": "node scripts/generate-icons.cjs"
   },
-  "engines": { "node": ">=20" },
-  "license": "MIT"
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.1"
+  }
 }
