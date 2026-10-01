@@ -32,7 +32,7 @@
 | - src/orchestration/stage-cache.js (32-bit DJB2 哈希与 DAG 增量失效)       |
 | - src/orchestration/exporter.js (SVG 分层、CNC G-Code、PNG pHYs 导出)      |
 | - src/orchestration/telemetry-sink.js (阶段耗时与性能指标统计)             |
-| - src/services/ai-service-gateway.js (HTTP /health, /infer, /depth 探活降级)|
+| - src/services/client/ai-service-gateway.js (HTTP /health, /infer, /depth 探活降级)|
 +───────────────────────────────────────────────────────────────────────────+
                                      │ 纯数据驱动
 +───────────────────────────────────────────────────────────────────────────+

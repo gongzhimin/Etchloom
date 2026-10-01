@@ -16,7 +16,7 @@ graph TD
     S4["Stage4Hatching (曲面排线总装)"]
     S5["Stage5MasterPrint (母版矢量合成)"]
     HatchingSub["src/core/hatching/ (15个排线模块)"]
-    Gateway["src/services/ai-service-gateway.js"]
+    Gateway["src/services/client/ai-service-gateway.js"]
     Cache["src/orchestration/stage-cache.js"]
 
     Runner --> Cache
