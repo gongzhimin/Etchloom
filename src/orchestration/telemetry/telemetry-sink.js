@@ -5,8 +5,14 @@
   'use strict';
 
   class TelemetrySink {
-    constructor() {
+    /**
+     * @param {Function} [initialListener] Optional callback for telemetry samples
+     */
+    constructor(initialListener = null) {
       this.listeners = new Set();
+      if (typeof initialListener === 'function') {
+        this.listeners.add(initialListener);
+      }
       this.currentMetrics = {
         totalElapsedMs: 0,
         stageTimings: {},

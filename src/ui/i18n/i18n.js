@@ -36,6 +36,7 @@ const DICTIONARY = {
     'sec.1.title': '01 / 空间轮廓',
     'sec.1.contour': '轮廓密度',
     'sec.1.aerial': '透视强度',
+    'sec.1.width': '轮廓刀宽',
     'sec.2.title': '02 / 曲面排线',
     'sec.2.hatch': '排线密度',
     'sec.2.cross': '交叉排线',

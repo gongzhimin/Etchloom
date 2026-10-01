@@ -160,28 +160,15 @@ class AppStore {
   }
 }
 
-const api = {
-  DEFAULT_STATE,
-  AppStore
-};
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.AppStore = AppStore;
-}
-
+  const api = {
+    DEFAULT_STATE,
+    AppStore
+  };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.AppStoreModule || AppStore);
-  }
-  if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.AppStoreModule = api;
-    }
-    if (typeof AppStore !== 'undefined') {
-      root.AppStore = AppStore;
-    }
+    module.exports = api;
+  } else {
+    root.AppStore = AppStore;
+    root.AppStoreModule = api;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

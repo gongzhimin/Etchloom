@@ -67,25 +67,12 @@ function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
   return { dt };
 }
 
-const api = { simulateAcidBite };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.AcidSimulator = api;
-}
-
+  const api = { simulateAcidBite };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.AcidSimulator || simulateAcidBite);
-  }
-  if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.AcidSimulator = api;
-    }
-    if (typeof simulateAcidBite !== 'undefined') {
-      root.simulateAcidBite = simulateAcidBite;
-    }
+    module.exports = api;
+  } else {
+    root.AcidSimulator = api;
+    root.simulateAcidBite = simulateAcidBite;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -14,7 +14,9 @@
   --border-subtle: #eae5dc;      /* Feather-light warm border */
   --border-strong: #d5cfc4;      /* Focused / emphasized warm border */
   
-  --accent-gold: #7a8c7e;        /* Pale Muted Sage (fresh, understated, calm) */
+  --accent-gold: #7a8c7e;        /* Pale Muted Sage / Morandi Primary Accent (historical alias kept) */
+  --accent-gold-rgb: 122, 140, 126; /* RGB components for custom opacity */
+  --accent-gold-glow: rgba(122, 140, 126, 0.25);
   --accent-gold-hover: #67786b;  /* Deepened Sage */
   --accent-teal: #7a8c7e;        /* Harmonized Sage Teal */
   --accent-teal-hover: #67786b;
@@ -27,6 +29,40 @@
   --paper-ivory: #faf7f0;        /* Archival fine-art paper ivory base */
   --ink-dark: #1b1c1b;           /* True printmaking deep black */
 
+  /* Spacing Scale (4px harmonic grid system) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Layout Structure Dimensions */
+  --header-height: 60px;
+  --footer-height: 32px;
+  --sidebar-width: 320px;
+  --card-min-height: 380px;
+
+  /* Border Radii */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 9999px;
+
+  /* Render Theme Tokens (Decoupled Canvas & SVG Bridge Colors) */
+  --render-paper-ground: #faf7f0;       /* Archival cotton rag paper ground */
+  --render-plate-ground: #1e2220;       /* Dark engraving studio ground */
+  --render-ink-primary: #1a1918;        /* Hand-pressed deep carbon intaglio ink */
+  --render-contour-gold: #c8b67e;       /* Atmospheric contour nuance */
+  --render-hatch-sage: #b4c0ab;         /* Curvature hatching sage nuance */
+  --render-master-paper: #fcfbf8;       /* Ivory white vector synthesis master ground */
+  --render-copper-ground: #b87333;      /* Copperplate metallic base */
+  --render-card-placeholder: #faf8f5;   /* Empty computing card placeholder */
+
   /* Backward Compatibility Aliases */
   --bg-deep: var(--bg-app);
   --bg-studio: var(--bg-surface);
@@ -34,7 +70,8 @@
   --accent-green: #678c74;
   --accent-amber: #b07d4b;
   --text-main: var(--text-primary);
-  --text-dark: #ffffff;
+  --text-dark: #ffffff;          /* Contrast text for dark-ground surfaces (buttons/badges) */
+  --text-light: #2a2b2a;         /* High-contrast text on light surfaces */
 
   /* Typography */
   --font-serif: Georgia, 'Songti SC', 'Source Han Serif SC', serif;
@@ -1144,6 +1181,7 @@ footer.telemetry-footer {
 }
 
 .fullscreen-canvas,
+.fullscreen-svg-wrap,
 .modal-viewport-wrap canvas {
   box-shadow: 0 16px 64px rgba(0, 0, 0, 0.65);
   max-width: none !important;
@@ -1151,6 +1189,20 @@ footer.telemetry-footer {
   display: block;
   pointer-events: none;
   border-radius: 2px;
+}
+
+.fullscreen-svg-wrap {
+  transform-origin: center center;
+  will-change: transform;
+  transition: transform 0.05s linear;
+}
+
+.fullscreen-svg-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
 }
 
 /* --------------------------------------------------------------------------
@@ -1225,6 +1277,184 @@ footer.telemetry-footer {
 .log-line.warn .log-cat { color: var(--accent-amber); }
 .log-line.error .log-cat { color: #dc2626; }
 .log-line.error { color: #b91c1c; }
+
+/* --------------------------------------------------------------------------
+   Semantic Utility & Decoupled Component Classes (Replacing Inline Styles)
+   -------------------------------------------------------------------------- */
+.u-mt-1 { margin-top: var(--space-1); }
+.u-mt-2 { margin-top: var(--space-2); }
+.u-mt-3 { margin-top: var(--space-3); }
+.u-mt-4 { margin-top: var(--space-4); }
+.u-mt-5 { margin-top: var(--space-5); }
+.u-ml-auto { margin-left: auto; }
+.u-flex-center { display: flex; align-items: center; }
+.u-flex-gap-2 { display: flex; align-items: center; gap: var(--space-2); }
+.u-flex-gap-3 { display: flex; align-items: center; gap: var(--space-3); }
+
+/* Transfer Wizard Decoupled Styles */
+.transfer-wizard-modal {
+  max-width: 580px;
+}
+.wizard-stats-box {
+  font-size: 12px;
+  color: var(--accent-gold);
+  background: var(--bg-app);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.wizard-modal-body {
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.wizard-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+.wizard-radio-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+.wizard-radio-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-2);
+}
+.wizard-card-center {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+}
+.wizard-card-center.active {
+  border-color: var(--border-strong);
+}
+.wizard-card-label {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.wizard-card-label.active {
+  border-color: var(--border-strong);
+}
+.about-modal {
+  max-width: 560px;
+}
+.about-modal-body {
+  padding: var(--space-6);
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.about-meta-text {
+  margin-top: var(--space-4);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.btn-compact-pad {
+  padding: 2px var(--space-2);
+}
+.btn-transfer-pad {
+  width: auto;
+  padding: var(--space-2) var(--space-5);
+}
+.btn-etch-top {
+  width: auto;
+  padding: 6px 18px;
+  font-size: 12px;
+}
+.wizard-range-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+.wizard-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+.telemetry-brand {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+.badge-caption {
+  font-size: 11px;
+}
+.wizard-item-title {
+  color: var(--text-primary);
+  display: block;
+}
+.wizard-item-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: block;
+  margin-top: 2px;
+}
+.wizard-spec-title {
+  display: block;
+  margin-top: 4px;
+}
+.wizard-spec-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.wizard-highlight {
+  color: var(--accent-gold);
+}
+.wizard-output-mono {
+  font-family: var(--font-mono);
+  color: var(--accent-gold);
+}
+.u-w-full {
+  width: 100%;
+}
+
+/* ==========================================================================
+   Micro-Inspection Loupe Magnifier
+   ========================================================================== */
+.etchloom-loupe {
+  position: fixed;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 2px var(--color-contour-gold, #c8b67e), 0 var(--space-2) var(--space-6) rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  pointer-events: none;
+  display: none;
+  z-index: 2000;
+  background: var(--bg-app, #191d1a);
+}
+
+.etchloom-loupe-canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.etchloom-loupe-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(200, 182, 126, 0.5);
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+}
 
 @media (max-width: 800px) {
   main.app-main {

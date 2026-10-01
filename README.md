@@ -98,21 +98,29 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 
 ## 5. Prerequisites & Quick Start (Prerequisites & Quick Start)
 
-### 5.1 前端环境（零构建）
-系统采用原生 JavaScript 与 ES Modules，无需 Webpack/Vite 打包构建。
+## 5. 运行模式与环境规范 (Execution Modes & Environment Spec)
 
-1. **直接离线使用**：双击根目录下 `index.html` 即可在现代浏览器中直接运行基础功能。
-2. **启动本地开发工作台（推荐）**：
+系统采用分层自愈式架构，提供三种严格界定依赖的运行模式：
+
+| 运行模式 | 涵盖功能 | 网络与环境依赖 | 适用场景与技术特征 |
+| :--- | :--- | :--- | :--- |
+| 🟢 **基础离线模式 (Base Offline)** | 5 阶段离散数学几何管线、结构张量场、Jobard-Lefer 流线积分、2D 偏微分铜版酸蚀物理仿真与棉纸凹版压印渲染 | **100% 纯本地离线**<br>零外部网络请求、零 Python 依赖、零构建打包 | 双击 `index.html` 或 `npm start` 即可秒开；纯 JavaScript 确定性运算，核心版画工坊完整可用。 |
+| 🔵 **本机 Python 神经服务 (Local Python CUDA)** | Informative Drawings 卷积模型线描抽取与 Lotus 空间几何深度模型 | **依赖本机 Python 环境**<br>需 Python 3.10+、PyTorch、CUDA 显卡驱动 | 执行 `scripts/start-model.ps1`，监听 `127.0.0.1:7861`；利用本地独立显卡算力处理超大分辨率图像。 |
+| 🟡 **联网浏览器模型 (Browser WebAI)** | 浏览器端 WebGPU / WASM 加速的 Informative Drawings ONNX 与 Depth Anything V2 空间单目深度估计 | **初次运行需网络下载**<br>需从 CDN 拉取运行时及模型，支持浏览器本地缓存 | 免配置 Python 即可获得深度估计；初次访问需联网从 CDN 下载模型权重（保存在 CacheStorage 中），有缓存时可离线复用。 |
+
+### 5.1 快速上手指南
+
+1. **启动本地开发工作台**：
    ```bash
    npm start
    ```
-   浏览器访问 <http://127.0.0.1:4173/>。
+   浏览器访问 <http://127.0.0.1:4173/>。默认以**基础离线模式**启动；若网络通畅且浏览器支持 WebGPU/WASM，可自动升级使用联网浏览器模型。
 
-### 5.2 启动 Python AI 辅助服务（可选）
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
-```
-服务监听本地 `http://127.0.0.1:7861`。若未启动，系统前端自动平滑降级至纯几何算法。
+2. **启动本机 Python AI 辅助服务（可选）**：
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
+   ```
+   服务监听 `http://127.0.0.1:7861`。启动后前端网关自动探活并切换至本机 CUDA 加速。
 
 ---
 

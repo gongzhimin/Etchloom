@@ -206,7 +206,6 @@ export function dab(x, y, force = 1) {
         if (f > 0) {
           blocked[i] = 0;
           exposed[i] = Math.max(exposed[i], f);
-          depth[i] = Math.min(1, depth[i] + f * 0.0008);
           burr[i] = 0;
         }
       }
@@ -247,7 +246,7 @@ export function etch(dt) {
       if (burr[i] > 0) burr[i] = Math.max(0, burr[i] - dt * strength * 0.14);
     }
   }
-  [exposed, next] = [next, exposed];
+  exposed.set(next);
   elapsed += dt;
   dirty = true;
 }
@@ -325,7 +324,9 @@ export function render(target = getCtx(), mode = view) {
       let fh1 = H - 2 * margin;
 
       if (typeof target.save === 'function') target.save();
-      target.strokeStyle = '#1a1918';
+      const tb = (typeof ThemeBridge !== 'undefined' && ThemeBridge) || (typeof globalThis !== 'undefined' && globalThis.ThemeBridge);
+      const theme = tb?.getRenderTheme ? tb.getRenderTheme() : null;
+      target.strokeStyle = theme?.inkPrimary || '#1a1918';
       target.lineCap = 'round';
       target.lineJoin = 'round';
 
@@ -465,7 +466,7 @@ export function updateAcidGauge() {
 }
 
 // Classical 5-Stage Stepper
-export let currentPlateStage = 2;
+export let currentPlateStage = 1;
 export function setPlateStage(stageNum) {
   currentPlateStage = stageNum;
   if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;

@@ -41,7 +41,7 @@ export const sidebarTemplate = `
       <label class="checkbox-label">
         <input id="lotus3D" type="checkbox" checked>
         <span data-i18n="sec.0.lotus">3D几何增强</span>
-        <span id="modelStatus" class="badge badge-amber" style="margin-left:auto">检测中…</span>
+        <span id="modelStatus" class="badge badge-amber u-ml-auto">检测中…</span>
       </label>
 
       <label><span data-i18n="sec.0.exposure">曝光度</span> <output id="exposureVal">50%</output></label>
@@ -95,7 +95,7 @@ export const sidebarTemplate = `
       <!-- Process A: 图稿上版 -->
       <div class="drawer-subgroup">
         <div class="drawer-subgroup-title">工序 A · 上版</div>
-        <button id="openTransferWizardBtn" class="primary" style="margin-top:4px;">图稿上版向导...</button>
+        <button id="openTransferWizardBtn" class="primary u-mt-1">图稿上版向导...</button>
       </div>
 
       <!-- Process B: 版面刻绘与修版 -->
@@ -111,11 +111,11 @@ export const sidebarTemplate = `
         <label><span data-i18n="sec.3.size">工具直径</span> <output id="sizeValue">4 px</output></label>
         <input id="size" type="range" min="1" max="50" value="4">
 
-        <div class="row" style="margin-top:8px">
+        <div class="row u-mt-2">
           <button id="undo" data-i18n="action.undo">撤销刻线</button>
           <button id="clear" data-i18n="action.clear">清空版面</button>
         </div>
-        <button id="demo" style="margin-top:6px" data-i18n="action.demo">载入静物练习版</button>
+        <button id="demo" class="u-mt-2" data-i18n="action.demo">载入静物练习版</button>
       </div>
 
       <!-- Process C: 酸液腐蚀参数 -->
@@ -127,7 +127,7 @@ export const sidebarTemplate = `
         <label><span data-i18n="sec.3.grain">金相颗粒</span> <output id="grainValue">45%</output></label>
         <input id="grain" type="range" min="0" max="100" value="45">
 
-        <label class="checkbox-label" style="margin-top:8px">
+        <label class="checkbox-label u-mt-2">
           <input id="irreversible" type="checkbox">
           <span data-i18n="sec.3.irreversible">不可逆模式</span>
         </label>
@@ -160,9 +160,9 @@ export const sidebarTemplate = `
           <option value="none" data-i18n="frame.none">无外框</option>
         </select>
 
-        <button id="print" class="primary" style="margin-top:10px" data-i18n="sec.3.print">取一张印样</button>
+        <button id="print" class="primary u-mt-2" data-i18n="sec.3.print">取一张印样</button>
 
-        <div class="row" style="margin-top:8px">
+        <div class="row u-mt-2">
           <button id="save" data-i18n="action.save">保存虚拟版</button>
           <button id="load" data-i18n="action.load">打开虚拟版</button>
         </div>
@@ -181,7 +181,7 @@ export const masterWorkspaceTemplate = `
         <h2 data-i18n="tab.master">母版设计</h2>
         <p data-i18n="step.intro">点击卡片可全屏特写或独立导出图层。</p>
       </div>
-      <button id="transferToPlateBtn" class="primary" style="width:auto;padding:8px 20px" data-i18n="action.transferToPlate">雕刻至铜版 →</button>
+      <button id="transferToPlateBtn" class="primary btn-transfer-pad" data-i18n="action.transferToPlate">雕刻至铜版 →</button>
     </div>
 
     <!-- 7-Stage Adaptive Grid (2 columns x 4 rows) -->
@@ -192,7 +192,7 @@ export const masterWorkspaceTemplate = `
       <div class="activity-log-header">
         <span class="log-title" data-i18n="console.title">运行日志</span>
         <span id="logStatusBadge" class="badge badge-green">IDLE</span>
-        <button id="clearLogBtn" class="card-btn" style="margin-left:auto;padding:2px 8px" data-i18n="action.clear">清空</button>
+        <button id="clearLogBtn" class="card-btn btn-compact-pad u-ml-auto" data-i18n="action.clear">清空</button>
         <span id="logToggleIndicator" class="log-toggle-arrow">▲</span>
       </div>
       <div id="activityLog" class="activity-log-body">
@@ -207,12 +207,12 @@ export const plateWorkspaceTemplate = `
   <div id="plateWorkspace" hidden class="plate-studio-wrap">
     <!-- 5-Stage Classical Printmaking Stepper -->
     <div id="plateStepper" class="plate-process-stepper">
-      <div class="stepper-step done" data-step="1" id="stepTransfer">
+      <div class="stepper-step active" data-step="1" id="stepTransfer">
         <span class="stepper-num">1</span>
         <span>上版</span>
       </div>
       <span class="stepper-arrow">→</span>
-      <div class="stepper-step active" data-step="2" id="stepInscribe">
+      <div class="stepper-step" data-step="2" id="stepInscribe">
         <span class="stepper-num">2</span>
         <span>刻绘</span>
       </div>
@@ -255,7 +255,7 @@ export const plateWorkspaceTemplate = `
 
       <!-- Unified Acid Bite Console -->
       <div class="acid-console-wrap">
-        <button id="etchBtn" class="primary" style="width:auto;padding:6px 18px;font-size:12px;" data-i18n="sec.3.startAcid">开始腐蚀</button>
+        <button id="etchBtn" class="primary btn-etch-top" data-i18n="sec.3.startAcid">开始腐蚀</button>
         <!-- Backward compatibility elements for tests -->
         <button id="etchTopBtn" hidden></button>
         <div id="plateAcidGauge" class="gauge-badge">腐蚀 0.0s · 平均深 0.0μm</div>
@@ -282,16 +282,16 @@ export const plateWorkspaceTemplate = `
 
 export const telemetryFooterTemplate = `
   <footer class="telemetry-footer">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button id="activityLogToggle" class="card-btn log-drawer-trigger" style="padding:2px 8px;font-size:11px;">📋 <span data-i18n="console.title">运行日志</span></button>
+    <div class="u-flex-gap-2">
+      <button id="activityLogToggle" class="card-btn log-drawer-trigger btn-compact-pad">📋 <span data-i18n="console.title">运行日志</span></button>
       <span><span data-i18n="telemetry.status">状态</span>: <span id="telemetryStatus" class="telemetry-status-val">运行就绪</span></span> |
       <span><span data-i18n="telemetry.task">活跃任务</span>: <span id="telemetryTask" class="telemetry-status-val">IDLE</span></span> |
       <span><span data-i18n="telemetry.duration">总耗时</span>: <span id="telemetryDuration" class="telemetry-status-val">0ms</span></span> |
       <span><span data-i18n="telemetry.strokes">矢量线条</span>: <span id="telemetryStrokes" class="telemetry-status-val">0 条</span></span> |
       <span><span data-i18n="telemetry.cache">拓扑缓存命中</span>: <span id="telemetryCache" class="telemetry-status-val">0/5</span></span>
     </div>
-    <div style="margin-left:auto">
-      <span style="color:var(--accent-gold);font-weight:600;">Etchloom v2.0 Atelier</span>
+    <div class="u-ml-auto">
+      <span class="telemetry-brand">Etchloom v2.0 Atelier</span>
     </div>
   </footer>
 `;
@@ -316,45 +316,46 @@ export const modalsTemplate = `
       </div>
     </header>
 
-    <!-- Edge-to-Edge Fullscreen Canvas Viewport -->
+    <!-- Edge-to-Edge Fullscreen Canvas/Vector Viewport -->
     <div id="modalViewportWrap" class="fullscreen-canvas-viewport">
       <canvas id="modalCanvas" class="fullscreen-canvas"></canvas>
+      <div id="modalSvgWrap" class="fullscreen-svg-wrap" hidden></div>
     </div>
   </div>
 
   <!-- Transfer Wizard Modal (M1 & M3: 图稿上版工艺向导) -->
   <div id="transferModalOverlay" class="etchloom-modal-overlay transfer-modal-overlay" hidden>
-    <div class="etchloom-modal transfer-wizard-modal" style="max-width:580px;">
+    <div class="etchloom-modal transfer-wizard-modal">
       <div class="modal-header">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div class="u-flex-gap-2">
           <h3 class="modal-title" data-i18n="wizard.title">母版图稿上版向导</h3>
-          <span class="badge badge-gold" style="font-size:11px;">M1 → M3 物理转录</span>
+          <span class="badge badge-gold badge-caption">M1 → M3 物理转录</span>
         </div>
-        <button id="transferModalClose" class="card-btn" style="padding:2px 8px;">✕</button>
+        <button id="transferModalClose" class="card-btn btn-compact-pad">✕</button>
       </div>
-      <div class="modal-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:18px;">
-        <div id="wizardStats" style="font-size:12px;color:var(--accent-gold);background:var(--bg-app);padding:10px 14px;border-radius:4px;border:1px solid var(--border-subtle);">
+      <div class="modal-body wizard-modal-body">
+        <div id="wizardStats" class="wizard-stats-box">
           当前就绪母版: 检测中...
         </div>
 
         <!-- Section 1: 工艺技法 -->
         <div class="wizard-group">
-          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-primary);">
+          <label class="wizard-label">
             1. 选择雕刻转录工艺技法:
           </label>
-          <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <label class="wizard-card active" style="padding:10px 12px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
-              <input type="radio" name="transferTechnique" value="etching" checked style="margin-top:3px;">
+          <div class="wizard-radio-grid wizard-radio-grid-2">
+            <label class="wizard-card wizard-card-label active">
+              <input type="radio" name="transferTechnique" value="etching" checked class="u-mt-1">
               <div>
-                <strong style="color:var(--text-primary);display:block;">蚀刻针划线 (Etching)</strong>
-                <span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:2px;">划破表面防蚀防酸保护漆，等待酸液咬蚀形成深沟。</span>
+                <strong class="wizard-item-title">蚀刻针划线 (Etching)</strong>
+                <span class="wizard-item-desc">划破表面防蚀防酸保护漆，等待酸液咬蚀形成深沟。</span>
               </div>
             </label>
-            <label class="wizard-card" style="padding:10px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
-              <input type="radio" name="transferTechnique" value="drypoint" style="margin-top:3px;">
+            <label class="wizard-card wizard-card-label">
+              <input type="radio" name="transferTechnique" value="drypoint" class="u-mt-1">
               <div>
-                <strong style="color:var(--text-primary);display:block;">干刻直刻 (Drypoint)</strong>
-                <span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:2px;">锋利钢针直接切削铜板，边缘翻起金属毛刺，暗部极深润。</span>
+                <strong class="wizard-item-title">干刻直刻 (Drypoint)</strong>
+                <span class="wizard-item-desc">锋利钢针直接切削铜板，边缘翻起金属毛刺，暗部极深润。</span>
               </div>
             </label>
           </div>
@@ -362,65 +363,65 @@ export const modalsTemplate = `
 
         <!-- Section 2: 目标物理铜版规格 -->
         <div class="wizard-group">
-          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-primary);">
+          <label class="wizard-label">
             2. 目标物理铜版规格:
           </label>
-          <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+          <div class="wizard-radio-grid wizard-radio-grid-3">
+            <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferRes" value="900">
-              <strong style="display:block;margin-top:4px;">900 × 660</strong>
-              <span style="font-size:10px;color:var(--text-muted);">标准轻量</span>
+              <strong class="wizard-spec-title">900 × 660</strong>
+              <span class="wizard-spec-sub">标准轻量</span>
             </label>
-            <label class="wizard-card active" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;text-align:center;">
+            <label class="wizard-card wizard-card-center active">
               <input type="radio" name="transferRes" value="1500" checked>
-              <strong style="display:block;margin-top:4px;color:var(--accent-gold);">1500 × 1100</strong>
-              <span style="font-size:10px;color:var(--text-secondary);">2K 高清 (推荐)</span>
+              <strong class="wizard-spec-title wizard-highlight">1500 × 1100</strong>
+              <span class="wizard-spec-sub">2K 高清 (推荐)</span>
             </label>
-            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+            <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferRes" value="3000">
-              <strong style="display:block;margin-top:4px;">3000 × 2200</strong>
-              <span style="font-size:10px;color:var(--text-muted);">3K 展品级</span>
+              <strong class="wizard-spec-title">3000 × 2200</strong>
+              <span class="wizard-spec-sub">3K 展品级</span>
             </label>
           </div>
         </div>
 
         <!-- Section 3: 转移图层选择 -->
         <div class="wizard-group">
-          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-primary);">
+          <label class="wizard-label">
             3. 选择转录矢量图层:
           </label>
-          <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-            <label class="wizard-card active" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;text-align:center;">
+          <div class="wizard-radio-grid wizard-radio-grid-3">
+            <label class="wizard-card wizard-card-center active">
               <input type="radio" name="transferLayer" value="all" checked>
-              <strong style="display:block;margin-top:4px;">全部母版图稿</strong>
-              <span id="wizardAllCount" style="font-size:10px;color:var(--text-secondary);">全部矢量线条</span>
+              <strong class="wizard-spec-title">全部母版图稿</strong>
+              <span id="wizardAllCount" class="wizard-spec-sub">全部矢量线条</span>
             </label>
-            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+            <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferLayer" value="contours">
-              <strong style="display:block;margin-top:4px;">仅空间轮廓</strong>
-              <span id="wizardContoursCount" style="font-size:10px;color:var(--text-muted);">骨干轮廓线</span>
+              <strong class="wizard-spec-title">仅空间轮廓</strong>
+              <span id="wizardContoursCount" class="wizard-spec-sub">骨干轮廓线</span>
             </label>
-            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+            <label class="wizard-card wizard-card-center">
               <input type="radio" name="transferLayer" value="hatching">
-              <strong style="display:block;margin-top:4px;">仅曲面排线</strong>
-              <span id="wizardHatchingCount" style="font-size:10px;color:var(--text-muted);">细密顺形排线</span>
+              <strong class="wizard-spec-title">仅曲面排线</strong>
+              <span id="wizardHatchingCount" class="wizard-spec-sub">细密顺形排线</span>
             </label>
           </div>
         </div>
 
         <!-- Section 4: 针尖下压力度 -->
         <div class="wizard-group">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <label for="wizardNeedlePressure" style="font-weight:600;color:var(--text-primary);">针尖刻划下压力度:</label>
-            <output id="wizardNeedlePressureVal" style="font-family:var(--font-mono);color:var(--accent-gold);">65%</output>
+          <div class="wizard-range-row">
+            <label for="wizardNeedlePressure" class="wizard-label">针尖刻划下压力度:</label>
+            <output id="wizardNeedlePressureVal" class="wizard-output-mono">65%</output>
           </div>
-          <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" style="width:100%;">
+          <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" class="u-w-full">
         </div>
 
         <!-- Buttons -->
-        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:12px;padding-top:16px;border-top:1px solid var(--border-subtle);">
-          <button id="transferCancelBtn" class="card-btn" style="padding:8px 20px;">取消</button>
-          <button id="transferConfirmBtn" class="primary" style="padding:8px 24px;">确认转入铜版并刻绘 →</button>
+        <div class="wizard-footer-actions">
+          <button id="transferCancelBtn" class="card-btn btn-transfer-pad">取消</button>
+          <button id="transferConfirmBtn" class="primary btn-transfer-pad">确认转入铜版并刻绘 →</button>
         </div>
       </div>
     </div>
@@ -433,15 +434,15 @@ export const modalsTemplate = `
 
   <!-- About Modal Dialog -->
   <div id="aboutModalOverlay" class="etchloom-modal-overlay" hidden>
-    <div class="etchloom-modal" style="max-width:560px;">
+    <div class="etchloom-modal about-modal">
       <div class="modal-header">
         <h3 class="modal-title" data-i18n="action.about">关于 Etchloom</h3>
-        <button id="aboutClose" class="card-btn" style="padding:2px 8px;">✕</button>
+        <button id="aboutClose" class="card-btn btn-compact-pad">✕</button>
       </div>
-      <div class="modal-body" style="padding:24px;line-height:1.7;color:var(--text-secondary);">
+      <div class="modal-body about-modal-body">
         <p><strong>Etchloom</strong> 是一套面向计算机图形学与计算摄影的数字古典铜版画工作室系统。</p>
         <p>系统完全基于纯数学几何管线与连续物理介质数值模拟，解耦实现五阶段离散数学管线、PDE 酸液侧向咬蚀与凹版压印光影着色。</p>
-        <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">版本：v2.0.0 (Decoupled Pure ESM Architecture)<br>许可证：MIT License</p>
+        <p class="about-meta-text">版本：v2.0.0 (Decoupled Pure ESM Architecture)<br>许可证：MIT License</p>
       </div>
     </div>
   </div>

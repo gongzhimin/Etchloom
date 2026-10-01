@@ -194,30 +194,16 @@ function exportPayload(request) {
   }
 }
 
-const api = {
-  exportSVG,
-  exportGCode,
-  exportRecipeJSON,
-  exportPayload
-};
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.Exporter = api;
-}
-
+  const api = {
+    exportSVG,
+    exportGCode,
+    exportRecipeJSON,
+    exportPayload
+  };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.Exporter || Exporter);
-  }
-  if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.Exporter = api;
-    }
-    if (typeof Exporter !== 'undefined') {
-      root.Exporter = Exporter;
-    }
+    module.exports = api;
+  } else {
+    root.Exporter = api;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

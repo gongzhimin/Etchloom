@@ -142,25 +142,12 @@ function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null) {
   return { width: W, height: H, pixels };
 }
 
-const api = { renderPlate };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.PressRenderer = api;
-}
-
+  const api = { renderPlate };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.PressRenderer || renderPlate);
-  }
-  if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.PressRenderer = api;
-    }
-    if (typeof renderPlate !== 'undefined') {
-      root.renderPlate = renderPlate;
-    }
+    module.exports = api;
+  } else {
+    root.PressRenderer = api;
+    root.renderPlate = renderPlate;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

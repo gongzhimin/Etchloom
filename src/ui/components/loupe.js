@@ -29,42 +29,18 @@ class LoupeMagnifier {
   _createLoupeElement() {
     this.container = document.createElement('div');
     this.container.className = 'etchloom-loupe';
-    this.container.style.cssText = `
-      position: fixed;
-      width: ${this.diameter}px;
-      height: ${this.diameter}px;
-      border-radius: 50%;
-      box-shadow: 0 0 0 2px #c8b67e, 0 8px 24px rgba(0, 0, 0, 0.6);
-      overflow: hidden;
-      pointer-events: none;
-      display: none;
-      z-index: 2000;
-      background: #191d1a;
-    `;
+    this.container.style.width = `${this.diameter}px`;
+    this.container.style.height = `${this.diameter}px`;
 
     this.loupeCanvas = document.createElement('canvas');
     this.loupeCanvas.width = this.diameter;
     this.loupeCanvas.height = this.diameter;
-    this.loupeCanvas.style.cssText = `
-      width: 100%;
-      height: 100%;
-      image-rendering: pixelated;
-    `;
+    this.loupeCanvas.className = 'etchloom-loupe-canvas';
     this.container.appendChild(this.loupeCanvas);
 
     // Crosshair overlay
     const crosshair = document.createElement('div');
-    crosshair.style.cssText = `
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 12px;
-      height: 12px;
-      transform: translate(-50%, -50%);
-      border: 1px solid rgba(200, 182, 126, 0.5);
-      border-radius: 50%;
-      pointer-events: none;
-    `;
+    crosshair.className = 'etchloom-loupe-crosshair';
     this.container.appendChild(crosshair);
 
     const parent = document.body || this.sourceCanvas?.parentElement;
@@ -177,25 +153,11 @@ class LoupeMagnifier {
   }
 }
 
-const api = { LoupeMagnifier };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.LoupeMagnifier = LoupeMagnifier;
-}
-
+  const api = { LoupeMagnifier };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.LoupeMagnifier || LoupeMagnifier);
-  }
-  if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.LoupeMagnifier = api;
-    }
-    if (typeof LoupeMagnifier !== 'undefined') {
-      root.LoupeMagnifier = LoupeMagnifier;
-    }
+    module.exports = api;
+  } else {
+    root.LoupeMagnifier = LoupeMagnifier;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

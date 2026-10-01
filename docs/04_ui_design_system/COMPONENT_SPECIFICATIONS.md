@@ -88,11 +88,41 @@
 - **步骤节点**：1. 上版 → 2. 刻绘 → 3. 腐蚀 → 4. 填墨 → 5. 试印
 - **状态流转**：通过 `.stepper-step.active`（淡鼠尾草绿高亮）与 `.stepper-step.done` 驱动全流程引导。
 
-### 1.7 模态视口系统 (True Fullscreen Viewport & TransferWizardModal)
+### 1.7 模态视口系统 (True Fullscreen Viewport & Dual-Engine Lightbox)
 - **真全屏沉浸式特写画廊 (`#modalOverlay.fullscreen-viewport-overlay`)**：
   - **彻底移除卡片框与视口限制**：彻底废弃限制在 64vh 与固定弹窗内的伪全屏。视口铺满 100vw × 100vh 整个屏幕，深色半透明微质感磨砂背景 (`rgba(12, 13, 14, 0.94)`)；
   - **最大化屏幕利用率**：进入特写时画布直接按当前浏览器可用视口极限比例（仅留微小边距）全屏展现，**尺寸远大于主工作区卡片，真实还原本体细节**；
+  - **全矢量无失真微观引擎 (True Vector SVG Dual-Engine)**：
+    - **中间产物数据类型精准辨析**：
+      - `Step 0`（原图输入）：RGB 栅格位图（Raster Bitmap）；
+      - `Step 1`（线描感知）：连续亮度/边缘梯度张量（2D Float32 Tensor，栅格连续场）；
+      - `Step 2`（等高流场）：2D 结构张量与局部切向向量场（离散网格场）；
+      - `Step 3`（透视轮廓）：**真正参数化矢量多折线**（True Vector Polylines）；
+      - `Step 4`（曲面排线）：**真正矢量积分流线**（True Vector Streamlines）；
+      - `Step 5`（母版合成）：**真正分层统一矢量母版**（Unified Layered Vector Paths）；
+      - `Step 6`（纯棉印样）：**真正矢量版画印品**（Vector Print Layout，含纯棉纸基底 `<rect fill="#faf7f0">` + 选定外框纯矢量刀痕 `<g id="etchloom-frame">` + 安全呼吸区裁切内嵌画作 `<g id="etchloom-artwork">`）；
+    - **矢量阶段（Step 3、4、5、6）SVG 原生渲染**：
+      - 激活 `#modalSvgWrap`，直接向 DOM 注入带 `viewBox` 与 `shape-rendering: geometricPrecision` 的高精度标准矢量 SVG；
+      - 鼠标滚轮缩放（80%~500%）与拖拽漫游直接作用于 SVG 矢量容器，**数学级保真，0% 模糊失真，无限放大绝无位图马赛克或模糊边缘**；
+    - **栅格阶段（Step 0、1、2 及铜版物理仿真）高清 Canvas 渲染**：
+      - 激活 `#modalCanvas`，以源图物理原分辨率进行高保真重采样与无级变换。
   - **悬浮胶囊控制条 (Floating Capsule)**：顶部居中悬浮极简半透明操作胶囊，提供缩小、放大、全屏自适应、1:1 像素复位、原生真全屏切换（F11 API 支持）及关闭按钮；
-  - **微观交互**：支持 80%~800% 鼠标滚轮无级缩放、双击在全屏与微观特写间无缝切换、鼠标左键拖拽漫游、点击画作外背景或按 ESC 快速退出。
+  - **微观交互**：支持 80%~500% 鼠标滚轮无级缩放、双击在全屏与微观特写间无缝切换、鼠标左键拖拽漫游、点击画作外背景或按 ESC 快速退出。
 - **上版工艺向导模态框 (`#transferModalOverlay`)**：支持蚀刻针/干刻直刻技法分流、900/1500/3000 三档网格规格单选、图层选择（全部/仅轮廓/仅排线）与针尖压力模拟。
+
+### 1.8 UI 彻底解耦与无头适配架构 (UI Decoupling & Headless Adapter Architecture)
+- **参数解耦机制 (`PipelineController.getParams`)**：
+  - 控制器不再直接通过 `document.getElementById('exposure')` 硬编码绑定 DOM 滑块输入；
+  - 构造函数注入 `options.getParams: () => ({ exposure, blackPoint, ... })`，集中式由外部入口适配；
+  - 内部方法 `getRecipeParams()` 保证无论未来 UI 如何重构（如预设卡片组、弹窗滑块、移动端抽屉），算法管线控制器源码零改动。
+- **遥测状态解耦机制 (`PipelineController.onTelemetry`)**：
+  - 剔除对 `telemetryStatus`、`telemetryTask`、`telemetryDuration`、`telemetryStrokes`、`telemetryCache` 5 个 DOM 节点的直接属性赋值；
+  - 控制器通过统一的 `updateTelemetry(metrics)` 触发观察者事件，解耦展现层。
+- **渲染主题跨层解耦桥 (`ThemeBridge`)**：
+  - Canvas 2D `ctx.fillStyle` / `ctx.strokeStyle` 与序列化 SVG XML 无法直接感知 CSS `var(--token)`；
+  - 通过 `src/services/theme/theme-bridge.js` 统一解析运行时主题，在浏览器端动态反射 `:root` 变量，在 Node.js / 测试环境中以古典工坊色谱安全退避。
+- **模板完全脱敏规范 (Zero Inline Styles)**：
+  - `src/ui/templates/layout-templates.js` 彻底剔除所有内联 `style="..."` 声明；
+  - 所有间距、边框、尺寸统一由 `styles/app.css` 中的语义类与 Token 梯队定义（如 `.transfer-wizard-modal`、`.wizard-stats-box`、`.u-space-4` 等）。
+
 

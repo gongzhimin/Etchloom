@@ -7,3 +7,4 @@
 *.html text eol=lf
 *.png binary
 *.jpg binary
+*.onnx binary

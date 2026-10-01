@@ -34,7 +34,24 @@ export function logMessage(category, text, level = 'info') {
   const timeStr = `[${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}]`;
   const lineEl = document.createElement('div');
   lineEl.className = `log-line${level === 'warn' ? ' log-warn' : level === 'error' ? ' log-error' : level === 'computing' ? ' log-computing' : ''}`;
-  lineEl.innerHTML = `<span class="log-time">${timeStr}</span> <span class="log-cat">[${category}]</span> <span class="log-text">${text}</span>`;
+
+  const timeSpan = document.createElement('span');
+  timeSpan.className = 'log-time';
+  timeSpan.textContent = timeStr;
+
+  const catSpan = document.createElement('span');
+  catSpan.className = 'log-cat';
+  catSpan.textContent = `[${category}]`;
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'log-text';
+  textSpan.textContent = text;
+
+  lineEl.appendChild(timeSpan);
+  lineEl.appendChild(document.createTextNode(' '));
+  lineEl.appendChild(catSpan);
+  lineEl.appendChild(document.createTextNode(' '));
+  lineEl.appendChild(textSpan);
   logEl.appendChild(lineEl);
   while (logEl.children.length > 200) {
     logEl.removeChild(logEl.firstChild);
@@ -117,10 +134,10 @@ if (gridContainer && StepFlowGridLib) {
       if (stepGrid) stepGrid.setActiveStep(stepIdx);
     },
     onStepLoupe: () => {},
-    onStepFullscreen: (stepIdx, cardCanvas) => {
+    onStepFullscreen: (stepIdx, cardCanvas, vectorData = {}) => {
       const title = i18nManager ? i18nManager.t(`step.${stepIdx}.title`) : `Step ${stepIdx}`;
       const meta = stepGrid?.stepStates[stepIdx]?.metaEl?.textContent || '';
-      lightbox.open(title, cardCanvas, meta);
+      lightbox.open(title, cardCanvas, meta, vectorData);
     },
     onStepExport: (stepIdx) => {
       pipelineController.downloadStepExport(stepIdx);
@@ -131,35 +148,43 @@ if (gridContainer && StepFlowGridLib) {
 const pipelineController = new PipelineController({
   stepGrid,
   log: logMessage,
+  getParams: () => ({
+    exposure: $('exposure')?.value,
+    blackPoint: $('blackPoint')?.value,
+    whitePoint: $('whitePoint')?.value,
+    contourDetail: $('contourDetail')?.value,
+    aerialStrength: $('aerialStrength')?.value,
+    needleWidth: $('needleWidth')?.value,
+    density: $('density')?.value,
+    curvatureGate: $('curvatureGate')?.value,
+    crossHatch: $('crossHatch')?.value,
+    lotus3D: $('lotus3D')?.checked,
+    frameStyle: $('frameStyle')?.value
+  }),
+  onTelemetry: (metrics) => {
+    if (metrics.status && $('telemetryStatus')) $('telemetryStatus').textContent = metrics.status;
+    if (metrics.task && $('telemetryTask')) $('telemetryTask').textContent = metrics.task;
+    if (metrics.duration != null && $('telemetryDuration')) $('telemetryDuration').textContent = `${metrics.duration}ms`;
+    if (metrics.strokes != null && $('telemetryStrokes')) $('telemetryStrokes').textContent = `${metrics.strokes} 条`;
+    if (metrics.cache && $('telemetryCache')) $('telemetryCache').textContent = metrics.cache;
+  },
+  onModelStatus: (statusData) => {
+    const badge = $('modelStatus');
+    if (badge) {
+      badge.textContent = statusData.label;
+      badge.className = statusData.badgeClass;
+    }
+  },
   onAspectRatioChange: (origW, origH) => {
     setPlateAspectRatio(origW, origH);
     const targetH = Math.max(1, Math.round(W * origH / origW));
     allocatePlate(W, targetH);
-  },
-  onPlateCarve: (allPaths, w, h) => {
-    // Initial demo hairline engraving onto copperplate with frameMargin nesting
-    const frameMargin = Math.round(54 * W / 900);
-    const artW = W - 2 * frameMargin;
-    const artH = H - 2 * frameMargin;
-    const scale = Math.min(artW / w, artH / h);
-    const offX = frameMargin + Math.round((artW - w * scale) / 2);
-    const offY = frameMargin + Math.round((artH - h * scale) / 2);
-    for (const path of allPaths) {
-      const pts = path.points;
-      if (pts && pts.length >= 2) {
-        for (let k = 1; k < pts.length; k++) {
-          line(
-            { x: offX + pts[k - 1][0] * scale, y: offY + pts[k - 1][1] * scale },
-            { x: offX + pts[k][0] * scale, y: offY + pts[k][1] * scale, p: 0.6 }
-          );
-        }
-      }
-    }
   }
 });
 
 const transferWizard = new TransferWizardController({
   getMasterData: () => pipelineController.getMasterData(),
+  onWarning: (msg) => logMessage('向导', msg, 'warn'),
   onExecuteTransfer: ({ pathsToCarve, selectedRes, selectedTechnique, needlePressure = 0.65, layerLabel }) => {
     stop();
     snapshot();

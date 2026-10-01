@@ -18,8 +18,9 @@ const TelemetrySink = _TelemetrySink.TelemetrySink || _TelemetrySink;
 const _PipelineRunner = typeof require !== 'undefined' ? require('../../core/pipeline/pipeline-runner.js') : globalThis.PipelineRunner;
 const PipelineRunner = _PipelineRunner.PipelineRunner || _PipelineRunner;
 
-const { VirtualPlateEngine } = typeof require !== 'undefined' ? require('../../core/plate/engine/virtual-plate-engine.js') : globalThis;
-const Exporter = typeof require !== 'undefined' ? require('../export/exporter.js') : globalThis.Exporter;
+const _VPE = typeof require !== 'undefined' ? require('../../core/plate/engine/virtual-plate-engine.js') : (globalThis.VirtualPlateEngineModule || globalThis);
+const VirtualPlateEngine = _VPE.VirtualPlateEngine || _VPE;
+const Exporter = typeof require !== 'undefined' ? require('../export/exporter.js') : (globalThis.Exporter || globalThis);
 
 class Orchestrator {
   /**

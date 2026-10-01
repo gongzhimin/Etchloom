@@ -15,7 +15,25 @@ export class TransferWizardController {
     this.onExecuteTransfer = options.onExecuteTransfer || (() => {});
     this.getMasterData = options.getMasterData || (() => ({ masterPaths: [], contours: [], hatching: [], loadedImage: null }));
 
+    this.onWarning = options.onWarning || null;
     this.bindEvents();
+  }
+
+  notifyWarning(msg) {
+    if (typeof this.onWarning === 'function') {
+      this.onWarning(msg);
+      return;
+    }
+    const fn = (typeof window !== 'undefined' && window.logMessage) || (typeof globalThis !== 'undefined' && globalThis.logMessage);
+    if (typeof fn === 'function') {
+      fn('向导', msg, 'warn');
+      return;
+    }
+    if (typeof alert === 'function') {
+      alert(msg);
+    } else {
+      console.warn(msg);
+    }
   }
 
   bindEvents() {
@@ -23,7 +41,7 @@ export class TransferWizardController {
       this.openBtn.onclick = () => {
         const { masterPaths, contours } = this.getMasterData();
         if ((!masterPaths || !masterPaths.length) && (!contours || !contours.length)) {
-          alert('请先载入照片或运行管线生成母版矢量线条！');
+          this.notifyWarning('请先载入照片或运行管线生成母版矢量线条！');
           return;
         }
         this.open();
@@ -34,7 +52,7 @@ export class TransferWizardController {
       this.drawerOpenBtn.onclick = () => {
         const { masterPaths, contours } = this.getMasterData();
         if ((!masterPaths || !masterPaths.length) && (!contours || !contours.length)) {
-          alert('请先载入照片或运行管线生成母版矢量线条！');
+          this.notifyWarning('请先载入照片或运行管线生成母版矢量线条！');
           return;
         }
         this.open();

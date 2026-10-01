@@ -17,6 +17,9 @@ export class LightboxController {
     this.zoomResetBtn = document.getElementById(options.zoomResetBtnId || 'lightboxReset');
     this.zoomFitBtn = document.getElementById(options.zoomFitBtnId || 'lightboxFit');
 
+    this.svgWrap = document.getElementById(options.svgWrapId || 'modalSvgWrap');
+    this.currentMode = 'canvas'; // 'canvas' | 'vector'
+
     this.scale = 1.0;
     this.translateX = 0;
     this.translateY = 0;
@@ -91,7 +94,7 @@ export class LightboxController {
         this.startX = e.clientX - this.translateX;
         this.startY = e.clientY - this.translateY;
         this.viewportWrap.classList.add('is-dragging');
-        this.viewportWrap.setPointerCapture(e.pointerId);
+        this.viewportWrap.setPointerCapture?.(e.pointerId);
       };
 
       this.viewportWrap.onpointermove = (e) => {
@@ -127,16 +130,20 @@ export class LightboxController {
       };
     }
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.overlay && !this.overlay.hidden) {
-        this.close();
-      }
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.overlay && !this.overlay.hidden) {
+          this.close();
+        }
+      });
+    }
   }
 
   updateTransform() {
-    if (!this.canvas) return;
-    this.canvas.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+    const target = this.currentMode === 'vector' ? this.svgWrap : this.canvas;
+    if (target) {
+      target.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+    }
     if (this.zoomBadge) {
       this.zoomBadge.textContent = `${Math.round(this.scale * 100)}%`;
     }
@@ -150,39 +157,90 @@ export class LightboxController {
   }
 
   /**
-   * Opens the lightbox modal displaying a canvas or image source.
+   * Opens the lightbox modal displaying a canvas or vector SVG source.
    * @param {string} title
-   * @param {HTMLCanvasElement|HTMLImageElement} sourceCanvas
+   * @param {HTMLCanvasElement|HTMLImageElement|string} source
    * @param {string} [description='']
+   * @param {Object} [options={}] - { isVector?: boolean, vectorSvg?: string, width?: number, height?: number }
    */
-  open(title, sourceCanvas, description = '') {
+  open(title, source, description = '', options = {}) {
     if (!this.overlay) this.overlay = document.getElementById('modalOverlay');
     if (!this.canvas) this.canvas = document.getElementById('modalCanvas') || document.getElementById('lightboxCanvas');
+    if (!this.svgWrap) this.svgWrap = document.getElementById('modalSvgWrap');
     if (!this.viewportWrap) this.viewportWrap = document.getElementById('modalViewportWrap') || document.getElementById('lightboxViewport');
     if (!this.titleEl) this.titleEl = document.getElementById('modalTitle');
     if (!this.descEl) this.descEl = document.getElementById('modalDescription');
     if (!this.closeBtn) this.closeBtn = document.getElementById('modalClose');
 
-    if (!this.overlay || !this.canvas || !sourceCanvas) return;
+    if (!this.overlay) return;
     if (this.titleEl) this.titleEl.textContent = title;
     if (this.descEl) this.descEl.textContent = description;
 
-    const sw = sourceCanvas.naturalWidth || sourceCanvas.width || 1440;
-    const sh = sourceCanvas.naturalHeight || sourceCanvas.height || 1000;
-    this.canvas.width = sw;
-    this.canvas.height = sh;
-
-    // True Fullscreen: calculate available viewport dimensions
+    // Viewport dimensions
     const winW = (typeof window !== 'undefined' ? window.innerWidth : 1920) || 1920;
     const winH = (typeof window !== 'undefined' ? window.innerHeight : 1080) || 1080;
     const wrapW = this.viewportWrap?.clientWidth || winW;
     const wrapH = this.viewportWrap?.clientHeight || winH;
-
-    // Use full screen minus minimal breathing margins (24px horizontal, 54px vertical)
     const availW = Math.max(300, wrapW - 24);
     const availH = Math.max(300, wrapH - 54);
-    const fitScale = Math.min(availW / sw, availH / sh);
 
+    // 1. Vector SVG Mode Check
+    const svgContent = options.vectorSvg || (typeof source === 'string' && source.includes('<svg') ? source : null);
+    if (svgContent && this.svgWrap) {
+      this.currentMode = 'vector';
+      if (this.canvas) {
+        this.canvas.style.display = 'none';
+        this.canvas.hidden = true;
+      }
+      this.svgWrap.hidden = false;
+      this.svgWrap.style.display = 'flex';
+      this.svgWrap.innerHTML = svgContent;
+
+      let sw = options.width || 900;
+      let sh = options.height || 660;
+
+      const svgEl = this.svgWrap.querySelector('svg');
+      if (svgEl) {
+        if (svgEl.viewBox && svgEl.viewBox.baseVal && svgEl.viewBox.baseVal.width > 0) {
+          sw = svgEl.viewBox.baseVal.width;
+          sh = svgEl.viewBox.baseVal.height;
+        } else {
+          const vbAttr = svgEl.getAttribute('viewBox');
+          if (vbAttr) {
+            const parts = vbAttr.trim().split(/[\s,]+/).map(Number);
+            if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+              sw = parts[2];
+              sh = parts[3];
+            }
+          }
+        }
+      }
+
+      const fitScale = Math.min(availW / sw, availH / sh);
+      this.svgWrap.style.width = `${Math.round(sw * fitScale)}px`;
+      this.svgWrap.style.height = `${Math.round(sh * fitScale)}px`;
+
+      this.resetView();
+      this.overlay.hidden = false;
+      return;
+    }
+
+    // 2. Raster Canvas Mode
+    if (!this.canvas || !source) return;
+    this.currentMode = 'canvas';
+    if (this.svgWrap) {
+      this.svgWrap.style.display = 'none';
+      this.svgWrap.hidden = true;
+    }
+    this.canvas.hidden = false;
+    this.canvas.style.display = 'block';
+
+    const sw = source.naturalWidth || source.width || 1440;
+    const sh = source.naturalHeight || source.height || 1000;
+    this.canvas.width = sw;
+    this.canvas.height = sh;
+
+    const fitScale = Math.min(availW / sw, availH / sh);
     this.canvas.style.width = `${Math.round(sw * fitScale)}px`;
     this.canvas.style.height = `${Math.round(sh * fitScale)}px`;
 
@@ -191,7 +249,7 @@ export class LightboxController {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.clearRect(0, 0, sw, sh);
-      ctx.drawImage(sourceCanvas, 0, 0, sw, sh);
+      ctx.drawImage(source, 0, 0, sw, sh);
     }
 
     this.resetView();

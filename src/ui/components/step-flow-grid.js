@@ -117,7 +117,8 @@ class StepFlowGrid {
         e?.stopPropagation?.();
         this.setActiveStep(i);
         this.onStepSelect(i);
-        this.onStepFullscreen(i, canvas);
+        const vectorSvg = i >= 3 ? this.getStepVectorSvg(i) : null;
+        this.onStepFullscreen(i, canvas, { isVector: !!vectorSvg, vectorSvg });
       };
       // Floating Ghost Hover Action Toolbar (特写 + 导出)
       const actions = document.createElement('div');
@@ -131,7 +132,8 @@ class StepFlowGrid {
         e?.stopPropagation?.();
         this.setActiveStep(i);
         this.onStepSelect(i);
-        this.onStepFullscreen(i, canvas);
+        const vectorSvg = i >= 3 ? this.getStepVectorSvg(i) : null;
+        this.onStepFullscreen(i, canvas, { isVector: !!vectorSvg, vectorSvg });
       };
       actions.appendChild(inspectBtn);
 
@@ -491,12 +493,28 @@ class StepFlowGrid {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    this.stepStates[stepIndex].lastPaths = paths;
-
     const cw = canvas.width;
     const ch = canvas.height;
     const sw = srcWidth || cw;
     const sh = srcHeight || ch;
+
+    this.stepStates[stepIndex].lastPaths = paths;
+    this.stepStates[stepIndex].lastSrcWidth = sw;
+    this.stepStates[stepIndex].lastSrcHeight = sh;
+    this.stepStates[stepIndex].lastOptions = options;
+
+    const getTheme = () => {
+      const tb = (typeof ThemeBridge !== 'undefined' && ThemeBridge) || (typeof globalThis !== 'undefined' && globalThis.ThemeBridge);
+      return tb?.getRenderTheme ? tb.getRenderTheme() : {
+        paperGround: '#faf7f0',
+        plateGround: '#1e2220',
+        inkPrimary: '#1a1918',
+        contourGold: '#c8b67e',
+        hatchSage: '#b4c0ab',
+        masterPaper: '#fcfbf8'
+      };
+    };
+    const theme = getTheme();
 
     if (stepIndex === 6) {
       // Step 6: Authentic Hand-printed Intaglio Sample on Cotton Rag Paper
@@ -505,13 +523,15 @@ class StepFlowGrid {
 
       const frameStyle = options.frameStyle || this.frameStyle || 'double';
       const geom = getFrameGeometry(cw, ch, frameStyle);
+      const paperGround = options.bgTone || theme.paperGround || '#faf7f0';
+      const inkPrimary = options.strokeColor || theme.inkPrimary || '#1a1918';
 
       // 1. Paper ground
-      ctx.fillStyle = options.bgTone || '#faf7f0';
+      ctx.fillStyle = paperGround;
       ctx.fillRect(0, 0, cw, ch);
 
       // 2. Draw impressed paper depression, plate bevel, and chosen frame style (outer, fine, rough)
-      drawEngravedFrame(ctx, cw, ch, geom, options.strokeColor || '#1a1918');
+      drawEngravedFrame(ctx, cw, ch, geom, inkPrimary);
 
       // 3. Artwork nesting area strictly inside the innermost frame clearance
       // Guarantees artwork NEVER extends outside the frame rules (outer frame is strictly outside artwork)
@@ -526,7 +546,7 @@ class StepFlowGrid {
       ctx.rect(artX, artY, artW, artH);
       ctx.clip();
 
-      ctx.strokeStyle = options.strokeColor || '#1a1918';
+      ctx.strokeStyle = inkPrimary;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
@@ -554,11 +574,11 @@ class StepFlowGrid {
 
     // Background tone
     const isLightBg = stepIndex === 5;
-    ctx.fillStyle = options.bgTone || (isLightBg ? '#fcfbf8' : '#1e2220');
+    ctx.fillStyle = options.bgTone || (isLightBg ? (theme.masterPaper || '#fcfbf8') : (theme.plateGround || '#1e2220'));
     ctx.fillRect(0, 0, cw, ch);
 
     // Default ink color
-    ctx.strokeStyle = options.strokeColor || (isLightBg ? '#1b1b1b' : '#ded9cc');
+    ctx.strokeStyle = options.strokeColor || (isLightBg ? (theme.inkPrimary || '#1b1b1b') : '#ded9cc');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -573,9 +593,9 @@ class StepFlowGrid {
 
       // Subtle nuance by stage
       if (stepIndex === 3) {
-        ctx.strokeStyle = isLightBg ? 'rgba(20, 20, 20, 0.85)' : '#c8b67e';
+        ctx.strokeStyle = isLightBg ? 'rgba(20, 20, 20, 0.85)' : (theme.contourGold || '#c8b67e');
       } else if (stepIndex === 4) {
-        ctx.strokeStyle = isLightBg ? 'rgba(30, 28, 26, 0.9)' : '#b4c0ab';
+        ctx.strokeStyle = isLightBg ? 'rgba(30, 28, 26, 0.9)' : (theme.hatchSage || '#b4c0ab');
       }
 
       ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
@@ -584,6 +604,97 @@ class StepFlowGrid {
       }
       ctx.stroke();
     }
+  }
+
+  /**
+   * Generates a pristine, scalable vector SVG for vector stages (Steps 3, 4, 5, 6).
+   * Enables infinite-resolution vector zooming without raster pixelation or blur.
+   * @param {number} stepIndex
+   * @returns {string|null} SVG XML string or null if not a vector stage
+   */
+  getStepVectorSvg(stepIndex) {
+    if (stepIndex < 3 || stepIndex > 6) return null;
+    const state = this.stepStates[stepIndex];
+    if (!state || !state.lastPaths || !state.lastPaths.length) return null;
+
+    const paths = state.lastPaths;
+    const sw = state.lastSrcWidth || (stepIndex === 6 ? (this.lastSrcWidth || 1400) : 900);
+    const sh = state.lastSrcHeight || (stepIndex === 6 ? (this.lastSrcHeight || Math.round(1400 * 660 / 900)) : 660);
+    const options = state.lastOptions || {};
+
+    const tb = (typeof ThemeBridge !== 'undefined' && ThemeBridge) || (typeof globalThis !== 'undefined' && globalThis.ThemeBridge);
+    const theme = tb?.getRenderTheme ? tb.getRenderTheme() : {
+      paperGround: '#faf7f0',
+      plateGround: '#1e2220',
+      inkPrimary: '#1a1918',
+      contourGold: '#c8b67e',
+      hatchSage: '#b4c0ab',
+      masterPaper: '#fcfbf8'
+    };
+
+    if (stepIndex === 6) {
+      const cw = 1400;
+      const ch = Math.max(1, Math.round(cw * sh / sw));
+      const frameStyle = options.frameStyle || this.frameStyle || 'double';
+      const geom = getFrameGeometry(cw, ch, frameStyle);
+      const strokeColor = options.strokeColor || theme.inkPrimary || '#1a1918';
+      const bgTone = options.bgTone || theme.paperGround || '#faf7f0';
+
+      const frameXml = generateFrameSvg(cw, ch, geom, strokeColor);
+
+      const { x: artX, y: artY, w: artW, h: artH } = geom.art;
+      const scale = Math.min(artW / sw, artH / sh);
+      const offX = artX + Math.round((artW - sw * scale) / 2);
+      const offY = artY + Math.round((artH - sh * scale) / 2);
+
+      const artPathsXml = pathsToSvgXml(paths, scale, offX, offY, 0.8);
+
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${ch}" viewBox="0 0 ${cw} ${ch}">
+  <style>
+    path, line, rect { stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <defs>
+    <clipPath id="etchloom-art-clip">
+      <rect x="${artX}" y="${artY}" width="${artW}" height="${artH}" />
+    </clipPath>
+  </defs>
+  <!-- Archival Cotton Paper Ground -->
+  <rect width="100%" height="100%" fill="${bgTone}" />
+  <!-- Classical Frame Border -->
+  <g id="etchloom-frame">
+${frameXml}
+  </g>
+  <!-- Nested Vector Art -->
+  <g id="etchloom-artwork" clip-path="url(#etchloom-art-clip)" fill="none" stroke="${strokeColor}">
+${artPathsXml}
+  </g>
+</svg>`;
+    }
+
+    const isLightBg = stepIndex === 5;
+    const bgTone = options.bgTone || (isLightBg ? (theme.masterPaper || '#fcfbf8') : (theme.plateGround || '#1e2220'));
+    let strokeColor = options.strokeColor || (isLightBg ? (theme.inkPrimary || '#1b1b1b') : '#ded9cc');
+    if (stepIndex === 3) {
+      strokeColor = isLightBg ? 'rgba(20, 20, 20, 0.85)' : (theme.contourGold || '#c8b67e');
+    } else if (stepIndex === 4) {
+      strokeColor = isLightBg ? 'rgba(30, 28, 26, 0.9)' : (theme.hatchSage || '#b4c0ab');
+    }
+
+    const defaultWidth = stepIndex === 3 ? 1.2 : 0.8;
+    const pathsXml = pathsToSvgXml(paths, 1.0, 0, 0, defaultWidth);
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${sw}" height="${sh}" viewBox="0 0 ${sw} ${sh}">
+  <style>
+    path { fill: none; stroke: ${strokeColor}; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <!-- Background Plate Tone -->
+  <rect width="100%" height="100%" fill="${bgTone}" />
+  <g id="etchloom-vector-paths">
+${pathsXml}
+  </g>
+</svg>`;
   }
 
   /**
@@ -790,7 +901,122 @@ function drawEngravedFrame(ctx, cw, ch, geom, strokeColor = '#1a1918') {
   ctx.restore();
 }
 
-const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame };
+/**
+ * Converts path objects to SVG <path> elements with coordinates scaled and offset.
+ * @param {Array<Object>} paths
+ * @param {number} [scale=1.0]
+ * @param {number} [offX=0]
+ * @param {number} [offY=0]
+ * @param {number} [defaultWidth=0.8]
+ * @returns {string}
+ */
+function pathsToSvgXml(paths, scale = 1.0, offX = 0, offY = 0, defaultWidth = 0.8) {
+  if (!Array.isArray(paths)) return '';
+  return paths.map(p => {
+    const pts = p.points || p;
+    if (!Array.isArray(pts) || pts.length < 2) return '';
+    const strokeW = Math.max(0.4, (p.width ?? defaultWidth) * scale).toFixed(2);
+    const d = pts.map((pt, idx) => {
+      const px = ((pt[0] ?? pt.x) * scale + offX).toFixed(2);
+      const py = ((pt[1] ?? pt.y) * scale + offY).toFixed(2);
+      return idx === 0 ? `M ${px} ${py}` : `L ${px} ${py}`;
+    }).join(' ');
+    return `    <path d="${d}" stroke-width="${strokeW}" />`;
+  }).filter(Boolean).join('\n');
+}
+
+/**
+ * Generates pure vector SVG XML elements for the chosen frame style.
+ * Supports double, fine, and authentic artisanal rough chisel marks.
+ * @param {number} cw
+ * @param {number} ch
+ * @param {Object} geom
+ * @param {string} [strokeColor='#1a1918']
+ * @returns {string} SVG snippet
+ */
+function generateFrameSvg(cw, ch, geom, strokeColor = '#1a1918') {
+  if (!geom || geom.style === 'none') return '';
+
+  if (geom.style === 'double') {
+    return `    <rect x="${geom.outer.x}" y="${geom.outer.y}" width="${geom.outer.w}" height="${geom.outer.h}" fill="none" stroke="${strokeColor}" stroke-width="${geom.outer.lineWidth.toFixed(2)}" />
+    <rect x="${geom.inner.x}" y="${geom.inner.y}" width="${geom.inner.w}" height="${geom.inner.h}" fill="none" stroke="${strokeColor}" stroke-width="${geom.inner.lineWidth.toFixed(2)}" />`;
+  }
+
+  if (geom.style === 'fine') {
+    return `    <rect x="${geom.outer.x}" y="${geom.outer.y}" width="${geom.outer.w}" height="${geom.outer.h}" fill="none" stroke="${strokeColor}" stroke-width="${geom.outer.lineWidth.toFixed(2)}" />`;
+  }
+
+  if (geom.style === 'rough') {
+    const { x, y, w, h, lineWidth } = geom.outer;
+    const scale = Math.max(0.7, Math.min(w, h) / 660);
+    const cornerOvershoot = Math.round(7 * scale);
+    const edges = [
+      { p1: [x - cornerOvershoot, y], p2: [x + w + cornerOvershoot, y], isH: true, seed: 101 },
+      { p1: [x + w, y - cornerOvershoot], p2: [x + w, y + h + cornerOvershoot], isH: false, seed: 202 },
+      { p1: [x + w + cornerOvershoot, y + h], p2: [x - cornerOvershoot, y + h], isH: true, seed: 303 },
+      { p1: [x, y + h + cornerOvershoot], p2: [x, y - cornerOvershoot], isH: false, seed: 404 }
+    ];
+
+    const xmlLines = [];
+    for (const edge of edges) {
+      const { p1, p2, isH, seed } = edge;
+      const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      const segments = Math.max(48, Math.round(len / 8));
+      let s = seed;
+      const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+      const pts = [];
+      for (let k = 0; k <= segments; k++) {
+        const t = k / segments;
+        const wave1 = Math.sin(t * Math.PI * 3 + seed * 0.1) * 1.8 * scale;
+        const wave2 = Math.sin(t * Math.PI * 8 + seed * 0.2) * 1.0 * scale;
+        const wave3 = Math.sin(t * Math.PI * 23 + seed * 0.3) * 0.5 * scale;
+        const jitter = (rnd() - 0.5) * 1.6 * scale;
+        const offset = wave1 + wave2 + wave3 + jitter;
+
+        const basePx = p1[0] + (p2[0] - p1[0]) * t;
+        const basePy = p1[1] + (p2[1] - p1[1]) * t;
+
+        const px = isH ? basePx : basePx + offset;
+        const py = isH ? basePy + offset : basePy;
+
+        const widthPulse = Math.sin(t * Math.PI * 4 + seed * 0.15);
+        const widthJitter = (rnd() - 0.5) * 0.5;
+        const strokeW = Math.max(0.6 * scale, lineWidth * (1.1 + 0.65 * widthPulse + widthJitter));
+
+        pts.push({ x: px, y: py, width: strokeW });
+      }
+
+      // Draw undulating chiseled line segments
+      for (let k = 1; k < pts.length; k++) {
+        const sw = pts[k].width.toFixed(2);
+        xmlLines.push(`    <line x1="${pts[k-1].x.toFixed(2)}" y1="${pts[k-1].y.toFixed(2)}" x2="${pts[k].x.toFixed(2)}" y2="${pts[k].y.toFixed(2)}" stroke="${strokeColor}" stroke-width="${sw}" />`);
+      }
+
+      // Hand-engraved chisel chatter & companion burr flecks
+      const fleckCount = Math.floor(4 + rnd() * 4);
+      for (let f = 0; f < fleckCount; f++) {
+        const ft = 0.1 + rnd() * 0.8;
+        const idx = Math.floor(ft * segments);
+        const basePt = pts[idx];
+        const side = rnd() > 0.5 ? 1 : -1;
+        const dist = (2.5 + rnd() * 3.5) * scale;
+        const fLen = (5 + rnd() * 12) * scale;
+        const fx1 = isH ? basePt.x : basePt.x + side * dist;
+        const fy1 = isH ? basePt.y + side * dist : basePt.y;
+        const fx2 = isH ? fx1 + fLen : fx1;
+        const fy2 = isH ? fy1 : fy1 + fLen;
+        const sw = Math.max(0.5 * scale, lineWidth * 0.5).toFixed(2);
+        xmlLines.push(`    <line x1="${fx1.toFixed(2)}" y1="${fy1.toFixed(2)}" x2="${fx2.toFixed(2)}" y2="${fy2.toFixed(2)}" stroke="${strokeColor}" stroke-width="${sw}" />`);
+      }
+    }
+    return xmlLines.join('\n');
+  }
+
+  return '';
+}
+
+const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame, generateFrameSvg, pathsToSvgXml };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = api;
@@ -799,6 +1025,8 @@ if (typeof globalThis !== 'undefined') {
   globalThis.StepFlowGrid = StepFlowGrid;
   globalThis.getFrameGeometry = getFrameGeometry;
   globalThis.drawEngravedFrame = drawEngravedFrame;
+  globalThis.generateFrameSvg = generateFrameSvg;
+  globalThis.pathsToSvgXml = pathsToSvgXml;
 }
 
 
