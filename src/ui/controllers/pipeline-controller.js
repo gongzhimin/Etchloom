@@ -13,6 +13,7 @@ export class PipelineController {
     this.stepGrid = options.stepGrid || null;
     this.log = options.log || ((cat, txt, lvl) => console.log(`[${cat}] ${txt}`));
     this.onPlateCarve = options.onPlateCarve || (() => {});
+    this.onAspectRatioChange = options.onAspectRatioChange || null;
 
     this.currentLoadedImage = null;
     this.currentDepthMap = null;
@@ -80,6 +81,10 @@ export class PipelineController {
               pixels[i] = Math.round(d[idx] * 0.299 + d[idx + 1] * 0.587 + d[idx + 2] * 0.114);
             }
             this.currentLoadedImage = { width: origW, height: origH, pixels, rawImg: tmpCanvas, file };
+
+            if (typeof this.onAspectRatioChange === 'function') {
+              this.onAspectRatioChange(origW, origH);
+            }
 
             if (this.stepGrid) {
               if (typeof this.stepGrid.setAspectRatio === 'function') {
@@ -358,8 +363,8 @@ export class PipelineController {
       }
     } else if (stepIdx === 6) {
       // Export pristine physical fine-art print on cotton paper with plate bevel
-      const expW = Math.max(1200, curW);
-      const expH = Math.max(880, Math.round(curH * (expW / curW)));
+      const expW = Math.max(1400, curW);
+      const expH = Math.max(1, Math.round(expW * curH / curW));
       const c = document.createElement('canvas');
       c.width = expW;
       c.height = expH;

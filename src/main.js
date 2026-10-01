@@ -9,7 +9,8 @@ import { PipelineController } from './ui/controllers/pipeline-controller.js';
 import {
   W, H, N, depth, exposed, blocked, burr,
   allocatePlate, snapshot, stop, setView, line,
-  setPlateStage, bindPlateStudioEvents, setPlateFrameStyle
+  setPlateStage, bindPlateStudioEvents, setPlateFrameStyle,
+  setPlateAspectRatio, setMirrorPrint
 } from './ui/controllers/plate-studio-controller.js';
 import { mountAppLayout } from './ui/templates/layout-templates.js';
 
@@ -130,6 +131,11 @@ if (gridContainer && StepFlowGridLib) {
 const pipelineController = new PipelineController({
   stepGrid,
   log: logMessage,
+  onAspectRatioChange: (origW, origH) => {
+    setPlateAspectRatio(origW, origH);
+    const targetH = Math.max(1, Math.round(W * origH / origW));
+    allocatePlate(W, targetH);
+  },
   onPlateCarve: (allPaths, w, h) => {
     // Initial demo hairline engraving onto copperplate with frameMargin nesting
     const frameMargin = Math.round(54 * W / 900);
@@ -158,8 +164,12 @@ const transferWizard = new TransferWizardController({
     stop();
     snapshot();
 
-    if (W !== selectedRes) {
-      allocatePlate(selectedRes);
+    const srcW = pipelineController.currentLoadedImage?.width || 900;
+    const srcH = pipelineController.currentLoadedImage?.height || 660;
+    const targetH = Math.max(1, Math.round(selectedRes * srcH / srcW));
+
+    if (W !== selectedRes || H !== targetH) {
+      allocatePlate(selectedRes, targetH);
     }
 
     depth.fill(0);

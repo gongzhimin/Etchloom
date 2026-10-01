@@ -68,14 +68,20 @@
   - 底部遥测栏集成 `[📋 运行日志]` 快捷触发键 (`#activityLogToggle`)，点击可一键平滑滑出 96px 高度日志视口；
   - 彻底释放主工作区垂直净空，确保大卡片自由向下滚动。
 
-### 1.5 虚拟铜版全屏特写与古典样印导出 (Plate Studio Fullscreen & Engraved Print Export)
+### 1.5 虚拟铜版全屏特写、正向样印与比例自适应 (Plate Studio Fullscreen, Upright Print & Dynamic Ratio)
 - **彻底移除放大镜**：彻底剔除虚拟铜版上的物理放大镜（Loupe）和全局 Alt 键劫持，杜绝视野遮挡。
 - **画板直观全屏特写**：
   - 画板右上角浮动操作条增设 `[⛶ 全屏特写]` 按钮 (`#plateCanvasInspectBtn`)；
   - 顶部操作栏提供 `[⛶ 全屏特写]` 显式按钮 (`#plateFullscreenBtn`)；
   - 在 `view === 'print'`（印样压印审阅）模式下，光标切换为 `zoom-in`，**单机画布任意区域直接弹出 Lightbox 超高清全屏特写**；
   - 在任意模式下（`plate` / `depth` / `print`），**双击铜版画布直接弹出全屏特写**，支持滚轮平滑缩放与拖拽漫游。
-- **古典双线边框样印导出**：虚拟铜版在“压印预览”与“取一张印样”导出时，同步绘制古典双线外框（Primary Outer Frame + Parallel Inner Hairline Frame）并保留纯棉纸倒角压痕，导出符合版画工坊传统的高品质独立样印，不含任何 DOM 或工作台辅助边框。
+- **正向样印压印（Upright Impression, No Inversion）**：
+  - 压印模拟默认采用正向印痕映射（`mirrorPrint = false`），彻底解决传统印制仿真中水平反转导致画面左右镜像、人物朝向反向的缺陷；
+  - 同步绘制古典外框（双线/单线/手工古拙），保留纯棉纸倒角压痕，导出符合现代版画工作室诉求的端正独立样印，不含任何 DOM 或工作台辅助边框。
+- **版画比例根据图片原始比例自适应 (Dynamic Plate Aspect Ratio Adaptation)**：
+  - 彻底废除硬编码的 `660 / 900`（或 1500x1100）固定长宽比；
+  - 虚拟铜版画板（`W, H`）及压印导出根据导入源图片的原始物理宽高比（`origW / origH`）自适应计算尺寸（如竖图 2:3、横图 16:9 等自洽缩放）；
+  - 向铜版转录图稿、分辨率升档（900/1500/3000）及撤销恢复均严格遵循源图宽高比。
 
 ### 1.6 铜版工坊 5 步步进器 (PlateProcessStepper)
 - **模板位置**：`#plateStepper`

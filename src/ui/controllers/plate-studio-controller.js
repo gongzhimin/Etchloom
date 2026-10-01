@@ -31,6 +31,8 @@ export let dirty = true;
 export let plateSources = [];
 export let grainNoise = new Float32Array(N);
 export let plateFrameStyle = 'double';
+export let mirrorPrint = false;
+export let sourceAspectRatio = null;
 
 export function setPlateFrameStyle(style) {
   plateFrameStyle = style || 'double';
@@ -38,6 +40,21 @@ export function setPlateFrameStyle(style) {
 }
 export function getPlateFrameStyle() {
   return plateFrameStyle;
+}
+
+export function setMirrorPrint(val) {
+  mirrorPrint = !!val;
+  dirty = true;
+}
+
+export function setPlateAspectRatio(width, height) {
+  if (width > 0 && height > 0) {
+    sourceAspectRatio = width / height;
+    const canvas = getCanvas();
+    if (canvas && canvas.style) {
+      canvas.style.aspectRatio = `${width} / ${height}`;
+    }
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -54,15 +71,24 @@ export function resetGrain() {
 }
 resetGrain();
 
-export function allocatePlate(width) {
+export function allocatePlate(width, height = null) {
   if (![900, 1500, 3000].includes(width)) throw Error("版面尺寸无效");
   W = width;
-  H = Math.round(W * 660 / 900);
+  if (height && height > 0) {
+    H = Math.round(height);
+  } else if (sourceAspectRatio && sourceAspectRatio > 0) {
+    H = Math.max(1, Math.round(W / sourceAspectRatio));
+  } else {
+    H = Math.round(W * 660 / 900);
+  }
   N = W * H;
   const canvas = getCanvas();
   if (canvas) {
     canvas.width = W;
     canvas.height = H;
+    if (canvas.style) {
+      canvas.style.aspectRatio = `${W} / ${H}`;
+    }
   }
   depth = new Float32Array(N);
   exposed = new Float32Array(N);
@@ -84,6 +110,7 @@ export function snapshot() {
   if ($('irreversible')?.checked) return;
   history.push({
     width: W,
+    height: H,
     depth: depth.slice(),
     exposed: exposed.slice(),
     blocked: blocked.slice(),
@@ -138,7 +165,7 @@ export function setView(v) {
     $('caption').textContent = {
       plate: '制版 / 针尖划开保护层，等待酸液进入',
       depth: '刻深 / 黑色为完整表面，亮度表示凹槽深度',
-      print: '印样 / 纯棉纸双线外框印痕，点击画布可全屏特写'
+      print: '印样 / 纯棉纸双线外框正向印痕，点击画布可全屏特写'
     }[v] || '';
   }
   dirty = true;
@@ -239,7 +266,7 @@ export function render(target = getCtx(), mode = view) {
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       let i = y * W + x;
-      let j = mode === 'print' ? y * W + W - 1 - x : i;
+      let j = (mode === 'print' && mirrorPrint) ? y * W + W - 1 - x : i;
       let d = depth[j];
       let bu = burr[j];
       let noise = grainNoise[i];
@@ -549,7 +576,7 @@ export function bindPlateStudioEvents(options = {}) {
       }
       stop();
       snapshot();
-      if (s.width !== W) allocatePlate(s.width);
+      if (s.width !== W || (s.height && s.height !== H)) allocatePlate(s.width, s.height);
       ({ depth, exposed, blocked } = decoded);
       burr = s.burr ? (s.version === 1 ? Float32Array.from(s.burr) : PlateCodecLib.decode(s.burr, Float32Array, N)) : new Float32Array(N);
       if (typeof window !== 'undefined') {
@@ -580,7 +607,7 @@ export function bindPlateStudioEvents(options = {}) {
   if ($('undo')) $('undo').onclick = () => {
     const s = history.pop();
     if (!s) return;
-    if (s.width !== W) allocatePlate(s.width);
+    if (s.width !== W || (s.height && s.height !== H)) allocatePlate(s.width, s.height);
     ({ depth, exposed, blocked, elapsed, plateSources } = s);
     burr = s.burr ? s.burr.slice() : new Float32Array(N);
     dirty = true;

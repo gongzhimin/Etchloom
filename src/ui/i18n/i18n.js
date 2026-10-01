@@ -90,7 +90,7 @@ const DICTIONARY = {
     'console.title': '运行日志',
     'caption.plate': '针尖划开保护层，等待酸液咬蚀',
     'caption.depth': '刻槽深度分布',
-    'caption.print': '纯棉纸凹版镜像压印',
+    'caption.print': '纯棉纸凹版正向压印',
     'caption.timer': '腐蚀累计',
     'wizard.title': '母版图稿上版向导'
   },
@@ -178,7 +178,7 @@ const DICTIONARY = {
     'console.title': 'Atelier Activity Log',
     'caption.plate': 'Plate / Needle scratches ground, awaiting acid',
     'caption.depth': 'Depth / Black is surface, brightness indicates depth',
-    'caption.print': 'Print / Mirrored plate, tone defined by depth & press',
+    'caption.print': 'Print / Upright impression, tone defined by depth & press',
     'caption.timer': 'Cumulative Bite',
     'wizard.title': 'Artwork Plate Transfer Wizard'
   }
