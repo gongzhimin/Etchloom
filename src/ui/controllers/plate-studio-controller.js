@@ -580,16 +580,27 @@ export function bindPlateStudioEvents(options = {}) {
     });
   }
 
-  // Sliders binding with output tags
-  for (const id of ['size', 'acid', 'grain', 'ink', 'pressure', 'tone', 'exposure', 'blackPoint', 'whitePoint', 'contourDetail', 'aerialStrength', 'needleWidth', 'density', 'curvatureGate', 'crossHatch']) {
+  // Sliders binding with output tags & pipeline reactive hooks
+  const masterParamIds = ['exposure', 'blackPoint', 'whitePoint', 'contourDetail', 'aerialStrength', 'needleWidth', 'density', 'curvatureGate', 'crossHatch'];
+  for (const id of ['size', 'acid', 'grain', 'ink', 'pressure', 'tone', ...masterParamIds]) {
     const el = $(id);
     const out = $(id + 'Val') || $(id + 'Value');
     if (el && out) {
-      el.oninput = () => {
+      const updateVal = () => {
         out.value = el.value + (id === 'size' ? ' px' : id === 'needleWidth' ? ' mm' : '%');
         dirty = true;
       };
-      el.oninput();
+      const handleInput = () => {
+        updateVal();
+        if (masterParamIds.includes(id) && typeof options.onMasterParamChange === 'function') {
+          options.onMasterParamChange(id, el.value);
+        }
+      };
+      if (typeof el.addEventListener === 'function') {
+        el.addEventListener('input', handleInput);
+      }
+      el.oninput = handleInput;
+      updateVal();
     }
   }
 

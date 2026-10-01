@@ -85,7 +85,8 @@ const DICTIONARY = {
     'caption.plate': '制版 / 针尖划开保护层，等待酸液进入',
     'caption.depth': '刻深 / 黑色为完整表面，亮度表示凹槽深度',
     'caption.print': '印样 / 铜版左右反转，墨色由刻深与压印共同决定',
-    'caption.timer': '腐蚀累计'
+    'caption.timer': '腐蚀累计',
+    'wizard.title': '母版图稿上版向导'
   },
   'en-US': {
     'app.title': 'Etchloom · Digital Printmaking Studio',
@@ -166,7 +167,8 @@ const DICTIONARY = {
     'caption.plate': 'Plate / Needle scratches ground, awaiting acid',
     'caption.depth': 'Depth / Black is surface, brightness indicates depth',
     'caption.print': 'Print / Mirrored plate, tone defined by depth & press',
-    'caption.timer': 'Cumulative Bite'
+    'caption.timer': 'Cumulative Bite',
+    'wizard.title': 'Artwork Plate Transfer Wizard'
   }
 };
 

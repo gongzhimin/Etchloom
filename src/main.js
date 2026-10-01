@@ -151,7 +151,7 @@ const pipelineController = new PipelineController({
 
 const transferWizard = new TransferWizardController({
   getMasterData: () => pipelineController.getMasterData(),
-  onExecuteTransfer: ({ pathsToCarve, selectedRes, selectedTechnique, layerLabel }) => {
+  onExecuteTransfer: ({ pathsToCarve, selectedRes, selectedTechnique, needlePressure = 0.65, layerLabel }) => {
     stop();
     snapshot();
 
@@ -200,16 +200,17 @@ const transferWizard = new TransferWizardController({
 
     const imgData = mctx.getImageData(0, 0, W, H).data;
     const isDrypoint = selectedTechnique === 'drypoint';
+    const pressFactor = needlePressure || 0.65;
 
     for (let i = 0; i < N; i++) {
       const alpha = imgData[i * 4 + 3];
       if (alpha > 0) {
-        const val = alpha / 255;
-        exposed[i] = Math.max(exposed[i], val);
+        const val = (alpha / 255) * (pressFactor / 0.65);
+        exposed[i] = Math.max(exposed[i], Math.min(1.0, val));
         blocked[i] = 0;
         if (isDrypoint) {
-          depth[i] = Math.min(1, depth[i] + val * 0.28);
-          burr[i] = Math.min(1, burr[i] + val * 0.38);
+          depth[i] = Math.min(1, depth[i] + val * 0.32);
+          burr[i] = Math.min(1, burr[i] + val * 0.42);
         } else {
           burr[i] = 0;
         }
@@ -217,6 +218,7 @@ const transferWizard = new TransferWizardController({
     }
 
     setPlateStage(2);
+    setView('plate');
     switchWorkflow('plate');
 
     const techLabel = selectedTechnique === 'drypoint' ? '干刻直刻 (Drypoint)' : '蚀刻针划线 (Etching)';
@@ -351,6 +353,30 @@ function initEventBindings() {
     };
   }
 
+  // Transfer Wizard Drawer Trigger Button
+  const openWizardDrawerBtn = $('openTransferWizardBtn');
+  if (openWizardDrawerBtn) {
+    openWizardDrawerBtn.onclick = () => transferWizard.open();
+  }
+
+  // Master Algorithm Recipe Sliders Reactive Binding
+  const masterParamIds = ['exposure', 'blackPoint', 'whitePoint', 'contourDetail', 'aerialStrength', 'needleWidth', 'density', 'curvatureGate', 'crossHatch'];
+  for (const id of masterParamIds) {
+    const slider = $(id);
+    if (slider) {
+      slider.addEventListener('input', () => {
+        pipelineController.scheduleParameterRun();
+      });
+    }
+  }
+
+  const lotusCheck = $('lotus3D');
+  if (lotusCheck) {
+    lotusCheck.addEventListener('change', () => {
+      pipelineController.scheduleParameterRun();
+    });
+  }
+
   // Loupe Magnifier Init on Plate Canvas
   const canvas = $('canvas');
   const LoupeLib = (typeof LoupeMagnifier !== 'undefined' ? LoupeMagnifier : (typeof window !== 'undefined' ? window.LoupeMagnifier : null));
@@ -359,7 +385,8 @@ function initEventBindings() {
   }
 
   bindPlateStudioEvents({
-    openTransferWizard: () => transferWizard.open()
+    openTransferWizard: () => transferWizard.open(),
+    onMasterParamChange: () => pipelineController.scheduleParameterRun()
   });
 }
 

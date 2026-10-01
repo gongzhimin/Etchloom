@@ -277,7 +277,7 @@ export const telemetryFooterTemplate = `
 `;
 
 export const modalsTemplate = `
-  <!-- Modal Dialog (Close-up & About) -->
+  <!-- Modal Dialog (Close-up & Fullscreen Lightbox) -->
   <div id="modalOverlay" class="etchloom-modal-overlay" hidden>
     <div class="etchloom-modal lightbox-modal">
       <div class="modal-header">
@@ -293,42 +293,123 @@ export const modalsTemplate = `
         </div>
         <button id="modalClose" class="card-btn" style="padding:2px 8px;">✕</button>
       </div>
-      <div id="modalBody" class="modal-body lightbox-modal-body">
-        <div id="lightboxViewport" class="lightbox-viewport">
-          <canvas id="lightboxCanvas" class="lightbox-canvas"></canvas>
+      <div id="modalBody" class="modal-body lightbox-modal-body" style="padding:10px;">
+        <div id="modalViewportWrap" class="modal-viewport-wrap lightbox-viewport">
+          <canvas id="modalCanvas" class="lightbox-canvas"></canvas>
+        </div>
+        <div id="modalDescription" class="lightbox-desc" style="margin-top:8px;font-size:12px;color:var(--text-secondary);line-height:1.5;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer Wizard Modal (M1 & M3: 图稿上版工艺向导) -->
+  <div id="transferModalOverlay" class="etchloom-modal-overlay transfer-modal-overlay" hidden>
+    <div class="etchloom-modal transfer-wizard-modal" style="max-width:580px;">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <h3 class="modal-title" data-i18n="wizard.title">母版图稿上版向导</h3>
+          <span class="badge badge-gold" style="font-size:11px;">M1 → M3 物理转录</span>
+        </div>
+        <button id="transferModalClose" class="card-btn" style="padding:2px 8px;">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:18px;">
+        <div id="wizardStats" style="font-size:12px;color:var(--accent-gold);background:var(--bg-app);padding:10px 14px;border-radius:4px;border:1px solid var(--border-subtle);">
+          当前就绪母版: 检测中...
+        </div>
+
+        <!-- Section 1: 工艺技法 -->
+        <div class="wizard-group">
+          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--paper-ivory);">
+            1. 选择雕刻转录工艺技法:
+          </label>
+          <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <label class="wizard-card active" style="padding:10px 12px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
+              <input type="radio" name="transferTechnique" value="etching" checked style="margin-top:3px;">
+              <div>
+                <strong style="color:var(--paper-ivory);display:block;">蚀刻针划线 (Etching)</strong>
+                <span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:2px;">划破表面防蚀防酸保护漆，等待酸液咬蚀形成深沟。</span>
+              </div>
+            </label>
+            <label class="wizard-card" style="padding:10px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
+              <input type="radio" name="transferTechnique" value="drypoint" style="margin-top:3px;">
+              <div>
+                <strong style="color:var(--paper-ivory);display:block;">干刻直刻 (Drypoint)</strong>
+                <span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:2px;">锋利钢针直接切削铜板，边缘翻起金属毛刺，暗部极深润。</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section 2: 目标物理铜版规格 -->
+        <div class="wizard-group">
+          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--paper-ivory);">
+            2. 目标物理铜版规格:
+          </label>
+          <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+              <input type="radio" name="transferRes" value="900">
+              <strong style="display:block;margin-top:4px;">900 × 660</strong>
+              <span style="font-size:10px;color:var(--text-muted);">标准轻量</span>
+            </label>
+            <label class="wizard-card active" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;text-align:center;">
+              <input type="radio" name="transferRes" value="1500" checked>
+              <strong style="display:block;margin-top:4px;color:var(--accent-gold);">1500 × 1100</strong>
+              <span style="font-size:10px;color:var(--text-secondary);">2K 高清 (推荐)</span>
+            </label>
+            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+              <input type="radio" name="transferRes" value="3000">
+              <strong style="display:block;margin-top:4px;">3000 × 2200</strong>
+              <span style="font-size:10px;color:var(--text-muted);">3K 展品级</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section 3: 转移图层选择 -->
+        <div class="wizard-group">
+          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--paper-ivory);">
+            3. 选择转录矢量图层:
+          </label>
+          <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <label class="wizard-card active" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;text-align:center;">
+              <input type="radio" name="transferLayer" value="all" checked>
+              <strong style="display:block;margin-top:4px;">全部母版图稿</strong>
+              <span id="wizardAllCount" style="font-size:10px;color:var(--text-secondary);">全部矢量线条</span>
+            </label>
+            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+              <input type="radio" name="transferLayer" value="contours">
+              <strong style="display:block;margin-top:4px;">仅空间轮廓</strong>
+              <span id="wizardContoursCount" style="font-size:10px;color:var(--text-muted);">骨干轮廓线</span>
+            </label>
+            <label class="wizard-card" style="padding:8px 10px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;text-align:center;">
+              <input type="radio" name="transferLayer" value="hatching">
+              <strong style="display:block;margin-top:4px;">仅曲面排线</strong>
+              <span id="wizardHatchingCount" style="font-size:10px;color:var(--text-muted);">细密顺形排线</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section 4: 针尖下压力度 -->
+        <div class="wizard-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="wizardNeedlePressure" style="font-weight:600;color:var(--paper-ivory);">针尖刻划下压力度:</label>
+            <output id="wizardNeedlePressureVal" style="font-family:var(--font-mono);color:var(--accent-gold);">65%</output>
+          </div>
+          <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" style="width:100%;">
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:12px;padding-top:16px;border-top:1px solid var(--border-subtle);">
+          <button id="transferCancelBtn" class="card-btn" style="padding:8px 20px;">取消</button>
+          <button id="transferConfirmBtn" class="primary" style="padding:8px 24px;">确认转入铜版并刻绘 →</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Transfer Wizard Modal -->
-  <div id="transferWizardOverlay" class="etchloom-modal-overlay" hidden>
-    <div class="etchloom-modal" style="max-width:540px;">
-      <div class="modal-header">
-        <h3 class="modal-title" data-i18n="wizard.title">母版图稿上版向导</h3>
-        <button id="closeTransferWizardBtn" class="card-btn" style="padding:2px 8px;">✕</button>
-      </div>
-      <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:16px;">
-        <label>目标物理铜版规格:
-          <select id="wizardPlateSize" style="margin-top:6px;">
-            <option value="900">900 x 660 (标准轻量)</option>
-            <option value="1500" selected>1500 x 1100 (2K 高清推荐)</option>
-            <option value="3000">3000 x 2200 (3K 展品级)</option>
-          </select>
-        </label>
-        <div>
-          <span style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:6px;">选择转移图层:</span>
-          <label class="checkbox-label"><input type="checkbox" id="wizardLayerContours" checked> <span>结构轮廓线 (Contours)</span></label>
-          <label class="checkbox-label"><input type="checkbox" id="wizardLayerHatching" checked> <span>表面顺形排线 (Hatching)</span></label>
-          <label class="checkbox-label"><input type="checkbox" id="wizardLayerCross" checked> <span>暗部交叉排线 (Cross-hatch)</span></label>
-        </div>
-        <label>针尖下压力度刻深:
-          <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" style="margin-top:6px;">
-        </label>
-        <button id="confirmTransferBtn" class="primary" style="margin-top:8px;">确认雕刻转移到铜版</button>
-      </div>
-    </div>
-  </div>
+  <!-- Backward Compatibility Alias Container for Legacy IDs -->
+  <div id="transferWizardOverlay" hidden></div>
+  <button id="closeTransferWizardBtn" hidden></button>
+  <button id="confirmTransferBtn" hidden></button>
 
   <!-- About Modal Dialog -->
   <div id="aboutModalOverlay" class="etchloom-modal-overlay" hidden>

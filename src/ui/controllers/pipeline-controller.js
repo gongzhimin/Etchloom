@@ -14,10 +14,16 @@ export class PipelineController {
     this.onPlateCarve = options.onPlateCarve || (() => {});
 
     this.currentLoadedImage = null;
+    this.currentDepthMap = null;
     this.lastStage1LineMap = null;
     this.lastContours = null;
     this.lastHatching = null;
     this.lastMasterPaths = null;
+
+    const SchedulerClass = (typeof TaskScheduler !== 'undefined' ? TaskScheduler : (globalThis.TaskScheduler || null));
+    const CacheClass = (typeof StageCache !== 'undefined' ? StageCache : (globalThis.StageCache || null));
+    this.scheduler = SchedulerClass ? new SchedulerClass(140) : null;
+    this.stageCache = CacheClass ? new CacheClass() : null;
   }
 
   setStepGrid(grid) {
@@ -251,34 +257,248 @@ export class PipelineController {
     };
 
     const ExporterLib = (typeof Exporter !== 'undefined' ? Exporter : (typeof window !== 'undefined' ? window.Exporter : null));
+    const stepCanvas = this.stepGrid?.stepStates[stepIdx]?.canvas;
+    const curW = this.currentLoadedImage?.width || 900;
+    const curH = this.currentLoadedImage?.height || 660;
 
-    if (stepIdx === 0 && this.currentLoadedImage?.rawImg) {
-      const c = document.createElement('canvas');
-      c.width = this.currentLoadedImage.width; c.height = this.currentLoadedImage.height;
-      c.getContext('2d').drawImage(this.currentLoadedImage.rawImg, 0, 0);
-      c.toBlob(b => b && download(b, 'step0_source_image.png'));
-    } else if (stepIdx === 1 && this.lastStage1LineMap) {
-      const c = document.createElement('canvas');
-      c.width = this.lastStage1LineMap.width; c.height = this.lastStage1LineMap.height;
-      const im = c.getContext('2d').createImageData(c.width, c.height);
-      for (let i = 0; i < c.width * c.height; i++) {
-        const v = this.lastStage1LineMap.pixels[i];
-        im.data[i*4] = v; im.data[i*4+1] = v; im.data[i*4+2] = v; im.data[i*4+3] = 255;
+    if (stepIdx === 0) {
+      if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step0_source_image.png'));
+      } else if (this.currentLoadedImage?.rawImg) {
+        const c = document.createElement('canvas');
+        c.width = curW; c.height = curH;
+        c.getContext('2d').drawImage(this.currentLoadedImage.rawImg, 0, 0);
+        c.toBlob(b => b && download(b, 'step0_source_image.png'));
       }
-      c.getContext('2d').putImageData(im, 0, 0);
-      c.toBlob(b => b && download(b, 'step1_line_map.png'));
-    } else if (stepIdx === 3 && this.lastContours && ExporterLib) {
-      const svg = ExporterLib.exportPayload({ format: 'SVG', masterPaths: this.lastContours, width: 400, height: 300 });
-      download(new Blob([svg.data], { type: svg.mimeType }), 'step3_contours.svg');
-    } else if (stepIdx === 4 && this.lastHatching && ExporterLib) {
-      const svg = ExporterLib.exportPayload({ format: 'SVG', masterPaths: this.lastHatching, width: 400, height: 300 });
-      download(new Blob([svg.data], { type: svg.mimeType }), 'step4_hatching.svg');
-    } else if (stepIdx === 5 && this.lastMasterPaths && ExporterLib) {
-      const svg = ExporterLib.exportPayload({ format: 'SVG', masterPaths: this.lastMasterPaths, width: 400, height: 300 });
-      download(new Blob([svg.data], { type: svg.mimeType }), 'step5_master_vector.svg');
+    } else if (stepIdx === 1) {
+      if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step1_line_map.png'));
+      } else if (this.lastStage1LineMap) {
+        const c = document.createElement('canvas');
+        c.width = this.lastStage1LineMap.width || curW;
+        c.height = this.lastStage1LineMap.height || curH;
+        const im = c.getContext('2d').createImageData(c.width, c.height);
+        const px = this.lastStage1LineMap.pixels || this.lastStage1LineMap;
+        for (let i = 0; i < c.width * c.height; i++) {
+          const v = px[i] ?? 255;
+          im.data[i * 4] = v;
+          im.data[i * 4 + 1] = v;
+          im.data[i * 4 + 2] = v;
+          im.data[i * 4 + 3] = 255;
+        }
+        c.getContext('2d').putImageData(im, 0, 0);
+        c.toBlob(b => b && download(b, 'step1_line_map.png'));
+      }
+    } else if (stepIdx === 2) {
+      if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step2_tone_flow.png'));
+      }
+    } else if (stepIdx === 3) {
+      if (this.lastContours && ExporterLib) {
+        const svg = ExporterLib.exportPayload({
+          format: 'SVG',
+          masterPaths: this.lastContours,
+          options: { width: curW, height: curH }
+        });
+        download(new Blob([svg.data], { type: svg.mimeType }), 'step3_contours.svg');
+      } else if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step3_contours.png'));
+      }
+    } else if (stepIdx === 4) {
+      if (this.lastHatching && ExporterLib) {
+        const svg = ExporterLib.exportPayload({
+          format: 'SVG',
+          masterPaths: this.lastHatching,
+          options: { width: curW, height: curH }
+        });
+        download(new Blob([svg.data], { type: svg.mimeType }), 'step4_hatching.svg');
+      } else if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step4_hatching.png'));
+      }
+    } else if (stepIdx === 5) {
+      if (this.lastMasterPaths && ExporterLib) {
+        const svg = ExporterLib.exportPayload({
+          format: 'SVG',
+          masterPaths: this.lastMasterPaths,
+          options: { width: curW, height: curH }
+        });
+        download(new Blob([svg.data], { type: svg.mimeType }), 'step5_master_vector.svg');
+      } else if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step5_master_vector.png'));
+      }
     } else if (stepIdx === 6) {
-      const c = this.stepGrid?.stepStates[6]?.canvas;
-      if (c) c.toBlob(b => b && download(b, 'step6_plate_print.png'));
+      if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, 'step6_plate_print.png'));
+      }
+    }
+  }
+
+  scheduleParameterRun() {
+    if (!this.currentLoadedImage) return;
+
+    if (!this.scheduler) {
+      const SchedulerClass = (typeof TaskScheduler !== 'undefined' ? TaskScheduler : (globalThis.TaskScheduler || null));
+      if (SchedulerClass) this.scheduler = new SchedulerClass(140);
+    }
+
+    if (!this.scheduler) {
+      this.runPipelineOnLoadedPhoto();
+      return;
+    }
+
+    this.scheduler.schedule(async (signal) => {
+      await this._executeIncrementalRun(signal);
+    });
+  }
+
+  async _executeIncrementalRun(signal) {
+    if (!this.currentLoadedImage) return;
+    const $ = id => document.getElementById(id);
+    const curW = this.currentLoadedImage.width;
+    const curH = this.currentLoadedImage.height;
+
+    const params = {
+      lineThreshold: Number($('exposure')?.value || 50),
+      exposure: Number($('exposure')?.value || 50),
+      blackPoint: Number($('blackPoint')?.value || 0),
+      whitePoint: Number($('whitePoint')?.value || 100),
+      contourDetail: Number($('contourDetail')?.value || 75),
+      aerialStrength: Number($('aerialStrength')?.value || 60),
+      needleWidth: Number($('needleWidth')?.value || 8) / 10,
+      density: Number($('density')?.value || 80),
+      curvatureGate: Number($('curvatureGate')?.value || 70),
+      cross: Number($('crossHatch')?.value || 65),
+      targetWidth: curW,
+      targetHeight: curH,
+      depthMap: this.currentDepthMap || null
+    };
+
+    if (!this.stageCache) {
+      const CacheClass = (typeof StageCache !== 'undefined' ? StageCache : (globalThis.StageCache || null));
+      if (CacheClass) this.stageCache = new CacheClass();
+    }
+
+    let startStage = 2; // Incremental recalculation starts from stage 2
+    let newHashes = {};
+
+    if (this.stageCache) {
+      const s1Params = { lotus3D: $('lotus3D')?.checked ?? true };
+      const s2Params = { exposure: params.exposure, blackPoint: params.blackPoint, whitePoint: params.whitePoint };
+      const s3Params = { contourDetail: params.contourDetail, aerialStrength: params.aerialStrength, needleWidth: params.needleWidth };
+      const s4Params = { density: params.density, cross: params.cross, curvatureGate: params.curvatureGate };
+      const s5Params = {};
+
+      const h1 = this.stageCache.computeStageHash(1, s1Params, '');
+      const h2 = this.stageCache.computeStageHash(2, s2Params, h1);
+      const h3 = this.stageCache.computeStageHash(3, s3Params, h2);
+      const h4 = this.stageCache.computeStageHash(4, s4Params, h3);
+      const h5 = this.stageCache.computeStageHash(5, s5Params, h4);
+
+      newHashes = { 1: h1, 2: h2, 3: h3, 4: h4, 5: h5 };
+      startStage = this.stageCache.resolveInvalidation(newHashes, 5);
+      if (startStage === 1 && this.stageCache.get(1)) {
+        startStage = 2; // Keep stage 1 line map cached for parameter tweaks
+      }
+    }
+
+    if (startStage > 5) return; // All stages cached
+
+    const telemetryStatus = document.getElementById('telemetryStatus');
+    const telemetryTask = document.getElementById('telemetryTask');
+    if (telemetryStatus) telemetryStatus.textContent = '增量重算中...';
+    if (telemetryTask) telemetryTask.textContent = `RECOMPUTING_STAGE_${startStage}_5`;
+
+    for (let s = startStage; s <= 6; s++) {
+      if (this.stepGrid) this.stepGrid.setStepStatus(s, 'COMPUTING');
+    }
+
+    const tStart = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+    try {
+      const Runner = (typeof PipelineRunner !== 'undefined' ? PipelineRunner : (typeof window !== 'undefined' ? window.PipelineRunner : null));
+      if (!Runner) return;
+
+      const previousOutputs = {
+        stage1: this.stageCache ? this.stageCache.get(1) : (this.lastStage1LineMap ? { width: curW, height: curH, data: this.lastStage1LineMap.pixels || this.lastStage1LineMap } : null),
+        stage2: this.stageCache ? this.stageCache.get(2) : null,
+        stage3: this.stageCache ? this.stageCache.get(3) : null,
+        stage4: this.stageCache ? this.stageCache.get(4) : null,
+        stage5: this.stageCache ? this.stageCache.get(5) : null
+      };
+
+      if (!previousOutputs.stage1 && this.lastStage1LineMap) {
+        previousOutputs.stage1 = { width: curW, height: curH, data: this.lastStage1LineMap.pixels || this.lastStage1LineMap };
+      }
+
+      const context = {
+        sourceImage: this.currentLoadedImage,
+        geometry: this.currentDepthMap ? { depthMap: this.currentDepthMap } : null
+      };
+
+      const _now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      let stageStart = _now();
+
+      const outputs = await Runner.runIncremental(context, previousOutputs, params, startStage, signal, (stage, progress, artifact) => {
+        if (signal && signal.aborted) return;
+        if (!this.stepGrid) return;
+        const stageElapsed = parseFloat((_now() - stageStart).toFixed(1));
+        if (stage === 2 && artifact) {
+          this.stepGrid.updateStepPreview(2, artifact);
+          this.stepGrid.setStepStatus(2, 'DONE', '3D几何流场', stageElapsed);
+        } else if (stage === 3 && artifact?.vectorContours) {
+          this.lastContours = artifact.vectorContours;
+          this.stepGrid.updateStepPaths(3, artifact.vectorContours, curW, curH);
+          this.stepGrid.setStepStatus(3, 'DONE', `${artifact.vectorContours.length} 条空间轮廓`, stageElapsed);
+        } else if (stage === 4 && artifact?.hatchingPaths) {
+          this.lastHatching = artifact.hatchingPaths;
+          this.stepGrid.updateStepPaths(4, artifact.hatchingPaths, curW, curH);
+          this.stepGrid.setStepStatus(4, 'DONE', `${artifact.hatchingPaths.length} 条曲面排线`, stageElapsed);
+        }
+        stageStart = _now();
+      });
+
+      if (signal && signal.aborted) return;
+
+      const masterPaths = outputs.stage5?.masterResult?.paths || outputs.masterResult?.paths || [...(this.lastContours || []), ...(this.lastHatching || [])];
+      this.lastMasterPaths = masterPaths;
+
+      if (this.stepGrid) {
+        const s5Elapsed = parseFloat((_now() - stageStart).toFixed(1));
+        this.stepGrid.updateStepPaths(5, masterPaths, curW, curH);
+        this.stepGrid.setStepStatus(5, 'DONE', `${masterPaths.length} 矢量母版线条`, s5Elapsed);
+
+        this.stepGrid.updateStepPaths(6, masterPaths, curW, curH, {
+          bgTone: '#f0ebd9',
+          strokeColor: '#1a1918'
+        });
+        this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样仿真', 10.0);
+      }
+
+      if (this.stageCache) {
+        if (outputs.stage1) this.stageCache.put(1, newHashes[1] || 's1', outputs.stage1);
+        if (outputs.stage2) this.stageCache.put(2, newHashes[2] || 's2', outputs.stage2);
+        if (outputs.stage3) this.stageCache.put(3, newHashes[3] || 's3', outputs.stage3);
+        if (outputs.stage4) this.stageCache.put(4, newHashes[4] || 's4', outputs.stage4);
+        if (outputs.stage5) this.stageCache.put(5, newHashes[5] || 's5', outputs.stage5);
+      }
+
+      const tEnd = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const totalElapsed = (tEnd - tStart).toFixed(1);
+
+      if (telemetryStatus) telemetryStatus.textContent = '运行就绪';
+      if (telemetryTask) telemetryTask.textContent = 'IDLE';
+      if ($('telemetryDuration')) $('telemetryDuration').textContent = totalElapsed + 'ms';
+      if ($('telemetryStrokes')) $('telemetryStrokes').textContent = masterPaths.length + ' 条';
+      if ($('telemetryCache')) $('telemetryCache').textContent = `${5 - (5 - startStage + 1)}/5 命中`;
+
+      this.log('管线', `参数微调完成 (重算阶段 ${startStage}..5): 生成 ${masterPaths.length} 条矢量线条，增量耗时 ${totalElapsed}ms。`, 'done');
+    } catch (err) {
+      if (err.name === 'AbortError' || signal?.aborted) {
+        return;
+      }
+      console.error('Incremental run error:', err);
+      if (telemetryStatus) telemetryStatus.textContent = '计算异常: ' + err.message;
+      this.log('管线', `增量计算异常: ${err.message}`, 'error');
     }
   }
 
@@ -364,6 +584,13 @@ export class PipelineController {
     lctx.ellipse(450, 150, 80, 20, 0, 0, Math.PI * 2);
     lctx.stroke();
 
+    const lineImgData = lctx.getImageData(0, 0, w, h).data;
+    const linePixels = new Uint8ClampedArray(w * h);
+    for (let i = 0; i < linePixels.length; i++) {
+      linePixels[i] = lineImgData[i * 4];
+    }
+    this.lastStage1LineMap = { width: w, height: h, pixels: linePixels };
+
     if (this.stepGrid) {
       this.stepGrid.updateStepPreview(1, lineCanvas);
       this.stepGrid.setStepStatus(1, 'DONE', '神经感知线描', 18.5);
@@ -430,6 +657,14 @@ export class PipelineController {
     this.lastContours = contours;
     this.lastHatching = hatchings;
     this.lastMasterPaths = allPaths;
+
+    if (this.stageCache) {
+      this.stageCache.put(1, 'init1', { width: w, height: h, data: linePixels });
+      this.stageCache.put(2, 'init2', { toneField, flowField });
+      this.stageCache.put(3, 'init3', { vectorContours: contours, contourMask: new Uint8Array(w * h) });
+      this.stageCache.put(4, 'init4', { hatchingPaths: hatchings });
+      this.stageCache.put(5, 'init5', { masterResult: { paths: allPaths } });
+    }
 
     if (this.stepGrid) {
       this.stepGrid.updateStepPaths(3, contours, w, h);

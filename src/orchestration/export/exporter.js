@@ -147,6 +147,16 @@ function exportRecipeJSON(recipe) {
  * @param {Object} [request.options]
  * @returns {{ filename: string, mimeType: string, data: string, byteSize: number }}
  */
+function getByteLength(str) {
+  if (typeof Buffer !== 'undefined' && typeof Buffer.byteLength === 'function') {
+    return Buffer.byteLength(str, 'utf8');
+  }
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(str).length;
+  }
+  return str.length;
+}
+
 function exportPayload(request) {
   const { format, masterPaths, recipe, options = {} } = request;
   const timestamp = Date.now();
@@ -158,7 +168,7 @@ function exportPayload(request) {
         filename: `etchloom-master-${timestamp}.svg`,
         mimeType: 'image/svg+xml',
         data,
-        byteSize: Buffer.byteLength(data, 'utf8')
+        byteSize: getByteLength(data)
       };
     }
     case 'GCODE': {
@@ -167,7 +177,7 @@ function exportPayload(request) {
         filename: `etchloom-master-${timestamp}.gcode`,
         mimeType: 'text/x-gcode',
         data,
-        byteSize: Buffer.byteLength(data, 'utf8')
+        byteSize: getByteLength(data)
       };
     }
     case 'RECIPE_JSON': {
@@ -176,7 +186,7 @@ function exportPayload(request) {
         filename: `etchloom-recipe-${timestamp}.json`,
         mimeType: 'application/json',
         data,
-        byteSize: Buffer.byteLength(data, 'utf8')
+        byteSize: getByteLength(data)
       };
     }
     default:

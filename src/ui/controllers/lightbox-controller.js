@@ -6,8 +6,8 @@
 export class LightboxController {
   constructor(options = {}) {
     this.overlay = document.getElementById(options.overlayId || 'modalOverlay');
-    this.canvas = document.getElementById(options.canvasId || 'modalCanvas');
-    this.viewportWrap = document.getElementById(options.viewportWrapId || 'modalViewportWrap');
+    this.canvas = document.getElementById(options.canvasId || 'modalCanvas') || document.getElementById('lightboxCanvas');
+    this.viewportWrap = document.getElementById(options.viewportWrapId || 'modalViewportWrap') || document.getElementById('lightboxViewport');
     this.titleEl = document.getElementById(options.titleId || 'modalTitle');
     this.descEl = document.getElementById(options.descId || 'modalDescription');
     this.closeBtn = document.getElementById(options.closeBtnId || 'modalClose');
@@ -15,6 +15,7 @@ export class LightboxController {
     this.zoomInBtn = document.getElementById(options.zoomInBtnId || 'lightboxZoomIn');
     this.zoomOutBtn = document.getElementById(options.zoomOutBtnId || 'lightboxZoomOut');
     this.zoomResetBtn = document.getElementById(options.zoomResetBtnId || 'lightboxReset');
+    this.zoomFitBtn = document.getElementById(options.zoomFitBtnId || 'lightboxFit');
 
     this.scale = 1.0;
     this.translateX = 0;
@@ -38,13 +39,20 @@ export class LightboxController {
     if (this.zoomOutBtn) {
       this.zoomOutBtn.onclick = (e) => {
         e.stopPropagation();
-        this.scale = Math.max(0.8, Number((this.scale / 1.25).toFixed(2)));
+        this.scale = Math.max(0.5, Number((this.scale / 1.25).toFixed(2)));
         this.updateTransform();
       };
     }
 
     if (this.zoomResetBtn) {
       this.zoomResetBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.resetView();
+      };
+    }
+
+    if (this.zoomFitBtn) {
+      this.zoomFitBtn.onclick = (e) => {
         e.stopPropagation();
         this.resetView();
       };
@@ -130,6 +138,13 @@ export class LightboxController {
    * @param {string} [description='']
    */
   open(title, sourceCanvas, description = '') {
+    if (!this.overlay) this.overlay = document.getElementById('modalOverlay');
+    if (!this.canvas) this.canvas = document.getElementById('modalCanvas') || document.getElementById('lightboxCanvas');
+    if (!this.viewportWrap) this.viewportWrap = document.getElementById('modalViewportWrap') || document.getElementById('lightboxViewport');
+    if (!this.titleEl) this.titleEl = document.getElementById('modalTitle');
+    if (!this.descEl) this.descEl = document.getElementById('modalDescription');
+    if (!this.closeBtn) this.closeBtn = document.getElementById('modalClose');
+
     if (!this.overlay || !this.canvas || !sourceCanvas) return;
     if (this.titleEl) this.titleEl.textContent = title;
     if (this.descEl) this.descEl.textContent = description;

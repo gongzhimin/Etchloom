@@ -5,12 +5,12 @@
  */
 export class TransferWizardController {
   constructor(options = {}) {
-    this.overlay = document.getElementById(options.overlayId || 'transferModalOverlay');
-    this.closeBtn = document.getElementById(options.closeBtnId || 'transferModalClose');
+    this.overlay = document.getElementById(options.overlayId || 'transferModalOverlay') || document.getElementById('transferWizardOverlay');
+    this.closeBtn = document.getElementById(options.closeBtnId || 'transferModalClose') || document.getElementById('closeTransferWizardBtn');
     this.cancelBtn = document.getElementById(options.cancelBtnId || 'transferCancelBtn');
-    this.confirmBtn = document.getElementById(options.confirmBtnId || 'transferConfirmBtn');
+    this.confirmBtn = document.getElementById(options.confirmBtnId || 'transferConfirmBtn') || document.getElementById('confirmTransferBtn');
     this.openBtn = document.getElementById(options.openBtnId || 'transferToPlateBtn');
-    this.drawerOpenBtn = document.getElementById(options.drawerOpenBtnId || 'openWizardFromDrawer');
+    this.drawerOpenBtn = document.getElementById(options.drawerOpenBtnId || 'openTransferWizardBtn') || document.getElementById('openWizardFromDrawer');
 
     this.onExecuteTransfer = options.onExecuteTransfer || (() => {});
     this.getMasterData = options.getMasterData || (() => ({ masterPaths: [], contours: [], hatching: [], loadedImage: null }));
@@ -23,7 +23,7 @@ export class TransferWizardController {
       this.openBtn.onclick = () => {
         const { masterPaths, contours } = this.getMasterData();
         if ((!masterPaths || !masterPaths.length) && (!contours || !contours.length)) {
-          alert('请先载入照片生成母版矢量线条！');
+          alert('请先载入照片或运行管线生成母版矢量线条！');
           return;
         }
         this.open();
@@ -31,7 +31,14 @@ export class TransferWizardController {
     }
 
     if (this.drawerOpenBtn) {
-      this.drawerOpenBtn.onclick = () => this.open();
+      this.drawerOpenBtn.onclick = () => {
+        const { masterPaths, contours } = this.getMasterData();
+        if ((!masterPaths || !masterPaths.length) && (!contours || !contours.length)) {
+          alert('请先载入照片或运行管线生成母版矢量线条！');
+          return;
+        }
+        this.open();
+      };
     }
 
     if (this.closeBtn) this.closeBtn.onclick = () => this.close();
@@ -54,6 +61,14 @@ export class TransferWizardController {
           });
         };
       });
+
+      const pressureSlider = document.getElementById('wizardNeedlePressure');
+      const pressureVal = document.getElementById('wizardNeedlePressureVal');
+      if (pressureSlider && pressureVal) {
+        pressureSlider.oninput = () => {
+          pressureVal.textContent = pressureSlider.value + '%';
+        };
+      }
     }
 
     if (this.confirmBtn) {
@@ -65,7 +80,28 @@ export class TransferWizardController {
   }
 
   open() {
-    if (this.overlay) this.overlay.hidden = false;
+    if (!this.overlay) {
+      this.overlay = document.getElementById('transferModalOverlay') || document.getElementById('transferWizardOverlay');
+    }
+    if (!this.overlay) return;
+
+    const { masterPaths, contours, hatching } = this.getMasterData();
+    const mLen = masterPaths?.length || 0;
+    const cLen = contours?.length || 0;
+    const hLen = hatching?.length || 0;
+
+    const statsEl = document.getElementById('wizardStats');
+    if (statsEl) {
+      statsEl.textContent = `当前就绪矢量母版: 总计 ${mLen} 条线条 (空间轮廓 ${cLen} 条 · 曲面排线 ${hLen} 条)`;
+    }
+    const allEl = document.getElementById('wizardAllCount');
+    if (allEl) allEl.textContent = `${mLen} 条线条`;
+    const contEl = document.getElementById('wizardContoursCount');
+    if (contEl) contEl.textContent = `${cLen} 条线条`;
+    const hatchEl = document.getElementById('wizardHatchingCount');
+    if (hatchEl) hatchEl.textContent = `${hLen} 条线条`;
+
+    this.overlay.hidden = false;
   }
 
   close() {
@@ -76,6 +112,7 @@ export class TransferWizardController {
     const selectedLayer = document.querySelector('input[name="transferLayer"]:checked')?.value || 'all';
     const selectedRes = Number(document.querySelector('input[name="transferRes"]:checked')?.value || 1500);
     const selectedTechnique = document.querySelector('input[name="transferTechnique"]:checked')?.value || 'etching';
+    const pressure = Number(document.getElementById('wizardNeedlePressure')?.value || 65) / 100;
 
     const { masterPaths, contours, hatching, loadedImage } = this.getMasterData();
 
@@ -102,6 +139,7 @@ export class TransferWizardController {
       layerLabel,
       selectedRes,
       selectedTechnique,
+      needlePressure: pressure,
       loadedImage
     });
   }

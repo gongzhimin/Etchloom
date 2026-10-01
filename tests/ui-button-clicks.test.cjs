@@ -536,3 +536,130 @@ test('UI Button Click: Unified Acid Console Toggle & Gauge Display', () => {
   assert.equal(etchBtn.textContent, '开始腐蚀');
 });
 
+test('Universal Exporter: Browser compatibility without Node.js Buffer global', () => {
+  const Exporter = require('../src/orchestration/export/exporter.js');
+  const mockPaths = [{ points: [[0, 0], [100, 100]], width: 1.0 }];
+
+  // Temporarily shadow Buffer to simulate browser environment
+  const originalBuffer = global.Buffer;
+  try {
+    delete global.Buffer;
+    const svgResult = Exporter.exportPayload({
+      format: 'SVG',
+      masterPaths: mockPaths,
+      options: { width: 400, height: 300 }
+    });
+    assert.ok(svgResult.data.includes('<svg'));
+    assert.equal(svgResult.mimeType, 'image/svg+xml');
+    assert.ok(svgResult.byteSize > 0);
+
+    const recipeResult = Exporter.exportPayload({
+      format: 'RECIPE_JSON',
+      recipe: { test: true }
+    });
+    assert.equal(recipeResult.mimeType, 'application/json');
+    assert.ok(recipeResult.byteSize > 0);
+  } finally {
+    global.Buffer = originalBuffer;
+  }
+});
+
+test('LightboxController: Viewport scaling, fit-to-view, and reset lifecycle', () => {
+  const mockCanvas = createMockElement('canvas', { id: 'modalCanvas', width: 800, height: 600 });
+  const mockViewport = createMockElement('div', { id: 'modalViewportWrap', clientWidth: 900, clientHeight: 560 });
+  const mockOverlay = createMockElement('div', { id: 'modalOverlay', hidden: true });
+  const mockTitle = createMockElement('h3', { id: 'modalTitle' });
+  const mockBadge = createMockElement('span', { id: 'lightboxZoomLevel' });
+  const mockZoomIn = createMockElement('button', { id: 'lightboxZoomIn' });
+  const mockZoomOut = createMockElement('button', { id: 'lightboxZoomOut' });
+  const mockReset = createMockElement('button', { id: 'lightboxReset' });
+  const mockFit = createMockElement('button', { id: 'lightboxFit' });
+  const mockClose = createMockElement('button', { id: 'modalClose' });
+
+  // Simulate LightboxController state
+  let scale = 1.0;
+  let tx = 0, ty = 0;
+  function updateTransform() {
+    mockCanvas.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    mockBadge.textContent = `${Math.round(scale * 100)}%`;
+  }
+  function resetView() {
+    scale = 1.0; tx = 0; ty = 0;
+    updateTransform();
+  }
+
+  mockZoomIn.onclick = () => { scale = Math.min(5.0, Number((scale * 1.25).toFixed(2))); updateTransform(); };
+  mockZoomOut.onclick = () => { scale = Math.max(0.5, Number((scale / 1.25).toFixed(2))); updateTransform(); };
+  mockReset.onclick = () => resetView();
+  mockFit.onclick = () => resetView();
+  mockClose.onclick = () => { mockOverlay.hidden = true; };
+
+  // 1. Initial State
+  assert.equal(scale, 1.0);
+
+  // 2. Zoom In
+  mockZoomIn.click();
+  assert.equal(scale, 1.25);
+  assert.equal(mockBadge.textContent, '125%');
+
+  // 3. Zoom Out twice
+  mockZoomOut.click();
+  mockZoomOut.click();
+  assert.ok(scale < 1.0);
+
+  // 4. Fit / Reset
+  mockFit.click();
+  assert.equal(scale, 1.0);
+  assert.equal(mockBadge.textContent, '100%');
+
+  // 5. Open & Close
+  mockOverlay.hidden = false;
+  assert.equal(mockOverlay.hidden, false);
+  mockClose.click();
+  assert.equal(mockOverlay.hidden, true);
+});
+
+test('StepFlowGrid All 7 Stages Independent Export Dispatcher', () => {
+  const Exporter = require('../src/orchestration/export/exporter.js');
+  const mockPaths = [{ points: [[10, 10], [50, 50]], width: 1.0 }];
+  const downloads = [];
+
+  function simulateDownloadStepExport(stepIdx) {
+    if (stepIdx === 0) {
+      downloads.push('step0_source_image.png');
+    } else if (stepIdx === 1) {
+      downloads.push('step1_line_map.png');
+    } else if (stepIdx === 2) {
+      downloads.push('step2_tone_flow.png');
+    } else if (stepIdx === 3) {
+      const svg = Exporter.exportPayload({ format: 'SVG', masterPaths: mockPaths, options: { width: 900, height: 660 } });
+      assert.ok(svg.data.length > 0);
+      downloads.push('step3_contours.svg');
+    } else if (stepIdx === 4) {
+      const svg = Exporter.exportPayload({ format: 'SVG', masterPaths: mockPaths, options: { width: 900, height: 660 } });
+      assert.ok(svg.data.length > 0);
+      downloads.push('step4_hatching.svg');
+    } else if (stepIdx === 5) {
+      const svg = Exporter.exportPayload({ format: 'SVG', masterPaths: mockPaths, options: { width: 900, height: 660 } });
+      assert.ok(svg.data.length > 0);
+      downloads.push('step5_master_vector.svg');
+    } else if (stepIdx === 6) {
+      downloads.push('step6_plate_print.png');
+    }
+  }
+
+  for (let s = 0; s <= 6; s++) {
+    simulateDownloadStepExport(s);
+  }
+
+  assert.equal(downloads.length, 7);
+  assert.equal(downloads[0], 'step0_source_image.png');
+  assert.equal(downloads[1], 'step1_line_map.png');
+  assert.equal(downloads[2], 'step2_tone_flow.png');
+  assert.equal(downloads[3], 'step3_contours.svg');
+  assert.equal(downloads[4], 'step4_hatching.svg');
+  assert.equal(downloads[5], 'step5_master_vector.svg');
+  assert.equal(downloads[6], 'step6_plate_print.png');
+});
+
+

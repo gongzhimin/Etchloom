@@ -953,6 +953,33 @@ footer.telemetry-footer {
   color: var(--text-muted);
   font-family: var(--font-sans);
 }
+
+/* --------------------------------------------------------------------------
+   Transfer Wizard Process Modal (M1 & M3)
+   -------------------------------------------------------------------------- */
+.transfer-wizard-modal {
+  max-width: 580px;
+}
+.wizard-group {
+  margin-bottom: 4px;
+}
+.wizard-card {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+.wizard-card:hover {
+  background: #232a23 !important;
+  border-color: var(--border-strong) !important;
+}
+.wizard-card.active {
+  background: #242e22 !important;
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 12px rgba(200, 182, 126, 0.18);
+}
+.wizard-card.active strong {
+  color: var(--accent-gold) !important;
+}
+
 .modal-viewport-wrap {
   position: relative;
   overflow: hidden;
