@@ -1,0 +1,66 @@
+name: Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v0.1.0)'
+        required: false
+        default: 'v0.1.0'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: ''
+          - platform: 'macos-latest'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run automated test suite
+        run: npm test
+
+      - name: Prepare desktop web bundle
+        run: node scripts/prepare-desktop.cjs
+
+      - name: Build Tauri desktop application & publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+          releaseName: 'Etchloom ${{ github.ref_type == "tag" && github.ref_name || inputs.version }}'
+          releaseBody: |
+            ## Etchloom Desktop Release
+
+            - **Windows**: Download the `.exe` (NSIS installer) or `.msi` package below.
+            - **macOS**: Download the `.dmg` package below.
+
+            ### Features:
+            - Featherweight standalone desktop application (~15 MB)
+            - 100% Offline base geometric printmaking engine & physical acid simulation
+            - Integrated in-app WebGPU / WASM neural acceleration (Depth Anything V2 & Informative Drawings)
+            - Automatic discovery & promotion to local Python CUDA service (`127.0.0.1:7861`)
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

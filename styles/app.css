@@ -14,16 +14,16 @@
   --border-subtle: #eae5dc;      /* Feather-light warm border */
   --border-strong: #d5cfc4;      /* Focused / emphasized warm border */
   
-  --accent-gold: #7a8c7e;        /* Pale Muted Sage / Morandi Primary Accent (historical alias kept) */
+  --accent-gold: #536957;        /* Sage with readable white button text (historical alias kept) */
   --accent-gold-rgb: 122, 140, 126; /* RGB components for custom opacity */
   --accent-gold-glow: rgba(122, 140, 126, 0.25);
-  --accent-gold-hover: #67786b;  /* Deepened Sage */
-  --accent-teal: #7a8c7e;        /* Harmonized Sage Teal */
-  --accent-teal-hover: #67786b;
+  --accent-gold-hover: #425545;  /* Deepened Sage */
+  --accent-teal: #536957;        /* Harmonized Sage Teal */
+  --accent-teal-hover: #425545;
   
   --text-primary: #2a2b2a;       /* Soft dark charcoal typography */
   --text-secondary: #5e605d;     /* Muted readable secondary text */
-  --text-muted: #959793;         /* Subdued tertiary metadata text */
+  --text-muted: #6b6e69;         /* Readable tertiary metadata text */
   
   --copper-glow: #9c755f;        /* Soft pottery terracotta tone */
   --paper-ivory: #faf7f0;        /* Archival fine-art paper ivory base */
@@ -584,6 +584,11 @@ body.mode-plate aside.app-sidebar #drawer2 {
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   background: #ffffff;
+}
+
+.card-viewport canvas:focus-visible {
+  outline: 3px solid var(--accent-gold);
+  outline-offset: 3px;
 }
 
 /* Floating Ghost Hover Action Toolbar */

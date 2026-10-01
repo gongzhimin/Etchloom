@@ -168,9 +168,10 @@ def handler(drawing_model: DrawingModel, lotus_model: LotusGeometryModel):
         server_version = "EtchloomModelV2/1.0"
 
         def cors(self):
-            origin = self.headers.get("Origin", "*")
-            self.send_header("Access-Control-Allow-Origin", origin if origin else "*")
-            self.send_header("Vary", "Origin")
+            origin = self.headers.get("Origin")
+            if origin in ("http://127.0.0.1:4173", "http://localhost:4173"):
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
@@ -198,6 +199,9 @@ def handler(drawing_model: DrawingModel, lotus_model: LotusGeometryModel):
             self.wfile.write(body)
 
         def do_POST(self):
+            if self.headers.get("Origin") not in (None, "http://127.0.0.1:4173", "http://localhost:4173"):
+                self.send_error(403, "Origin not allowed")
+                return
             if self.path not in ("/infer", "/depth"):
                 self.send_error(404)
                 return

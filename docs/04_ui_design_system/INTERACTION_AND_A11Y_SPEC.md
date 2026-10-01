@@ -4,16 +4,16 @@
 
 ---
 
-## 1. 极简淡雅工坊无障碍色彩与对比度 (WCAG 2.1 AA / AAA Compliance)
+## 1. 工坊界面色彩与对比度核算
 
-Etchloom v2.0 极简淡雅浅色工坊主题全面对标 **Web Content Accessibility Guidelines (WCAG 2.1)** 对比度标准：
+下表按 WCAG 相对亮度公式核算指定颜色对；颜色对达标不等于整个界面已通过无障碍审计：
 
 | 文本/前景元素 | 背景材质 | 颜色组合 | 对比度 (Contrast Ratio) | 达标等级 |
 | :--- | :--- | :--- | :--- | :--- |
-| 正文排印 (`--text-primary`) | 纯白卡片 (`#ffffff`) | `#2a2b2a` on `#ffffff` | **13.5 : 1** | **WCAG AAA** (远超 7.0:1 严苛标准) |
-| 二级辅助标签 (`--text-secondary`) | 纯白卡片 (`#ffffff`) | `#5e605d` on `#ffffff` | **6.8 : 1** | **WCAG AA** (超 4.5:1) |
-| 弱化时间戳 (`--text-muted`) | 控件底色 (`#f4f1ec`) | `#959793` on `#f4f1ec` | **3.5 : 1** | **WCAG AA** (大字号/次级元数据合规) |
-| 鼠尾草绿按钮文案 (`#ffffff`) | 淡鼠尾草绿主色 (`#7a8c7e`) | `#ffffff` on `#7a8c7e` | **4.6 : 1** | **WCAG AA** (超 4.5:1 正文标准) |
+| 正文排印 (`--text-primary`) | 纯白卡片 (`#ffffff`) | `#2a2b2a` on `#ffffff` | **14.21 : 1** | 普通文字 AAA |
+| 二级辅助标签 (`--text-secondary`) | 纯白卡片 (`#ffffff`) | `#5e605d` on `#ffffff` | **6.35 : 1** | 普通文字 AA |
+| 元数据 (`--text-muted`) | 控件底色 (`#f4f1ec`) | `#6b6e69` on `#f4f1ec` | **4.59 : 1** | 普通文字 AA |
+| 主按钮文字 (`#ffffff`) | 鼠尾草绿底色 (`#536957`) | `#ffffff` on `#536957` | **5.96 : 1** | 普通文字 AA |
 | 典藏纸面印样 (`#1b1c1b`) | 象牙白画纸 (`#faf7f0`) | `#1b1c1b` on `#faf7f0` | **15.8 : 1** | **WCAG AAA** (印刷级极致黑白层次) |
 
 ---

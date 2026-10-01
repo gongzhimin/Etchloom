@@ -7,6 +7,8 @@
 
 ## 1. 架构拓扑与组件关系
 
+环境边界：阶段 2–5 的主要数值计算可在 Node.js 中运行；`image/photo-pro.js` 的画布辅助函数与 `pipeline/stage1-informative.js` 的 HTTP 推理入口依赖宿主 API，尚未拆入独立适配层。
+
 ```mermaid
 graph TD
     Runner["PipelineRunner 总执行器"]

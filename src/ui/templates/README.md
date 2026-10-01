@@ -1,5 +1,7 @@
 # UI Modular Layout Templates (`src/ui/templates/`)
 
+侧栏中的范围输入与下拉框通过 `label for` 关联可见名称；动态装配仍由 `mountAppLayout` 完成。
+
 > **模块路径**：`src/ui/templates/`  
 > **技术定位**：Layer 4 视图呈现层，提供解耦的 HTML 模板挂载函数，负责将母版工作台、虚拟铜版工坊、参数抽屉与模态弹窗动态注入 `#app` 根容器。
 

@@ -14,7 +14,7 @@ graph LR
     end
 
     subgraph Local Python 3.10 Runtime (Port 7861)
-        Gateway -->|HTTP JSON / Base64| Server[FastAPI / Flask Server (services/)]
+        Gateway -->|HTTP JPEG 请求 / PNG 响应| Server[ThreadingHTTPServer (services/informative_drawings/server.py)]
         Server --> LineModel[Informative Drawings GAN]
         Server --> LotusModel[Lotus 3D Geometry Pipeline]
     end
@@ -25,6 +25,8 @@ graph LR
 ---
 
 ## 2. 状态机模型与降级流转 (State Machine)
+
+本机 Python 服务仅向 `http://127.0.0.1:4173` 和 `http://localhost:4173` 返回跨域许可；直接打开的 `file://` 页面仍可运行基础几何模式。浏览器 WebAI 的设备探测只表明可尝试加载模型，不表示模型已就绪。
 
 ```mermaid
 stateDiagram-v2

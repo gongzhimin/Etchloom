@@ -29,7 +29,7 @@
 | **5** | **核心算法原理与数学建模摘要 (Mathematical Principles)** | 列出 5 阶段算子、导向滤波色调分解、空气透视深度衰减、2D PDE 侧蚀扩散方程的核心公式。 |
 | **6** | **环境要求与快速启动 (Prerequisites & Quick Start)** | 明确说明零构建、双击直接打开 (`index.html`)、本地服务启动 (`npm start`) 与 Python 神经网络服务启动方法。 |
 | **7** | **交互工作流实操指南 (Interactive Workflow Guide)** | 详细说明算法母版设计区（7 卡片）、图稿上版向导（Transfer Wizard）、虚拟铜版工坊（4 工具实操、酸蚀控制台、凹版压印）与辅助交互（Alt+悬停 160px 4倍放大镜、滚轮漫游）。 |
-| **8** | **自动化测试与质量保障 (Testing & Quality Assurance)** | 详细列明运行命令 `npm test`、真实的 20 个测试套件清单、104 项测试用例分布与 Tier 1~4 层级。 |
+| **8** | **自动化测试与质量保障 (Testing & Quality Assurance)** | 列明 `npm test`、实际测试文件及测试结果；统计数字以最近一次完整运行结果为准。 |
 | **9** | **数据格式与通信契约 (Data Contracts & Schemas)** | 说明 Recipe Schema、Vector Geometry (role 枚举)、Plate Buffer 连续内存与 Python HTTP 微服务通信契约。 |
 | **10** | **全景工程文档索引 (Master Documentation Matrix)** | 汇总指向 `docs/00_` 至 `docs/05_` 全局规范及 11 个子模块各自文档的索引矩阵。 |
 | **11** | **实物与物理标定说明 (Physical & Material Calibration)** | 真实说明当前针宽物理毫米换算、吸墨扩张等视觉模型的标定现状。 |

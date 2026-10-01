@@ -134,6 +134,13 @@ export class LightboxController {
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && this.overlay && !this.overlay.hidden) {
           this.close();
+        } else if (e.key === 'Tab' && this.overlay && !this.overlay.hidden) {
+          const controls = [...this.overlay.querySelectorAll('button:not([disabled])')].filter(el => !el.hidden);
+          if (!controls.length) return;
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
         }
       });
     }
@@ -164,6 +171,7 @@ export class LightboxController {
    * @param {Object} [options={}] - { isVector?: boolean, vectorSvg?: string, width?: number, height?: number }
    */
   open(title, source, description = '', options = {}) {
+    this.returnFocus = document.activeElement;
     if (!this.overlay) this.overlay = document.getElementById('modalOverlay');
     if (!this.canvas) this.canvas = document.getElementById('modalCanvas') || document.getElementById('lightboxCanvas');
     if (!this.svgWrap) this.svgWrap = document.getElementById('modalSvgWrap');
@@ -222,6 +230,7 @@ export class LightboxController {
 
       this.resetView();
       this.overlay.hidden = false;
+      this.closeBtn?.focus?.();
       return;
     }
 
@@ -254,11 +263,13 @@ export class LightboxController {
 
     this.resetView();
     this.overlay.hidden = false;
+    this.closeBtn?.focus?.();
   }
 
   close() {
     if (this.overlay) {
       this.overlay.hidden = true;
+      this.returnFocus?.focus?.();
     }
   }
 }

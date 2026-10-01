@@ -244,6 +244,9 @@ test('UI Button Click: StepFlowGrid Card Actions (Loupe, Fullscreen, Export)', (
   viewport1.click();
   assert.equal(fullscreenEvents.pop(), 1);
   assert.equal(selectedSteps.pop(), 1);
+  const previewCanvas = viewport1.querySelector('canvas');
+  previewCanvas.onkeydown({ key: 'Enter', preventDefault: () => {}, stopPropagation: () => {} });
+  assert.equal(fullscreenEvents.pop(), 1);
 
   // 3. Test programmatic toggleLoupe API
   grid.toggleLoupe(1);

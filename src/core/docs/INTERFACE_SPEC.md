@@ -8,8 +8,8 @@
 
 ## 1. 接口设计哲学与职责边界 (Design Philosophy & Boundary)
 
-1. **纯计算同构约束 (Zero-DOM Isomorphism)**：
-   本模块导出的所有算子与执行器必须保持严格的计算同构性。**严禁**持有任何浏览器专有对象（如 `window`, `document`, `HTMLCanvasElement`, `fetch`），保证在 Node.js 原生测试与浏览器 Worker 环境中无差别运行。
+1. **计算核心与宿主适配边界**：
+   主要数值算子与版面仿真可在 Node.js 和浏览器运行。当前 `image/photo-pro.js` 含浏览器画布辅助函数，`pipeline/stage1-informative.js` 含本机推理服务请求；这两处不属于纯数值算子，不能声称整个 `src/core/` 无 DOM、无网络依赖。后续拆分适配层时应保持现有调用接口兼容。
 2. **状态单向流转与不可变分期 (Unidirectional Stage Isolation)**：
    管线划分为 Stage 1 至 Stage 5。下游阶段必须将上游阶段的产物视为**只读上下文 (Readonly Context)**，严禁任何阶段在原地（in-place）篡改前序阶段的输出缓冲区。
 3. **确定性算子设计 (Deterministic Functional Operators)**：

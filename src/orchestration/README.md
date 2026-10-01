@@ -8,7 +8,7 @@
 ## 1. 核心职责与工程目标 (Responsibilities & Objectives)
 
 1. **DAG 增量缓存 (`cache/stage-cache.js`)**：通过 32-bit DJB2 确定性状态哈希检测上游参数变动，精准定位第一失效阶段，最大化复用已有中间产物；
-2. **抢占式任务调度 (`scheduler/task-scheduler.js`)**：实现 300ms 动态防抖并借助 `AbortController` 优雅中止正在运行的陈旧生成任务；
+2. **任务调度 (`scheduler/task-scheduler.js`)**：默认 60ms 防抖（母版参数控制器使用 140ms），借助 `AbortController` 在管线阶段边界取消陈旧任务；
 3. **工业级母版导出 (`export/exporter.js`)**：生成带精确图层分组的 SVG、工业雕刻机/CNC G-Code 以及包含物理 DPI (`pHYs` 数据块) 的无损 PNG；
 4. **运行时遥测聚合 (`telemetry/telemetry-sink.js`)**：精确度量各阶段实际执行微秒数、生成矢量笔画计数与缓存命中率；
 5. **生命周期调度中枢 (`engine/orchestrator.js`)**：统筹管线执行、事件监听与铜版物理引擎联动。

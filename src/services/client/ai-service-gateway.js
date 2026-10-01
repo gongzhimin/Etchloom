@@ -64,8 +64,9 @@ export class AIServiceGateway {
       return {
         ready: true,
         mode: 'browser-webai',
-        modeLabel: `联网浏览器模型 (${dev})`,
+        modeLabel: `浏览器支持 ${dev}（模型待加载）`,
         device: dev,
+        modelReady: false,
         requiresNetwork: true,
         webgpu: clientCaps.webgpu
       };

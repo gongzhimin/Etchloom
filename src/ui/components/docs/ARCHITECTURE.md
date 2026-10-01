@@ -38,6 +38,7 @@ $$	ext{ctx.drawImage}(	ext{sourceCanvas}, x_{	ext{src}} - 20, y_{	ext{src}} - 20
 7. **阶段 5：矢量母版合成 (Master Print Synthesis)**
 
 每张卡片均内建独立的操作浮层：
+- **键盘特写**：聚焦画布后按 Enter 或空格打开灯箱；关闭时焦点返回原控件；
 - **点击图片**：直接触发大图特写；
 - **放大镜按钮**：唤起 160px 4x 悬停放大镜；
 - **导出按钮**：导出当前卡片的单步独立 SVG / PNG 图像。

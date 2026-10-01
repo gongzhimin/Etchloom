@@ -46,6 +46,9 @@
           throw err;
         }
       };
+      // Give pending input events a turn between synchronous stages so a new
+      // request can abort before the next expensive stage begins.
+      const yieldBetweenStages = () => new Promise(resolve => setTimeout(resolve, 0));
 
       // ---------------------------------------------------------------------
       // Stage 1: 灰度线描感知 (Informative Line Extraction)
@@ -70,6 +73,7 @@
       // Stage 2: 3D 几何等高流场 (Tone & 3D Surface Flow Field)
       // ---------------------------------------------------------------------
       if (startStage <= 2) {
+        await yieldBetweenStages();
         checkAbort(2);
         if (!outputs.stage1) throw new Error('PipelineRunner: stage1 output missing for Stage 2');
         if (Stage2 && Stage2.runStage2) {
@@ -90,6 +94,7 @@
       // Stage 3: 轮廓与景深调制 (Aerial Perspective Contours)
       // ---------------------------------------------------------------------
       if (startStage <= 3) {
+        await yieldBetweenStages();
         checkAbort(3);
         if (!outputs.stage1 || !outputs.stage2) throw new Error('PipelineRunner: upstream outputs missing for Stage 3');
         if (Stage3 && Stage3.runStage3) {
@@ -109,6 +114,7 @@
       // Stage 4: 曲率门控空间排线 (Curvature-Gated Spatial Hatching)
       // ---------------------------------------------------------------------
       if (startStage <= 4) {
+        await yieldBetweenStages();
         checkAbort(4);
         if (!outputs.stage2 || !outputs.stage3) throw new Error('PipelineRunner: upstream outputs missing for Stage 4');
         if (Stage4 && Stage4.runStage4) {
@@ -130,6 +136,7 @@
       // Stage 5: 母版矢量合成 (Master Print Synthesis)
       // ---------------------------------------------------------------------
       if (startStage <= 5) {
+        await yieldBetweenStages();
         checkAbort(5);
         if (!outputs.stage3 || !outputs.stage4) throw new Error('PipelineRunner: upstream outputs missing for Stage 5');
         if (Stage5 && Stage5.runStage5) {

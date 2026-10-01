@@ -14,9 +14,9 @@
 
 在 2K/3K 画幅下，单次全量执行耗时可达数秒。而在图形创作交互中，用户通常需要频繁调整局部控制参数（如调整排线疏密 `density`、阻尼系数或风格预设）。若每次用户变动参数均从阶段 1 重新计算全流程，将导致主线程频繁假死与严重的计算资源浪费。
 
-为实现 60FPS 级别的响应流畅度，本模块设计了两大核心算法：
+为减少重复计算，本模块实现两项机制；浏览器帧率需单独测量：
 - **基于 32-bit DJB2 哈希的 DAG 增量失效判定算法**：精准识别参数变动的上游阶段，仅重新执行受直接影响的阶段及其后继阶段，上游前置产物毫秒级原地复用；
-- **基于 AbortController 的抢占式微任务防抖调度算法**：在用户连续拖拽滑块时，自动防抖（300ms）并物理打断正在执行的陈旧后台微任务，杜绝无效并发争抢。
+- **基于 AbortController 的防抖调度**：调度器默认 60ms，母版参数控制器使用 140ms。管线在阶段之间让出事件循环并检查取消信号；单个同步阶段内部不能即时中断。
 
 ---
 
@@ -28,7 +28,7 @@
 | $P_k$ | 键值映射字典 $\text{Map}\langle \text{string}, \text{any}\rangle$ | 第 $k$ 阶段相关的全部控制参数 | 纯 JSON 兼容对象 |
 | $H_k$ | 32-bit 有符号整数 ($\mathbb{Z}_{32}$) | 第 $k$ 阶段参数序列化后的 DJB2 哈希值 | $[-2^{31}, 2^{31}-1]$ |
 | $\mathcal{C}$ | 状态字典 $\text{Map}\langle \text{stageId}, \text{CacheEntry}\rangle$ | 运行时中间产物缓存池 | 包含阶段输出与对应哈希 |
-| $\Delta t_{\text{debounce}}$ | 标量 (毫秒) | 防抖延迟时间窗口 | 常量 300ms |
+| $\Delta t_{\text{debounce}}$ | 标量 (毫秒) | 防抖延迟时间窗口 | 调度器默认 60ms；调用方可覆盖，母版参数控制器使用 140ms |
 | $\mathcal{A}$ | 实例对象 (`AbortController`) | 正在运行任务的抢占信号源 | 每次任务分配独立实例 |
 
 ---
@@ -100,9 +100,9 @@ sequenceDiagram
     participant PR as PipelineRunner
     participant SC as StageCache
 
-    UI->>TS: schedule(runTask, 300ms)
+    UI->>TS: schedule(runTask, 140ms)
     Note over TS: 启动防抖计时器
-    UI->>TS: schedule(runTask, 300ms) (用户快速拖拽滑块)
+    UI->>TS: schedule(runTask, 140ms) (用户快速拖拽滑块)
     Note over TS: 清除旧计时器，重启新计时器
     TS->>TS: 计时器到期触发
     alt 存在正在运行的任务

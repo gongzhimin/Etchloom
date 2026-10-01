@@ -89,3 +89,17 @@ test('PipelineRunner: Aborts gracefully when AbortSignal triggers', async () => 
     }
   );
 });
+
+test('PipelineRunner: queued cancellation stops the next synchronous stage', async () => {
+  const img = makeSyntheticImage(() => 128, 40, 30);
+  const controller = new AbortController();
+  const reached = [];
+  await assert.rejects(
+    PipelineRunner.runIncremental({ sourceImage: img }, {}, {}, 1, controller.signal, stage => {
+      reached.push(stage);
+      if (stage === 1) setTimeout(() => controller.abort('NEW_INPUT'), 0);
+    }),
+    err => err.name === 'AbortError' && err.stageIndex === 2
+  );
+  assert.deepEqual(reached, [1]);
+});

@@ -16,7 +16,7 @@ stateDiagram-v2
         [*] --> AwaitingPhoto: 等待载入图片
         AwaitingPhoto --> RunningPipeline: 载入照片或调整参数
         RunningPipeline --> PipelineDone: 5阶段全部完成
-        PipelineDone --> RunningPipeline: 修改参数 (防抖300ms触发)
+        PipelineDone --> RunningPipeline: 修改参数 (控制器防抖140ms触发)
     }
 
     MASTER_IDLE --> TRANSFER_WIZARD: 点击 [雕刻至虚拟铜版 →]

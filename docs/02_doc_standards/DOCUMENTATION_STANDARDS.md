@@ -59,7 +59,7 @@
 
 ## 8. 自动化测试与质量保障体系 (Testing & Quality Assurance)
 - 测试运行指令 (`npm test`)。
-- 20 个测试套件、104 项测试的分层说明与覆盖范围。
+- 26 个测试文件、119 项测试的分层说明与覆盖范围。
 
 ## 9. 数据格式与通信契约 (Data Contracts & Schemas)
 - Recipe Schema、Vector Geometry (role 枚举)、Plate Buffer Layout 与 Service API。

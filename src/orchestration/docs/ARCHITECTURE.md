@@ -34,11 +34,11 @@ sequenceDiagram
 
     User->>Ctrl: onInput(params)
     Ctrl->>Orch: requestCompute(recipe)
-    Orch->>Sched: scheduleTask(runPipeline, 300ms)
-    Note over Sched: 防抖窗口计时 (300ms)
+    Orch->>Sched: scheduleTask(runPipeline, 140ms)
+    Note over Sched: 防抖窗口计时 (140ms)
     User->>Ctrl: onInput(新参数变化)
     Ctrl->>Orch: requestCompute(newRecipe)
-    Orch->>Sched: scheduleTask(runPipeline, 300ms)
+    Orch->>Sched: scheduleTask(runPipeline, 140ms)
     Note over Sched: 清除旧计时器，更新执行载荷
     Sched->>Cache: resolveInvalidation(params)
     Cache-->>Sched: 返回 { firstInvalidated: 'stage4' }
@@ -53,7 +53,7 @@ sequenceDiagram
 
 1. **单向数据流原则**：`Orchestrator` 永远不直接持有 DOM 元素句柄，所有数据变更均以不可变 Plain Object 形式通过回调派发；
 2. **缓存指针不可变性**：`StageCache` 存入的中间产物（如 `LineMap`、`ToneFlow`）为只读引用，后续阶段必须作为纯入参传入，严禁就地（in-place）修改前置阶段属性；
-3. **信号源唯一性**：任何正在执行的任务必须且仅能绑定唯一一个 `AbortSignal`，当新的调度请求生效时，旧信号立即触发 `abort` 广播。
+3. **信号源唯一性**：任务绑定唯一 `AbortSignal`；新任务触发旧任务取消。`PipelineRunner` 在同步阶段之间让出事件循环并检查信号；阶段内部计算不能即时中断。
 
 ---
 

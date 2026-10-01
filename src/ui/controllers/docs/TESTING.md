@@ -1,7 +1,7 @@
 # 前端业务控制器自动化测试规范 (TESTING.md)
 
 > **被测模块**：`src/ui/controllers/` (`pipeline-controller.js`, `plate-studio-controller.js`, `transfer-wizard-controller.js`, `lightbox-controller.js`)  
-> **执行命令**：`node --test tests/ui-button-clicks.test.cjs`
+> **执行命令**：`node --test tests/ui-button-clicks.test.cjs tests/pipeline-source-race.test.cjs`
 
 ---
 
@@ -14,6 +14,8 @@
 | `UI Button Click: Plate Undo and Clear Actions` | `PlateStudioController` | 验证撤销栈深度增减、画布重绘与清空确认机制 |
 | `UI Button Click: Transfer Wizard Modal` | `TransferWizardController` | 验证图层勾选状态、深度滑块与上版确认回调触发 |
 | `UI Button Click: Unified Acid Console Toggle & Gauge Display` | `PlateStudioController` | 验证酸蚀控制台展开/收起、秒表时钟计时与咬蚀深度表盘联动 |
+| `a superseded photo cannot replace the newer source or start its pipeline` | `PipelineController` | 旧图片读取回调晚于新图片时不能覆盖新来源或启动旧管线 |
+| `oversized images are rejected before allocating a canvas` | `PipelineController` | 1200 万像素上限在画布分配前生效 |
 
 ---
 

@@ -13,8 +13,8 @@
 <p align="center">
   <img alt="Node 20+" src="https://img.shields.io/badge/Node.js-20%2B-596f50?style=flat-square">
   <img alt="Zero Runtime Dependencies" src="https://img.shields.io/badge/runtime_dependencies-0-c8b67e?style=flat-square">
-  <img alt="Tests Passing" src="https://img.shields.io/badge/tests-116%2F116%20PASS-16a34a?style=flat-square">
-  <img alt="Test Suites" src="https://img.shields.io/badge/suites-24%20passed-2f3932?style=flat-square">
+  <img alt="Tests Passing" src="https://img.shields.io/badge/tests-123%2F123%20PASS-16a34a?style=flat-square">
+  <img alt="Test Files" src="https://img.shields.io/badge/test_files-28-2f3932?style=flat-square">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f3932?style=flat-square"></a>
 </p>
 
@@ -24,7 +24,7 @@
 
 ## 1. Executive Summary
 
-Etchloom is a local-first, open-source studio system engineered for computational geometry, computational photography, and digital intaglio printmaking. The primary objective is to transform natural photographic imagery into authentic classical copperplate prints and vector masters featuring micrometer-scale groove dynamics, surface-conforming cross-hatching, and intaglio press debossing characteristics—all driven by pure mathematical geometry and continuum physics simulations.
+Etchloom is a local-first, open-source studio for computational geometry, photography, and digital intaglio printmaking. It transforms photographs into vector masters and print previews using geometric image processing and a two-dimensional plate grid simulation.
 
 The architecture strictly decouples algorithmic computational engines from host presentation layers:
 - **Pure Algorithmic Core (`src/core/`)**: A 5-stage discrete mathematical pipeline based on 2D guided filtering, structure tensor fields, and Jobard-Lefer streamline integration, maintained as strictly isomorphic between Node.js and browser runtimes;
@@ -40,9 +40,9 @@ The architecture strictly decouples algorithmic computational engines from host 
 2. **Partial Differential Equation (PDE) Chemical Acid Bite Simulation**:
    Numerically solves 4-neighborhood lateral acid bite and vertical depth deepening PDEs on 1500×1100 or 3000×2200 physical grids, with full support for stop-out varnish masking and drypoint metal burr acid erosion.
 3. **Zero-DOM Isomorphic Computation & 100% Test Coverage**:
-   The computational core and physical simulation engines are completely decoupled from browser globals (`window` / `document`), verified by 24 native Node.js test suites containing 116 tests with 100% PASS rate.
+   Most computational operators and the plate simulation run in Node.js; canvas helpers and inference requests retain browser or network adapters. The current Node.js run covers 28 test files and passes 123 tests. Passing tests do not establish code coverage.
 4. **DAG Incremental State Caching & Preemptive Task Scheduling**:
-   Monitors parameter changes with deterministic 32-bit DJB2 hashing. Modifying hatching parameters recomputes only Stages 4–5 while reusing Stages 1–3 in milliseconds; obsolete computations are preemptively aborted via `AbortController`.
+   Monitors parameter changes with deterministic 32-bit DJB2 hashing. Modifying hatching parameters recomputes Stages 4–5 when earlier stages are cached. `AbortController` cancels obsolete computations at stage boundaries; an active synchronous stage cannot be interrupted immediately.
 
 ---
 
@@ -81,7 +81,7 @@ The architecture strictly decouples algorithmic computational engines from host 
 │  ├─ informative_drawings/                 # Grayscale line extraction service [Documentation](services/informative_drawings/README.md)
 │  └─ lotus_geometry/                       # Lotus depth & surface normal service [Documentation](services/lotus_geometry/README.md)
 ├─ styles/                                  # Fresh Atelier Light design system CSS (app.css)
-├─ tests/                                   # 24 Automated test suites (116 tests, 100% PASS)
+├─ tests/                                   # 28 test files (123 tests in the current run)
 ├─ docs/                                    # Technical specifications & data dictionaries [Documentation Index](docs/DOCUMENTATION_INDEX.md)
 └─ archive/                                 # Historical experimental prototypes & research notes
 ```
@@ -105,8 +105,8 @@ The system supports a 3-tier progressive enhancement execution topology. The UI 
 
 | Execution Tier | Runtime Environment | Connectivity & Dependencies | Capabilities & Primary Use Case |
 | :--- | :--- | :--- | :--- |
-| **1. Base Offline**<br>`Offline Mode (Geometric)` | Pure Browser / Local Static Files | **100% Offline**<br>Zero build, zero network, zero external dependencies | Powered by pure computational geometry (Sobel gradients, guided filtering, anisotropic diffusion) and copperplate PDE physics. Runs instantly anywhere. |
-| **2. Browser WebAI**<br>`Online Model (WebGPU/WASM)` | Modern Chromium/Edge Browser | **Online initial fetch**, subsequently persistent in browser IndexedDB | Downloads lightweight ONNX models once via CDN, then executes in-browser neural depth estimation (Depth Anything V2) and line extraction (Informative Drawings). |
+| **1. Base Offline**<br>`Offline Mode (Geometric)` | Browser with a local HTTP server (`npm start`) | Base geometry processing requires no external network or runtime packages | Native ESM modules need HTTP loading; direct `file://` opening is not a supported startup method. |
+| **2. Browser WebAI**<br>`Online Model (WebGPU/WASM)` | Modern Chromium/Edge Browser | Initial download needs network access; later offline reuse depends on browser cache and complete model availability | Loads the runtime and depth model on demand, then attempts browser inference; loading failures fall back to analytical geometry. |
 | **3. Local Python AI**<br>`Local AI (CUDA / MPS)` | Host Python Virtual Environment | Local `http://127.0.0.1:7861`, fully offline once installed | Leverages dedicated local GPU acceleration (PyTorch + CUDA/DirectML) for full Lotus spatial geometry and neural drawing inference. |
 
 ### 5.1 Quick Start Frontend Studio
@@ -128,7 +128,7 @@ Once the service is listening on port `7861`, the frontend gateway detects it au
 ```bash
 npm test
 ```
-**Test Results**: 24 test suites, 116 tests all 100% PASS (execution time: ~4.5–5.0 seconds).
+**Current test run**: 28 test files, 123 tests passed (about 5.2 seconds).
 Refer to [docs/03_testing_qa/TEST_SPECIFICATION.md](docs/03_testing_qa/TEST_SPECIFICATION.md) for testing methodologies and coverage requirements.
 
 ---

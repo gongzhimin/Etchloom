@@ -44,42 +44,42 @@ export const sidebarTemplate = `
         <span id="modelStatus" class="badge badge-amber u-ml-auto">检测中…</span>
       </label>
 
-      <label><span data-i18n="sec.0.exposure">曝光度</span> <output id="exposureVal">50%</output></label>
+      <label for="exposure"><span data-i18n="sec.0.exposure">曝光度</span> <output id="exposureVal">50%</output></label>
       <input id="exposure" type="range" min="0" max="100" value="50">
 
-      <label><span data-i18n="sec.0.black">黑场</span> <output id="blackPointVal">0%</output></label>
+      <label for="blackPoint"><span data-i18n="sec.0.black">黑场</span> <output id="blackPointVal">0%</output></label>
       <input id="blackPoint" type="range" min="0" max="50" value="0">
 
-      <label><span data-i18n="sec.0.white">白场</span> <output id="whitePointVal">100%</output></label>
+      <label for="whitePoint"><span data-i18n="sec.0.white">白场</span> <output id="whitePointVal">100%</output></label>
       <input id="whitePoint" type="range" min="50" max="100" value="100">
     </section>
 
     <!-- Drawer 01: 空间轮廓 -->
     <section id="drawer1">
       <h2 class="drawer-title" data-i18n="sec.1.title">01 / 空间轮廓</h2>
-      <label><span data-i18n="sec.1.contour">轮廓密度</span> <output id="contourDetailVal">75%</output></label>
+      <label for="contourDetail"><span data-i18n="sec.1.contour">轮廓密度</span> <output id="contourDetailVal">75%</output></label>
       <input id="contourDetail" type="range" min="0" max="100" value="75">
 
-      <label><span data-i18n="sec.1.aerial">透视强度</span> <output id="aerialStrengthVal">60%</output></label>
+      <label for="aerialStrength"><span data-i18n="sec.1.aerial">透视强度</span> <output id="aerialStrengthVal">60%</output></label>
       <input id="aerialStrength" type="range" min="0" max="100" value="60">
 
-      <label><span data-i18n="sec.1.width">轮廓刀宽</span> <output id="needleWidthVal">0.8 mm</output></label>
+      <label for="needleWidth"><span data-i18n="sec.1.width">轮廓刀宽</span> <output id="needleWidthVal">0.8 mm</output></label>
       <input id="needleWidth" type="range" min="1" max="30" value="8">
     </section>
 
     <!-- Drawer 02: 曲面排线 -->
     <section id="drawer2">
       <h2 class="drawer-title" data-i18n="sec.2.title">02 / 曲面排线</h2>
-      <label><span data-i18n="sec.2.hatch">排线密度</span> <output id="densityVal">80%</output></label>
+      <label for="density"><span data-i18n="sec.2.hatch">排线密度</span> <output id="densityVal">80%</output></label>
       <input id="density" type="range" min="0" max="100" value="80">
 
-      <label><span data-i18n="sec.2.gate">曲率门控</span> <output id="curvatureGateVal">70%</output></label>
+      <label for="curvatureGate"><span data-i18n="sec.2.gate">曲率门控</span> <output id="curvatureGateVal">70%</output></label>
       <input id="curvatureGate" type="range" min="0" max="100" value="70">
 
-      <label><span data-i18n="sec.2.cross">交叉排线</span> <output id="crossHatchVal">65%</output></label>
+      <label for="crossHatch"><span data-i18n="sec.2.cross">交叉排线</span> <output id="crossHatchVal">65%</output></label>
       <input id="crossHatch" type="range" min="0" max="100" value="65">
 
-      <label><span data-i18n="sec.2.frame">版画外框</span></label>
+      <label for="frameStyle"><span data-i18n="sec.2.frame">版画外框</span></label>
       <select id="frameStyle">
         <option value="double" selected data-i18n="frame.double">双层古典边框</option>
         <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
@@ -108,7 +108,7 @@ export const sidebarTemplate = `
           <button data-tool="polish" data-i18n="tool.polish">刮磨器</button>
         </div>
 
-        <label><span data-i18n="sec.3.size">工具直径</span> <output id="sizeValue">4 px</output></label>
+        <label for="size"><span data-i18n="sec.3.size">工具直径</span> <output id="sizeValue">4 px</output></label>
         <input id="size" type="range" min="1" max="50" value="4">
 
         <div class="row u-mt-2">
@@ -121,10 +121,10 @@ export const sidebarTemplate = `
       <!-- Process C: 酸液腐蚀参数 -->
       <div class="drawer-subgroup">
         <div class="drawer-subgroup-title">工序 C · 酸液腐蚀</div>
-        <label><span data-i18n="sec.3.acid">酸液浓度</span> <output id="acidValue">45%</output></label>
+        <label for="acid"><span data-i18n="sec.3.acid">酸液浓度</span> <output id="acidValue">45%</output></label>
         <input id="acid" type="range" min="1" max="100" value="45">
 
-        <label><span data-i18n="sec.3.grain">金相颗粒</span> <output id="grainValue">45%</output></label>
+        <label for="grain"><span data-i18n="sec.3.grain">金相颗粒</span> <output id="grainValue">45%</output></label>
         <input id="grain" type="range" min="0" max="100" value="45">
 
         <label class="checkbox-label u-mt-2">
@@ -137,22 +137,22 @@ export const sidebarTemplate = `
       <!-- Process D: 填墨与压印试印 -->
       <div class="drawer-subgroup">
         <div class="drawer-subgroup-title">工序 D · 填墨试印</div>
-        <label><span data-i18n="sec.3.ink">油墨饱满</span> <output id="inkValue">90%</output></label>
+        <label for="ink"><span data-i18n="sec.3.ink">油墨饱满</span> <output id="inkValue">90%</output></label>
         <input id="ink" type="range" min="0" max="150" value="90">
 
-        <label><span data-i18n="sec.3.pressure">压印压力</span> <output id="pressureValue">65%</output></label>
+        <label for="pressure"><span data-i18n="sec.3.pressure">压印压力</span> <output id="pressureValue">65%</output></label>
         <input id="pressure" type="range" min="0" max="100" value="65">
 
-        <label><span data-i18n="sec.3.plateTone">留墨调子</span> <output id="toneValue">4%</output></label>
+        <label for="tone"><span data-i18n="sec.3.plateTone">留墨调子</span> <output id="toneValue">4%</output></label>
         <input id="tone" type="range" min="0" max="35" value="4">
 
-        <label data-i18n="sec.3.paper">纸张材质</label>
+        <label for="paper" data-i18n="sec.3.paper">纸张材质</label>
         <select id="paper">
           <option value="rough" data-i18n="paper.rough">暖白 · 粗纹棉纸</option>
           <option value="smooth" data-i18n="paper.smooth">象牙白 · 细纹纸</option>
         </select>
 
-        <label data-i18n="sec.3.frame">印样外框</label>
+        <label for="plateFrameStyle" data-i18n="sec.3.frame">印样外框</label>
         <select id="plateFrameStyle">
           <option value="double" selected data-i18n="frame.double">双层古典边框</option>
           <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
@@ -298,7 +298,7 @@ export const telemetryFooterTemplate = `
 
 export const modalsTemplate = `
   <!-- True Fullscreen Viewport (全屏沉浸式特写画廊，全屏饱满铺满，彻底消除卡片框束缚) -->
-  <div id="modalOverlay" class="fullscreen-viewport-overlay" hidden>
+  <div id="modalOverlay" class="fullscreen-viewport-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription" hidden>
     <!-- Floating Translucent Control Header Capsule -->
     <header class="fullscreen-floating-header">
       <div class="fullscreen-header-info">

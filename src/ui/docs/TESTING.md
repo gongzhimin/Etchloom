@@ -11,6 +11,8 @@
 | :--- | :---: | :--- |
 | `tests/ui.test.cjs` | 3 项 | I18nManager 双语字典更新、DOM 数据属性自动匹配、AppStore 发布订阅与状态保护 |
 | `tests/ui-button-clicks.test.cjs` | 12 项 | 顶栏模式切换、语言切换、About 弹窗、7阶段卡片动作（放大镜/全屏/导出）、上版按钮、4工具选择、撤销清空、步进器导航、2K/3K 分辨率切换、酸蚀控制台展开与表盘显示 |
+| `tests/pipeline-source-cache.test.cjs` | 1 项 | 新来源清空阶段缓存并递增版本 |
+| `tests/pipeline-source-race.test.cjs` | 2 项 | 连续载图时旧回调失效、超限图片在画布分配前被拒绝 |
 
 ---
 

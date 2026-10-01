@@ -13,8 +13,8 @@
 <p align="center">
   <img alt="Node 20+" src="https://img.shields.io/badge/Node.js-20%2B-596f50?style=flat-square">
   <img alt="零运行依赖" src="https://img.shields.io/badge/runtime_dependencies-0-c8b67e?style=flat-square">
-  <img alt="测试通过率" src="https://img.shields.io/badge/tests-116%2F116%20PASS-16a34a?style=flat-square">
-  <img alt="测试套件" src="https://img.shields.io/badge/suites-24%20passed-2f3932?style=flat-square">
+  <img alt="测试通过率" src="https://img.shields.io/badge/tests-123%2F123%20PASS-16a34a?style=flat-square">
+  <img alt="测试文件" src="https://img.shields.io/badge/test_files-28-2f3932?style=flat-square">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f3932?style=flat-square"></a>
 </p>
 
@@ -24,7 +24,7 @@
 
 ## 1. 系统概览与工程定位 (Executive Summary)
 
-Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作的本地优先开源系统。工程核心目标在于将自然光摄影图像，通过纯数学几何管线与连续介质物理仿真，转换为具备微米级物理刻痕、表面顺形排线与凹版压印特征的数字古典铜版画与矢量母版。
+Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作的本地优先开源系统。工程核心目标在于将自然光摄影图像，通过几何管线与二维版面网格仿真，转换为具有顺形排线与凹版压印特征的数字版画与矢量母版。
 
 系统彻底解耦了图像算法核心与前端展现宿主：
 - **纯计算算法核心 (`src/core/`)**：基于二维导向滤波、结构张量场与 Jobard-Lefer 流线积分的 5 阶段离散数学管线，保持 Node.js/Browser 同构；
@@ -39,9 +39,9 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
    从图像灰度线描感知抽取（Stage 1）、多尺度色调场与等高切线场分解（Stage 2）、Lotus 3D 深度空气透视骨干轮廓（Stage 3）、15 模块曲面空间几何顺形排线（Stage 4），到最终母版矢量合成（Stage 5）。
 2. **偏微分方程化学酸蚀仿真**：
    在 1500x1100 或 3000x2200 物理网格上数值解算 4-邻域侧向咬蚀与纵向深化偏微分方程，支持防蚀漆阻断掩膜与干刻金属毛刺酸溶衰减。
-3. **零 DOM 同构计算与 100% 自动化测试保护**：
-   算法核心与物理仿真层彻底剥离对 `window` 与 `document` 的依赖，在 Node.js 原生测试环境下拥有 24 个测试套件、116 项测试用例全量覆盖。
-4. **DAG 状态增量缓存与抢占式调度**：
+3. **算法核心与自动化测试**：
+   主要算子与物理仿真可在 Node.js 环境测试；图像画布与推理请求仍包含浏览器或网络适配代码。当前 28 个测试文件的 123 项用例通过，测试通过率不代表代码覆盖率。
+4. **DAG 状态增量缓存与阶段边界取消**：
    采用 32-bit DJB2 确定性哈希监听参数变化，修改排线参数时仅需重新计算 Stage 4~5，前置阶段毫秒级复用；基于 `AbortController` 瞬时抢占中止陈旧任务。
 
 ---
@@ -81,7 +81,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 │  ├─ informative_drawings/                 # 灰度线描推理服务 [查看文档](services/informative_drawings/README.md)
 │  └─ lotus_geometry/                       # Lotus 深度与法线模型 [查看文档](services/lotus_geometry/README.md)
 ├─ styles/                                  # 莫兰迪古典浅色工作室设计系统 CSS (Fresh Atelier Light app.css)
-├─ tests/                                   # 24 个自动化测试套件 (116 项测试，100% 通过)
+├─ tests/                                   # 28 个自动化测试文件 (当前 123 项测试通过)
 ├─ docs/                                    # 规范工程技术规范与数据字典 [查看索引](docs/DOCUMENTATION_INDEX.md)
 └─ archive/                                 # 历史归档资产与探索性实验
 ```
@@ -102,8 +102,8 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 
 | 模式层级 | 运行环境 | 依赖与网络需求 | 核心能力与适用场景 |
 | :--- | :--- | :--- | :--- |
-| **1. 基础离线模式**<br>`Offline Mode (Geometric)` | 纯浏览器 / 本地静态文件 | **100% 离线**，零构建、零网络、零第三方依赖 | 基于纯数学几何（Sobel/导向滤波/各向异性扩散）与铜版 PDE 物理仿真，任何离线环境即开即用 |
-| **2. 联网浏览器 WebAI 模式**<br>`Online Model (WebGPU/WASM)` | 现代化浏览器 | **联网加载一次**，后续从本地 IndexedDB 缓存持久读取 | 基于 CDN 动态按需加载 ONNX Runtime Web，在前端浏览器直接执行 Depth Anything V2 与 Informative Drawings 神经网络推理 |
+| **1. 基础离线模式**<br>`Offline Mode (Geometric)` | 浏览器 + 本地 HTTP 服务（`npm start`） | 基础几何计算无需外网或第三方运行依赖 | 基于几何算子与铜版网格仿真；原生 ESM 入口需要经 HTTP 服务加载，不保证直接打开 `file://` 可运行 |
+| **2. 联网浏览器 WebAI 模式**<br>`Online Model (WebGPU/WASM)` | 现代化浏览器 | 首次需要联网；后续离线复用取决于浏览器缓存及模型是否完整缓存 | 基于 CDN 动态按需加载运行库与深度模型，在浏览器中尝试神经网络推理；加载失败时回退至纯几何解析 |
 | **3. 本机 Python 服务模式**<br>`Local AI (CUDA / MPS)` | 本地 Python 虚拟环境 | 本地启动 `http://127.0.0.1:7861`，可全离线 | 基于本地 PyTorch + CUDA/DirectML 硬件加速，执行完整的 Lotus 几何模型与高精度线描推理 |
 
 ### 5.1 快速启动前端工坊
@@ -125,7 +125,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
 ```bash
 npm test
 ```
-**运行结果**：24 个测试套件，116 项测试用例全部 100% PASS（耗时约 4.5~5 秒）。
+**本次运行结果**：28 个测试文件，123 项测试用例通过（约 5.2 秒）；结果随代码与运行环境变化。
 详见 [docs/03_testing_qa/TEST_SPECIFICATION.md](docs/03_testing_qa/TEST_SPECIFICATION.md)。
 
 ---

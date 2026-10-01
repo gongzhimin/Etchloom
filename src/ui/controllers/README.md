@@ -1,7 +1,7 @@
 # Application Controllers (`src/ui/controllers/`)
 
 > **模块路径**：`src/ui/controllers/`  
-> **技术定位**：Layer 3 业务控制器层（Native ES Modules），桥接用户界面 DOM 事件与底层无 DOM 纯计算核心。
+> **技术定位**：Layer 3 业务控制器层（Native ES Modules），桥接用户界面 DOM 事件与算法核心；核心中仍有少量画布和网络适配代码。
 
 ---
 
@@ -9,6 +9,7 @@
 
 本层采用现代原生 ES Modules (`type="module"`) 架构，杜绝内联脚本与杂乱的全局可变状态污染：
 1. `PipelineController`：编排母版生成管线，监听输入图像上传，调度 `PipelineRunner`，用 `performance.now()` 度量阶段真实耗时并驱动卡片刷新；
+   连续载图时通过来源版本和 `AbortSignal` 阻止旧计算提交；导入上限为 1200 万像素。
 2. `PlateStudioController`：管理虚拟铜版工坊画布渲染、4 工具划线涂抹与酸液控制台联动；
 3. `TransferWizardController`：控制图稿上版向导模态框，执行矢量笔画 Bresenham 离散划线并写入物理网格；
 4. `LightboxController`：管理超高清全屏视口，支持 100%~500% 鼠标滚轮平滑缩放与拖拽漫游。

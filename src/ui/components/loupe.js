@@ -19,6 +19,7 @@ class LoupeMagnifier {
     this.zoom = options.zoom || 4;
     this.active = false;
     this.cursorPos = { x: 0, y: 0 };
+    this.pendingFrame = null;
 
     if (typeof document !== 'undefined') {
       this._createLoupeElement();
@@ -55,7 +56,16 @@ class LoupeMagnifier {
         return;
       }
       this.show();
-      this.updatePosition(e.clientX, e.clientY);
+      this.cursorPos = { x: e.clientX, y: e.clientY };
+      if (this.pendingFrame !== null) return;
+      if (typeof requestAnimationFrame === 'function') {
+        this.pendingFrame = requestAnimationFrame(() => {
+          this.pendingFrame = null;
+          this.updatePosition(this.cursorPos.x, this.cursorPos.y);
+        });
+      } else {
+        this.updatePosition(this.cursorPos.x, this.cursorPos.y);
+      }
     });
 
     this.sourceCanvas.addEventListener('pointerleave', () => {
@@ -147,6 +157,10 @@ class LoupeMagnifier {
   }
 
   destroy() {
+    if (this.pendingFrame !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.pendingFrame);
+      this.pendingFrame = null;
+    }
     if (this.container && this.container.parentElement) {
       this.container.parentElement.removeChild(this.container);
     }

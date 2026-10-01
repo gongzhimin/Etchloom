@@ -13,3 +13,4 @@ data/engravings_patches/
 __pycache__/
 experiments/im2pencil_train_previews/
 archive/
+src-tauri/target/

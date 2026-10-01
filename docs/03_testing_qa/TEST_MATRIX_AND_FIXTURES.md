@@ -2,7 +2,7 @@
 
 > **当前测试运行器**：Node.js 内置测试框架 (`node:test` + `node:assert/strict`)  
 > **执行命令**：`npm test` (等效于 `node --test tests/*.test.cjs`)  
-> **真实统计**：共 20 个测试套件，104 项测试用例，100% 通过。
+> **真实统计**：共 26 个测试文件，119 项测试用例，100% 通过。
 
 ---
 
@@ -21,7 +21,7 @@
 | 9 | `tests/high-precision-tone-flow.test.cjs` | 高精度色调场与各向异性扩散流 | 3 | 微纹理细节场保留；各向异性扩散方向相干性 |
 | 10 | `tests/orchestrator.test.cjs` | 调度中心与生命周期事件总线 | 2 | 阶段监听器触发顺序；遥测数据流转 |
 | 11 | `tests/photo.test.cjs` | 图像处理核心、对比度调整、多尺度结构 | 7 | 白场留白；暗部雕刻密度；1800x1320 分辨率稳定性 |
-| 12 | `tests/pipeline-runner.test.cjs` | 阶段管线执行器、缓存复用、任务中断 | 3 | 全量 1~5 阶段执行；增量缓存复用；AbortSignal 响应 |
+| 12 | `tests/pipeline-runner.test.cjs` | 阶段管线执行器、缓存复用、任务中断 | 4 | 全量 1~5 阶段执行；增量缓存复用；阶段间 AbortSignal 响应 |
 | 13 | `tests/plate.test.cjs` | 虚拟铜版工坊界面逻辑与 4 工具交互 | 5 | 刻针/干刻针/防蚀漆/刮磨器工具行为；撤销与重做 |
 | 14 | `tests/refinement.test.cjs` | 色调校正、自适应迷宫生成、高分编码 | 14 | 灰度阶跃单调性；PlateCodec 无损编解码；极端压印对比 |
 | 15 | `tests/stage-cache.test.cjs` | 阶段增量缓存与 DAG 状态哈希 | 3 | DJB2 确定性哈希；下游依赖精确失效 |
@@ -30,6 +30,12 @@
 | 18 | `tests/ui.test.cjs` | 国际化 I18n 管理器与 AppStore 响应 | 3 | 语言字典更新；DOM 绑定；Store 订阅发布 |
 | 19 | `tests/universal-hatching.test.cjs` | 通用无类别自适应排线与墨量守恒 | 3 | 墨量空间守恒门控；各向同性平面排线抑制 |
 | 20 | `tests/virtual-plate-engine.test.cjs` | 铜版无 DOM 物理引擎、化学腐蚀 PDE | 6 | 物理内存分配；偏微分酸蚀扩散；无头纯位图压印 |
+| 21 | `tests/app-entry-mount.test.cjs` | 应用入口模块图与 DOM 装配 | 1 | 真实入口可加载并挂载 |
+| 22 | `tests/lightbox-vector.test.cjs` | 七阶段 SVG 与灯箱 | 2 | 矢量预览及栅格切换 |
+| 23 | `tests/theme-bridge.test.cjs` | 主题和设计 Token | 4 | 无头主题解析及模板约束 |
+| 24 | `tests/web-ai-client.test.cjs` | 浏览器模型网关降级 | 1 | Node 环境能力探测与离线模式 |
+| 25 | `tests/preview-server.test.cjs` | 本机预览资产边界 | 1 | 应用资产可访问，归档和文档不可访问 |
+| 26 | `tests/pipeline-source-cache.test.cjs` | 换图缓存隔离 | 1 | 新来源取消待执行任务、清空旧产物并递增来源版本 |
 
 ---
 

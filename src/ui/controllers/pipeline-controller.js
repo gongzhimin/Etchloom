@@ -31,6 +31,8 @@ export class PipelineController {
 
     this.currentLoadedImage = null;
     this.currentDepthMap = null;
+    this.sourceVersion = 0;
+    this.sourceAbortController = null;
     this.lastStage1LineMap = null;
     this.lastContours = null;
     this.lastHatching = null;
@@ -149,16 +151,36 @@ export class PipelineController {
 
   async handleImageFile(file) {
     if (!file) return;
+    this.sourceVersion += 1;
+    this.sourceAbortController?.abort('NEW_SOURCE_IMAGE');
+    const sourceController = new AbortController();
+    this.sourceAbortController = sourceController;
+    const sourceVersion = this.sourceVersion;
+    const isCurrent = () => sourceVersion === this.sourceVersion && !sourceController.signal.aborted;
+    this.scheduler?.cancelActive('NEW_SOURCE_IMAGE');
+    this.stageCache?.clear();
+    this.lastStage1LineMap = null;
+    this.lastStage2Artifact = null;
+    this.lastContours = null;
+    this.lastContourMask = null;
+    this.lastHatching = null;
+    this.lastMasterPaths = null;
+    this.currentDepthMap = null;
     this.log('图像', `正在载入原图: ${file.name} (${(file.size / 1024).toFixed(1)} KB)...`, 'computing');
 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = ev => {
+        if (!isCurrent()) { resolve(null); return; }
         const img = new Image();
         img.onload = async () => {
           try {
+            if (!isCurrent()) { resolve(null); return; }
             const origW = img.naturalWidth || img.width;
             const origH = img.naturalHeight || img.height;
+            if (!Number.isSafeInteger(origW) || !Number.isSafeInteger(origH) || origW <= 0 || origH <= 0 || origW * origH > 12000000) {
+              throw new Error('图片尺寸无效或超过 1200 万像素，请先缩小图片再导入');
+            }
             const tmpCanvas = document.createElement('canvas');
             tmpCanvas.width = origW;
             tmpCanvas.height = origH;
@@ -187,21 +209,24 @@ export class PipelineController {
             }
 
             this.log('图像', `图像装载完成: ${origW} × ${origH} 原始物理规格，维持原图尺寸与比例。进入 5 阶段管线计算。`, 'done');
-            await this.runPipelineOnLoadedPhoto(file);
-            resolve(this.currentLoadedImage);
+            await this.runPipelineOnLoadedPhoto(file, sourceController.signal, sourceVersion);
+            resolve(isCurrent() ? this.currentLoadedImage : null);
           } catch (err) {
+            if (!isCurrent()) { resolve(null); return; }
             console.error('Error processing image:', err);
             this.log('图像', `图片处理异常: ${err.message}`, 'error');
             reject(err);
           }
         };
         img.onerror = () => {
+          if (!isCurrent()) { resolve(null); return; }
           this.log('图像', '无法解析该图片文件，请换一张常见格式的图片重试。', 'error');
           reject(new Error('Image parse error'));
         };
         img.src = ev.target.result;
       };
       reader.onerror = () => {
+        if (!isCurrent()) { resolve(null); return; }
         this.log('图像', '读取本地文件失败，请检查文件权限。', 'error');
         reject(new Error('File read error'));
       };
@@ -209,8 +234,9 @@ export class PipelineController {
     });
   }
 
-  async runPipelineOnLoadedPhoto(optionalFile = null) {
+  async runPipelineOnLoadedPhoto(optionalFile = null, signal = null, sourceVersion = this.sourceVersion) {
     if (!this.currentLoadedImage) return;
+    const isCurrent = () => !(signal?.aborted) && sourceVersion === this.sourceVersion;
 
     let neuralLineUsed = false;
     this.updateTelemetry({ status: '管线计算中...', task: 'PIPELINE_RUNNING' });
@@ -231,15 +257,18 @@ export class PipelineController {
       } else if (optionalFile || this.currentLoadedImage.file) {
         inferBlob = optionalFile || this.currentLoadedImage.file;
       }
+      if (!isCurrent()) return;
 
       let fetchedDepthMap = null;
 
       // Check AI Engine Mode (Remote Python / Online Browser Model / Offline Analytical)
       if (inferBlob) {
         const health = await this.aiGateway.checkHealth();
+        if (!isCurrent()) return;
         this.log('模型', `当前引擎: ${health.modeLabel}，开始处理线描与空间深度...`, 'computing');
         try {
           const { lineMap, depthMap, backend } = await this.aiGateway.requestParallelPipeline(inferBlob, curW, curH);
+          if (!isCurrent()) return;
           if (lineMap) {
             this.currentLoadedImage.lineMap = lineMap;
             neuralLineUsed = true;
@@ -256,6 +285,7 @@ export class PipelineController {
       }
 
       await new Promise(r => setTimeout(r, 20));
+      if (!isCurrent()) return;
 
       const recipeParams = this.getRecipeParams();
       const recipe = {
@@ -279,7 +309,9 @@ export class PipelineController {
         const _now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
         let stageStart = _now();
         const outputs = await Runner.run(recipe, {
+          signal,
           onProgress: (stage, progress, artifact) => {
+            if (!isCurrent()) return;
             if (!this.stepGrid) return;
             const stageElapsed = parseFloat((_now() - stageStart).toFixed(1));
             if (stage === 1 && artifact) {
@@ -307,12 +339,13 @@ export class PipelineController {
             stageStart = _now();
           }
         });
+        if (!isCurrent()) return;
 
         const masterPaths = outputs.stage5?.paths || outputs.masterResult?.paths || [...(this.lastContours || []), ...(this.lastHatching || [])];
         this.lastMasterPaths = masterPaths;
 
         if (this.stageCache) {
-          const s1Params = { lotus3D: recipeParams.lotus3D };
+          const s1Params = { lotus3D: recipeParams.lotus3D, sourceVersion: this.sourceVersion };
           const s2Params = { exposure: recipeParams.exposure, blackPoint: recipeParams.blackPoint, whitePoint: recipeParams.whitePoint };
           const s3Params = { contourDetail: recipeParams.contourDetail, aerialStrength: recipeParams.aerialStrength, needleWidth: recipeParams.needleWidth };
           const s4Params = { density: recipeParams.density, cross: recipeParams.cross, curvatureGate: recipeParams.curvatureGate };
@@ -365,6 +398,7 @@ export class PipelineController {
         this.log('工坊', `全管线执行完成！共生成 ${this.lastMasterPaths.length} 条矢量印痕，总耗时 ${totalElapsed}ms。`, 'done');
       }
     } catch (err) {
+      if (!isCurrent()) return;
       console.error('Pipeline error:', err);
       this.updateTelemetry({ status: '计算异常: ' + err.message });
       this.log('管线', `管线计算异常: ${err.message}`, 'error');
@@ -564,7 +598,7 @@ export class PipelineController {
     let newHashes = {};
 
     if (this.stageCache) {
-      const s1Params = { lotus3D: recipeParams.lotus3D };
+      const s1Params = { lotus3D: recipeParams.lotus3D, sourceVersion: this.sourceVersion };
       const s2Params = { exposure: params.exposure, blackPoint: params.blackPoint, whitePoint: params.whitePoint };
       const s3Params = { contourDetail: params.contourDetail, aerialStrength: params.aerialStrength, needleWidth: params.needleWidth };
       const s4Params = { density: params.density, cross: params.cross, curvatureGate: params.curvatureGate };
@@ -659,7 +693,7 @@ export class PipelineController {
           strokeColor: theme?.inkPrimary || '#1a1918',
           frameStyle: recipeParams.frameStyle
         });
-        this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', 10.0);
+        this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', parseFloat((_now() - stageStart).toFixed(1)));
       }
 
       if (this.stageCache) {

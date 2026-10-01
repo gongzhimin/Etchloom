@@ -106,6 +106,9 @@ class StepFlowGrid {
       viewport.title = '点击查看大图 (支持滚轮缩放与拖拽)';
       viewport.style.cursor = 'zoom-in';
       const canvas = document.createElement('canvas');
+      canvas.setAttribute?.('role', 'button');
+      canvas.setAttribute?.('tabindex', '0');
+      canvas.setAttribute?.('aria-label', `${title.textContent}：特写检查`);
       canvas.width = i === 6 ? 1400 : 900;
       canvas.height = i === 6 ? Math.round(1400 * 660 / 900) : 660;
       canvas.style.width = '100%';
@@ -119,6 +122,11 @@ class StepFlowGrid {
         this.onStepSelect(i);
         const vectorSvg = i >= 3 ? this.getStepVectorSvg(i) : null;
         this.onStepFullscreen(i, canvas, { isVector: !!vectorSvg, vectorSvg });
+      };
+      canvas.onkeydown = (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        viewport.onclick(e);
       };
       // Floating Ghost Hover Action Toolbar (特写 + 导出)
       const actions = document.createElement('div');

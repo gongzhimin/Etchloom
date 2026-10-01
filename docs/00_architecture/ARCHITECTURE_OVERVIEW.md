@@ -66,4 +66,4 @@
 
 ### 2.3 铜版网格物理内存模型 (TypedArray Grid)
 - 物理铜版采用 `Float32Array`（刻深 `depth`、暴露 `exposed`、毛刺 `burr`）和 `Uint8Array`（防蚀漆 `blocked`）作为一维连续内存布局。
-- 保证数百万像素级的物理化学仿真在 60fps 交互下零 GC 垃圾回收停顿。
+- 连续 TypedArray 降低对象分配；浏览器帧率与 GC 停顿仍需在目标设备和分辨率上测量。
