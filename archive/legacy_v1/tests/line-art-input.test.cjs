@@ -1,4 +1,0 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),L=require('../src/core/line-art-input');
-const image=fn=>({width:90,height:66,pixels:Array.from({length:90*66},(_,i)=>fn(i%90,Math.floor(i/90)))});
-test('direct line-art input preserves white paper and deterministic black runs',()=>{const blank=L.generate(image(()=>255));assert.equal(blank.paths.length,0);assert.ok(blank.plateMask.every(v=>v===0));const source=image((x,y)=>y===20&&x>10&&x<70?20:255),a=L.generate(source);assert.deepEqual(a.paths,L.generate(source).paths);assert.equal(a.paths.length,1);assert.equal(a.paths[0].mark,'model-output');assert.equal(a.plateMask[20*90+20],235);});
-test('antialiased model output controls exposure strength without inventing marks',()=>{const result=L.generate(image((x,y)=>y===10&&x<30?40:y===30&&x<30?190:255));assert.equal(result.paths.length,2);assert.ok(result.paths[0].width>result.paths[1].width);});

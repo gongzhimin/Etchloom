@@ -1,4 +1,0 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),Q=require('../src/core/quality-metrics');
-const image={width:90,height:66,pixels:Array.from({length:90*66},(_,i)=>(i%90)<45?50:245)};
-test('aligned contours score above displaced contours',()=>{const aligned={paths:[{role:'contour',width:1,points:[[450,0],[450,660]]}]},shifted={paths:[{role:'contour',width:1,points:[[700,0],[700,660]]}]};assert.ok(Q.evaluate(image,aligned).contourF1>Q.evaluate(image,shifted).contourF1);});
-test('tone order rewards ink concentrated in darker regions',()=>{const ordered={paths:Array.from({length:18},(_,i)=>({role:'hatch',width:1,points:[[20+i*20,0],[20+i*20,660]]}))},reversed={paths:Array.from({length:18},(_,i)=>({role:'hatch',width:1,points:[[500+i*20,0],[500+i*20,660]]}))};assert.ok(Q.evaluate(image,ordered).toneCorrelation>Q.evaluate(image,reversed).toneCorrelation);});

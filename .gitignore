@@ -12,3 +12,4 @@ data/engravings_patches/
 *.pth
 __pycache__/
 experiments/im2pencil_train_previews/
+archive/

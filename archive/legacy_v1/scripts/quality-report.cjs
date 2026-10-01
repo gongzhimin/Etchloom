@@ -1,6 +1,0 @@
-const fs=require('node:fs'),path=require('node:path'),G=require('../src/core/generator'),P=require('../src/core/photo-pro'),Q=require('../src/core/quality-metrics');
-const image={width:225,height:165,pixels:Array.from({length:225*165},(_,i)=>{const x=i%225,y=Math.floor(i/225),body=((x-115)/48)**2+((y-88)/58)**2<1;return body?Math.round(55+120*x/225+(Math.abs(y-88)<2?-35:0)):248;})};
-const base={version:1,mode:'photo',seed:77,layoutSeed:77,variation:0,params:{...G.defaults,detail:80,density:68,fidelity:88,randomness:20},image,pro:{version:1,...P.defaults,edits:[]}};
-const routes={photo:base,sketch:{...base,pro:{...base.pro,sourceMode:'sketch'}}},report={fixture:'synthetic tonal vessel',note:'Diagnostic scores in [0,1], except shortFragmentRate; compare revisions on the same fixture.',routes:{}};
-for(const [name,recipe]of Object.entries(routes)){const result=G.generate(recipe);report.routes[name]={...Q.evaluate(image,result),semantics:{silhouettes:result.stats.silhouettes,occlusions:result.stats.occlusions,formLines:result.stats.formLines,textureLines:result.stats.textureLines}};}
-fs.writeFileSync(path.join(__dirname,'..','QUALITY_REPORT.json'),JSON.stringify(report,null,2)+'\n');console.log(report);

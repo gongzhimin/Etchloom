@@ -1,5 +1,0 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),M=require('../src/core/mark-system');
-const image=fn=>({width:225,height:165,pixels:Array.from({length:225*165},(_,i)=>fn(i%225,Math.floor(i/225)))});
-test('five tone tiers preserve highlights and order increasingly dark regions',()=>{const a=M.analyze(image(x=>[250,220,175,110,35][Math.min(4,Math.floor(x/45))])),counts=Array.from(a.tier.reduce((v,t)=>(v[t]++,v),new Uint32Array(5)));assert.ok(counts.every(Boolean));});
-test('mark system is deterministic and leaves white paper untouched',()=>{const white=image(()=>255),scene=image(x=>255-x);assert.equal(M.generate(white,7).paths.length,0);assert.deepEqual(M.generate(scene,7).paths,M.generate(scene,7).paths);});
-test('dark tiers inherit hatching and add crosshatching plus black mass',()=>{const result=M.generate(image(x=>x<75?235:x<150?125:25),19);assert.ok(result.paths.some(p=>p.role==='hatch'));assert.ok(result.paths.some(p=>p.role==='cross'));assert.ok(result.paths.some(p=>p.role==='mass'));assert.ok(result.paths.filter(p=>p.role==='mass').every(p=>p.toneTier===4));});
