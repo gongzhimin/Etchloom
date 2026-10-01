@@ -97,22 +97,10 @@ class LoupeMagnifier {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', (e) => {
-        if (e.key === 'Alt') {
-          this.altActive = true;
-          this.show();
-        } else if (e.key === 'Escape') {
+        if (e.key === 'Escape') {
           this.active = false;
           this.altActive = false;
           this.hide();
-        }
-      });
-
-      window.addEventListener('keyup', (e) => {
-        if (e.key === 'Alt') {
-          this.altActive = false;
-          if (!this.active) {
-            this.hide();
-          }
         }
       });
     }

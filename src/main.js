@@ -354,10 +354,10 @@ function initEventBindings() {
             <li><strong>M3 铜版工坊</strong>：4大正交物理工具（刻针、干刻针、防蚀漆、刮磨器）与 2D 偏微分酸液咬蚀化学仿真、纯手工棉纸凹版压痕印样。</li>
             <li><strong>M4 调度编排</strong>：拓扑有向无环图哈希增量缓存、抢占式微任务调度、多格式图层导出 (SVG / CNC G-Code / Recipe JSON)。</li>
           </ul>
-          <p><strong>快捷操作指南 (Keyboard Shortcuts)</strong></p>
+          <p><strong>快捷操作指南 (Shortcuts & Interaction)</strong></p>
           <ul>
-            <li>按住 <code>Alt</code> 键在铜版或步骤画布上悬停：开启 160px 直径物理像素级放大镜 (Loupe Inspection)。</li>
-            <li>点击任意卡片右下角 <code>[⛶ 特写]</code>：展开超高清全屏视口特写。</li>
+            <li>点击主工作区任意步骤卡片或虚拟铜版画板：直接开启超高清全屏特写画廊（支持鼠标滚轮无级缩放与拖拽漫游）。</li>
+            <li>点击卡片右上角 <code>[⛶ 特写]</code>：唤出超高清全屏视口特写。</li>
             <li>点击 <code>[雕刻至虚拟铜版 →]</code>：将母版计算所得的数千条矢量线条无缝转录为物理干刻针痕迹，直接进入酸液腐蚀工坊。</li>
           </ul>
         `
@@ -392,6 +392,7 @@ function initEventBindings() {
   // Plate Fullscreen Lightbox Trigger (Replaces Loupe with full-viewport close-up)
   const canvas = $('canvas');
   const plateFullscreenBtn = $('plateFullscreenBtn');
+  const plateCanvasInspectBtn = $('plateCanvasInspectBtn');
   const openPlateLightbox = () => {
     if (!canvas) return;
     const mode = (window.getPlateState ? window.getPlateState().view : 'plate') || 'plate';
@@ -402,13 +403,23 @@ function initEventBindings() {
   if (plateFullscreenBtn) {
     plateFullscreenBtn.onclick = openPlateLightbox;
   }
+  if (plateCanvasInspectBtn) {
+    plateCanvasInspectBtn.onclick = openPlateLightbox;
+  }
   if (canvas) {
     canvas.ondblclick = openPlateLightbox;
+    canvas.onclick = () => {
+      const mode = (window.getPlateState ? window.getPlateState().view : 'plate') || 'plate';
+      if (mode === 'print') {
+        openPlateLightbox();
+      }
+    };
   }
 
   bindPlateStudioEvents({
     openTransferWizard: () => transferWizard.open(),
-    onMasterParamChange: () => pipelineController.scheduleParameterRun()
+    onMasterParamChange: () => pipelineController.scheduleParameterRun(),
+    openPlateFullscreen: openPlateLightbox
   });
 }
 

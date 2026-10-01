@@ -34,12 +34,15 @@
   - 顶层容器 `#app` 严格继承 `height: 100%; overflow: hidden;`，`main.app-main` 占满剩余视口净高；
   - `.workspace-area` 设置 `overflow-y: auto; overflow-x: hidden;`，用户通过鼠标滚轮或滚动条可无阻碍向下纵览全部 2 列 4 行大卡片及底部日志控制台。
 - **计算中清空画布机制**：当卡片处于 `COMPUTING` 状态时，执行 `ctx.clearRect` 并注入淡雅占位底，彻底清空上一张图或静物范式的生成残留。
-- **物理倒角压痕 (Plate Bevel)**：第 06 步印样卡片与独立导出均真实模拟四周纸边留白（Paper Margin）与 45° 倒角压印凹痕（背光阴影/受光高光），无任何工作台辅助框杂质。
+- **物理倒角压痕与古典双线外框 (Plate Bevel & Classical Engraved Double Frame)**：
+  - 继承历史版画经典边框架构（源自 `PhotoPro.framePaths` 与 `output-ui.js`），第 06 步印样卡片与独立导出均真实模拟纯棉纸四周留白（Paper Margin）与 45° 倒角压印凹痕（Plate Bevel）；
+  - **古典外侧双线边框**：在凹痕内侧绘制双层精细边框——外框主线（Primary Outer Frame Rule，线宽 ~1.8-2.0px / 900px 基准）与内框平行细线（Parallel Inner Hairline Frame，线宽 ~0.9-1.0px），并在内框向内留出安全呼吸边距（Clearance = 8px），将所有凹版版画线条优雅嵌于双线外框内，严密杜绝线条与外框穿模或挤出；
+  - 导出纯净画作本身（含纯棉纸留白、倒角压痕与古典双线外框），彻底剥离网页工作台边框与 DOM 界面元素。
 - **响应式降级**：屏幕宽度 `< 860px` 时自动重排为单列垂直流。
 - **DOM 挂载点**：`#stepFlowGridContainer`
 
 ### 1.2 悬浮微交互工具条 (Ghost Action Toolbar)
-- **实现位置**：`.card-viewport .card-actions`
+- **实现位置**：`.card-viewport .card-actions` 与铜版画板 `.plate-canvas-frame .plate-canvas-actions`
 - **交互规范**：
   - 默认状态：`opacity: 0; transform: translateY(-2px);` 完全透明，最大化留出纯净画布视口；
   - 悬停/聚焦状态：鼠标移入卡片视口时，`opacity: 1; transform: translateY(0);` 平滑浮现半透明微质感胶囊（`[⛶ 特写]`, `[⬇ 导出]`）；
@@ -60,9 +63,14 @@
   - 底部遥测栏集成 `[📋 运行日志]` 快捷触发键 (`#activityLogToggle`)，点击可一键平滑滑出 96px 高度日志视口；
   - 彻底释放主工作区垂直净空，确保大卡片自由向下滚动。
 
-### 1.5 虚拟铜版全屏特写与独立导出 (Plate Studio Fullscreen & Clean Export)
-- **全屏特写**：移除铜版上的圆形放大镜遮罩，顶栏提供 `[⛶ 全屏特写]` 显式按钮 (`#plateFullscreenBtn`) 与画布双击交互，一键唤出支持无级缩放与拖拽平移的 Lightbox 全屏特写。
-- **纯净画作导出**：在虚拟铜版点击“取一张印样”或在步骤流导出第 06 步时，系统仅导出纯净画作本身，完美还原棉纸四周留白与 45° 金属倒角凹印压痕，彻底剥离工作台边框与 DOM 界面元素。
+### 1.5 虚拟铜版全屏特写与古典样印导出 (Plate Studio Fullscreen & Engraved Print Export)
+- **彻底移除放大镜**：彻底剔除虚拟铜版上的物理放大镜（Loupe）和全局 Alt 键劫持，杜绝视野遮挡。
+- **画板直观全屏特写**：
+  - 画板右上角浮动操作条增设 `[⛶ 全屏特写]` 按钮 (`#plateCanvasInspectBtn`)；
+  - 顶部操作栏提供 `[⛶ 全屏特写]` 显式按钮 (`#plateFullscreenBtn`)；
+  - 在 `view === 'print'`（印样压印审阅）模式下，光标切换为 `zoom-in`，**单机画布任意区域直接弹出 Lightbox 超高清全屏特写**；
+  - 在任意模式下（`plate` / `depth` / `print`），**双击铜版画布直接弹出全屏特写**，支持滚轮平滑缩放与拖拽漫游。
+- **古典双线边框样印导出**：虚拟铜版在“压印预览”与“取一张印样”导出时，同步绘制古典双线外框（Primary Outer Frame + Parallel Inner Hairline Frame）并保留纯棉纸倒角压痕，导出符合版画工坊传统的高品质独立样印，不含任何 DOM 或工作台辅助边框。
 
 ### 1.6 铜版工坊 5 步步进器 (PlateProcessStepper)
 - **模板位置**：`#plateStepper`

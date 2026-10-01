@@ -115,11 +115,21 @@ export function setView(v) {
   if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
     document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   }
+  const canvas = getCanvas();
+  if (canvas) {
+    if (v === 'print') {
+      canvas.classList.add('cursor-zoom');
+      canvas.title = '点击查看全屏大图 (支持滚轮缩放与拖拽)';
+    } else {
+      canvas.classList.remove('cursor-zoom');
+      canvas.title = '数字铜版绘图区 (双击或点击右上角按钮可全屏特写)';
+    }
+  }
   if ($('caption')) {
     $('caption').textContent = {
       plate: '制版 / 针尖划开保护层，等待酸液进入',
       depth: '刻深 / 黑色为完整表面，亮度表示凹槽深度',
-      print: '印样 / 铜版左右反转，墨色由刻深与压印共同决定'
+      print: '印样 / 纯棉纸双线外框印痕，点击画布可全屏特写'
     }[v] || '';
   }
   dirty = true;
@@ -284,6 +294,30 @@ export function render(target = getCtx(), mode = view) {
     }
   }
   target.putImageData(im, 0, 0);
+
+  // Classical Engraved Double-Line Outer Frame Border (古典版画双线外框/边框)
+  if (mode === 'print' && target && typeof target.strokeRect === 'function') {
+    let outerMargin = Math.round(14 * W / 900);
+    let gap = Math.round(5 * W / 900);
+    let pw = W - 2 * pm;
+    let ph = H - 2 * pm;
+    let fx1 = pm + outerMargin;
+    let fy1 = pm + outerMargin;
+    let fw1 = pw - 2 * outerMargin;
+    let fh1 = ph - 2 * outerMargin;
+    let fx2 = fx1 + gap;
+    let fy2 = fy1 + gap;
+    let fw2 = fw1 - 2 * gap;
+    let fh2 = fh1 - 2 * gap;
+
+    if (typeof target.save === 'function') target.save();
+    target.strokeStyle = '#1a1918';
+    target.lineWidth = Math.max(1.2, 1.8 * W / 900);
+    target.strokeRect(fx1, fy1, fw1, fh1);
+    target.lineWidth = Math.max(0.6, 0.9 * W / 900);
+    target.strokeRect(fx2, fy2, fw2, fh2);
+    if (typeof target.restore === 'function') target.restore();
+  }
 }
 
 export function download(blob, name) {
@@ -353,7 +387,9 @@ export function bindPlateStudioEvents(options = {}) {
   if (canvas) {
     canvas.onpointerdown = e => {
       if (view === 'print') {
-        if ($('status')) $('status').textContent = '切换到铜版或刻深图继续制版';
+        if (typeof options.openPlateFullscreen === 'function') {
+          options.openPlateFullscreen();
+        }
         return;
       }
       snapshot();
@@ -372,6 +408,26 @@ export function bindPlateStudioEvents(options = {}) {
       drawing = false;
       last = null;
     };
+    canvas.onclick = e => {
+      if (view === 'print' && typeof options.openPlateFullscreen === 'function') {
+        options.openPlateFullscreen();
+      }
+    };
+    canvas.ondblclick = e => {
+      if (typeof options.openPlateFullscreen === 'function') {
+        options.openPlateFullscreen();
+      }
+    };
+
+    const inspectBtn = $('plateCanvasInspectBtn');
+    if (inspectBtn) {
+      inspectBtn.onclick = e => {
+        e?.stopPropagation?.();
+        if (typeof options.openPlateFullscreen === 'function') {
+          options.openPlateFullscreen();
+        }
+      };
+    }
   }
 
   if ($('print')) $('print').onclick = () => {

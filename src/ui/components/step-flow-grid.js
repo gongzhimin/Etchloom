@@ -514,14 +514,49 @@ class StepFlowGrid {
       ctx.lineWidth = 1;
       ctx.strokeRect(pm, pm, pw, ph);
 
-      // Scale and position paths strictly inside the plate area
-      const scale = Math.min(pw / sw, ph / sh);
-      const offX = pm + Math.round((pw - sw * scale) / 2);
-      const offY = pm + Math.round((ph - sh * scale) / 2);
+      // Classical Engraved Double-Line Outer Frame Border (古典版画双线外框/边框)
+      // Preserved from historical Etchloom printmaking design (PhotoPro.framePaths & output-ui.js)
+      const outerMargin = Math.round(14 * cw / 900);
+      const gap = Math.round(5 * cw / 900);
+      const clearance = Math.round(8 * cw / 900);
+
+      const fx1 = pm + outerMargin;
+      const fy1 = pm + outerMargin;
+      const fw1 = pw - 2 * outerMargin;
+      const fh1 = ph - 2 * outerMargin;
+
+      const fx2 = fx1 + gap;
+      const fy2 = fy1 + gap;
+      const fw2 = fw1 - 2 * gap;
+      const fh2 = fh1 - 2 * gap;
+
+      ctx.save();
+      ctx.strokeStyle = options.strokeColor || '#1a1918';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // 1. Primary Outer Frame Rule (外框主线)
+      ctx.lineWidth = Math.max(1.2, 1.8 * cw / 900);
+      ctx.strokeRect(fx1, fy1, fw1, fh1);
+
+      // 2. Parallel Inner Hairline Frame (细内边框)
+      ctx.lineWidth = Math.max(0.6, 0.9 * cw / 900);
+      ctx.strokeRect(fx2, fy2, fw2, fh2);
+      ctx.restore();
+
+      // Artwork nesting area strictly inside the inner frame clearance
+      const artX = fx2 + clearance;
+      const artY = fy2 + clearance;
+      const artW = fw2 - 2 * clearance;
+      const artH = fh2 - 2 * clearance;
+
+      const scale = Math.min(artW / sw, artH / sh);
+      const offX = artX + Math.round((artW - sw * scale) / 2);
+      const offY = artY + Math.round((artH - sh * scale) / 2);
 
       ctx.save();
       ctx.beginPath();
-      ctx.rect(pm, pm, pw, ph);
+      ctx.rect(artX, artY, artW, artH);
       ctx.clip();
 
       ctx.strokeStyle = options.strokeColor || '#1a1918';

@@ -862,6 +862,19 @@ body.mode-plate aside.app-sidebar #drawer2 {
   background: #ffffff;
 }
 
+.plate-canvas-actions {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 25;
+  display: flex;
+  gap: 6px;
+}
+
+.plate-canvas-frame canvas.cursor-zoom {
+  cursor: zoom-in !important;
+}
+
 .plate-caption {
   display: flex;
   justify-content: space-between;

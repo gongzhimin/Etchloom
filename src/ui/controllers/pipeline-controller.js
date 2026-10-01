@@ -390,15 +390,51 @@ export class PipelineController {
         ctx.lineWidth = 1;
         ctx.strokeRect(pm, pm, pw, ph);
 
+        // Classical Engraved Double-Line Outer Frame Border (古典版画双线外框/边框)
+        // Preserved from historical Etchloom printmaking design (PhotoPro.framePaths & output-ui.js)
+        const outerMargin = Math.round(14 * expW / 900);
+        const gap = Math.round(5 * expW / 900);
+        const clearance = Math.round(8 * expW / 900);
+
+        const fx1 = pm + outerMargin;
+        const fy1 = pm + outerMargin;
+        const fw1 = pw - 2 * outerMargin;
+        const fh1 = ph - 2 * outerMargin;
+
+        const fx2 = fx1 + gap;
+        const fy2 = fy1 + gap;
+        const fw2 = fw1 - 2 * gap;
+        const fh2 = fh1 - 2 * gap;
+
+        ctx.save();
+        ctx.strokeStyle = '#1a1918';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // 1. Primary Outer Frame Rule (外框主线)
+        ctx.lineWidth = Math.max(1.4, 2.0 * expW / 900);
+        ctx.strokeRect(fx1, fy1, fw1, fh1);
+
+        // 2. Parallel Inner Hairline Frame (细内边框)
+        ctx.lineWidth = Math.max(0.7, 1.0 * expW / 900);
+        ctx.strokeRect(fx2, fy2, fw2, fh2);
+        ctx.restore();
+
+        // Artwork Display Area strictly nested within inner frame clearance
+        const artX = fx2 + clearance;
+        const artY = fy2 + clearance;
+        const artW = fw2 - 2 * clearance;
+        const artH = fh2 - 2 * clearance;
+
         // Render intaglio ink strokes
         if (this.lastMasterPaths && this.lastMasterPaths.length > 0) {
-          const scale = Math.min(pw / curW, ph / curH);
-          const offX = pm + Math.round((pw - curW * scale) / 2);
-          const offY = pm + Math.round((ph - curH * scale) / 2);
+          const scale = Math.min(artW / curW, artH / curH);
+          const offX = artX + Math.round((artW - curW * scale) / 2);
+          const offY = artY + Math.round((artH - curH * scale) / 2);
 
           ctx.save();
           ctx.beginPath();
-          ctx.rect(pm, pm, pw, ph);
+          ctx.rect(artX, artY, artW, artH);
           ctx.clip();
 
           ctx.strokeStyle = '#1a1918';

@@ -249,7 +249,10 @@ export const plateWorkspaceTemplate = `
     </div>
 
     <!-- High-Resolution Plate Canvas Frame (Default 1500x1100 2K) -->
-    <div class="plate-canvas-frame">
+    <div class="plate-canvas-frame" id="plateCanvasFrame">
+      <div class="plate-canvas-actions">
+        <button id="plateCanvasInspectBtn" class="card-btn btn-inspect-layer" title="全屏特写 (支持滚轮缩放与拖拽)">⛶ <span data-i18n="card.inspect">全屏特写</span></button>
+      </div>
       <canvas id="canvas" width="1500" height="1100" aria-label="数字铜版绘图区"></canvas>
     </div>
 
