@@ -34,15 +34,15 @@
   - 顶层容器 `#app` 严格继承 `height: 100%; overflow: hidden;`，`main.app-main` 占满剩余视口净高；
   - `.workspace-area` 设置 `overflow-y: auto; overflow-x: hidden;`，用户通过鼠标滚轮或滚动条可无阻碍向下纵览全部 2 列 4 行大卡片及底部日志控制台。
 - **计算中清空画布机制**：当卡片处于 `COMPUTING` 状态时，执行 `ctx.clearRect` 并注入淡雅占位底，彻底清空上一张图或静物范式的生成残留。
-- **物理倒角压痕与多型古典外边框 (Plate Bevel & Multi-Style Engraved Outer Frames)**：
-  - 继承历史版画经典边框架构（源自 `PhotoPro.framePaths` 与 `output-ui.js`），第 06 步印样卡片与独立导出均真实模拟纯棉纸四周留白（Paper Margin）与 45° 倒角压印凹痕（Plate Bevel）；
-  - **外框严格位于版画外侧，绝不小于画面 (Strict Outer Enclosure)**：外框主线坐标严格基于纸面留白外圈（`geom.outer.w > geom.art.w`, `geom.outer.h > geom.art.h`），内部版画面积严格嵌套于内框的安全呼吸边距（Clearance = 10px）内并执行物理裁切，**数学上绝对保证外边框位于画面外侧，杜绝画面溢出外框或外框切入画面的缺陷**；
+- **纯净版画样印与古典外边框 (Pure Fine-Art Print & Multi-Style Engraved Frames)**：
+  - **纯净样印输出（彻底剥离工作台铜版凹痕与阴影）**：彻底剔除虚拟工作台上金属铜版产生的 3D 倒角阴影条（Bevel Shadows）与凹槽灰底。导出与印样预览仅呈现纯净高级的纯棉艺术纸基（象牙白细纹 / 暖白粗纹纤维底）与选定外框，真实还原美术馆版画装裱品级；
+  - **外框严格位于版画外侧，绝不小于画面 (Strict Outer Enclosure)**：外框坐标严格基于纸面留白外圈（`geom.outer.w > geom.art.w`, `geom.outer.h > geom.art.h`），内部版画面积严格嵌套于内框的安全呼吸边距（Clearance = 10px）内并执行物理裁切，**数学上绝对保证外边框位于画面外侧，杜绝画面溢出外框或外框切入画面的缺陷**；
   - **4 种专业外框类型支持 (Multi-Style Frame Engine)**：
     1. `double`（双层古典边框）：外框主线（1.8px）+ 平行内细线（0.9px）+ 均匀间距，重现经典工坊双层印痕；
     2. `fine`（单线精细刻框）：单线精雅轮廓（1.4px），留白清透典雅；
-    3. `rough`（手工古拙边框）：四边由 14 段手工古拙刻痕拼接，微颤不规则刻痕真实还原手工雕刻铜版时的刀感；
-    4. `none`（无外框）：仅保留纯棉纸底色与金属倒角凹印，纯净自然；
-  - 导出纯净画作本身（含纯棉纸留白、倒角压痕与所选外边框），彻底剥离网页工作台边框与 DOM 界面元素。
+    3. `rough`（手工古拙边框）：采用真多频刀痕算法，具备手工刀刻的顿挫粗细张力（1.0px~3.5px 随刀锋深浅动态起伏）、四角手工出刀交叉（Corner Chisel Overshoots 7px 出头痕）、以及沿边刻刀微颤飞刺（Burr Chatter & Companion Flecks），真实还原手工木版与铜版手刻古拙韵味；
+    4. `none`（无外框）：仅保留纯棉纸底色与纯净画作，纯净自然；
+  - 导出纯净画作本身（含纯棉纸留白与所选外边框），彻底剥离网页工作台边框、工作台阴影与 DOM 界面元素。
 - **响应式降级**：屏幕宽度 `< 860px` 时自动重排为单列垂直流。
 - **DOM 挂载点**：`#stepFlowGridContainer`
 

@@ -689,30 +689,12 @@ function getFrameGeometry(cw, ch, style = 'double') {
  * @param {string} [strokeColor='#1a1918']
  */
 function drawEngravedFrame(ctx, cw, ch, geom, strokeColor = '#1a1918') {
-  if (!ctx || !geom) return;
+  if (!ctx || !geom || geom.style === 'none') return;
 
-  // 1. Soft paper plate depression (impressed intaglio plate surface)
-  ctx.fillStyle = '#f7f4ec';
-  ctx.fillRect(geom.pm, geom.pm, geom.pw, geom.ph);
-
-  // 2. Debossed plate bevel: top & left shadow side
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
-  ctx.fillRect(geom.pm - geom.bw, geom.pm - geom.bw, geom.pw + 2 * geom.bw, geom.bw);
-  ctx.fillRect(geom.pm - geom.bw, geom.pm - geom.bw, geom.bw, geom.ph + 2 * geom.bw);
-
-  // Bottom & right highlight side
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-  ctx.fillRect(geom.pm - geom.bw, geom.pm + geom.ph, geom.pw + 2 * geom.bw, geom.bw);
-  ctx.fillRect(geom.pm + geom.pw, geom.pm - geom.bw, geom.bw, geom.ph + 2 * geom.bw);
-
-  // Bevel boundary seam
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(geom.pm, geom.pm, geom.pw, geom.ph);
-
-  // 3. Render Chosen Frame Style Rules
+  // Render Chosen Classical Frame Rules on Archival Paper Ground
   ctx.save();
   ctx.strokeStyle = strokeColor;
+  ctx.fillStyle = strokeColor;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
@@ -729,32 +711,78 @@ function drawEngravedFrame(ctx, cw, ch, geom, strokeColor = '#1a1918') {
     ctx.lineWidth = geom.outer.lineWidth;
     ctx.strokeRect(geom.outer.x, geom.outer.y, geom.outer.w, geom.outer.h);
   } else if (geom.style === 'rough') {
-    // Artisanal rough segmented hand-engraved border
+    // Authentic Artisanal Hand-cut / Woodblock Rough Frame (古拙手工刀刻边框)
     const { x, y, w, h, lineWidth } = geom.outer;
-    const sides = [
-      [[x, y], [x + w, y]],
-      [[x + w, y], [x + w, y + h]],
-      [[x + w, y + h], [x, y + h]],
-      [[x, y + h], [x, y]]
+    const scale = Math.max(0.7, Math.min(w, h) / 660);
+    const cornerOvershoot = Math.round(7 * scale);
+    const edges = [
+      // Top: Left to Right
+      { p1: [x - cornerOvershoot, y], p2: [x + w + cornerOvershoot, y], isH: true, seed: 101 },
+      // Right: Top to Bottom
+      { p1: [x + w, y - cornerOvershoot], p2: [x + w, y + h + cornerOvershoot], isH: false, seed: 202 },
+      // Bottom: Right to Left
+      { p1: [x + w + cornerOvershoot, y + h], p2: [x - cornerOvershoot, y + h], isH: true, seed: 303 },
+      // Left: Bottom to Top
+      { p1: [x, y + h + cornerOvershoot], p2: [x, y - cornerOvershoot], isH: false, seed: 404 }
     ];
-    let seed = 42;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    for (const [p1, p2] of sides) {
-      const parts = 14;
-      for (let p = 0; p < parts; p++) {
-        const t1 = p / parts;
-        const t2 = (p + 1) / parts;
-        const j1 = (rnd() - 0.5) * 1.5;
-        const j2 = (rnd() - 0.5) * 1.5;
-        const isH = (p1[1] === p2[1]);
-        const x1 = p1[0] + (p2[0] - p1[0]) * t1 + (isH ? 0 : j1);
-        const y1 = p1[1] + (p2[1] - p1[1]) * t1 + (isH ? j1 : 0);
-        const x2 = p1[0] + (p2[0] - p1[0]) * t2 + (isH ? 0 : j2);
-        const y2 = p1[1] + (p2[1] - p1[1]) * t2 + (isH ? j2 : 0);
+
+    for (const edge of edges) {
+      const { p1, p2, isH, seed } = edge;
+      const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      const segments = Math.max(48, Math.round(len / 8));
+      let s = seed;
+      const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+      const pts = [];
+      for (let k = 0; k <= segments; k++) {
+        const t = k / segments;
+        // Multi-octave tactile chisel resistance wave
+        const wave1 = Math.sin(t * Math.PI * 3 + seed * 0.1) * 1.8 * scale;
+        const wave2 = Math.sin(t * Math.PI * 8 + seed * 0.2) * 1.0 * scale;
+        const wave3 = Math.sin(t * Math.PI * 23 + seed * 0.3) * 0.5 * scale;
+        const jitter = (rnd() - 0.5) * 1.6 * scale;
+        const offset = wave1 + wave2 + wave3 + jitter;
+
+        const basePx = p1[0] + (p2[0] - p1[0]) * t;
+        const basePy = p1[1] + (p2[1] - p1[1]) * t;
+
+        const px = isH ? basePx : basePx + offset;
+        const py = isH ? basePy + offset : basePy;
+
+        // Burin cut depth and line swell
+        const widthPulse = Math.sin(t * Math.PI * 4 + seed * 0.15);
+        const widthJitter = (rnd() - 0.5) * 0.5;
+        const strokeW = Math.max(0.6 * scale, lineWidth * (1.1 + 0.65 * widthPulse + widthJitter));
+
+        pts.push({ x: px, y: py, width: strokeW });
+      }
+
+      // Draw undulating chiseled line
+      for (let k = 1; k < pts.length; k++) {
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineWidth = lineWidth * (0.8 + rnd() * 0.45);
+        ctx.lineWidth = pts[k].width;
+        ctx.moveTo(pts[k - 1].x, pts[k - 1].y);
+        ctx.lineTo(pts[k].x, pts[k].y);
+        ctx.stroke();
+      }
+
+      // Hand-engraved chisel chatter & companion burr flecks (手工飞刺与刀花)
+      const fleckCount = Math.floor(4 + rnd() * 4);
+      for (let f = 0; f < fleckCount; f++) {
+        const ft = 0.1 + rnd() * 0.8;
+        const idx = Math.floor(ft * segments);
+        const basePt = pts[idx];
+        const side = rnd() > 0.5 ? 1 : -1;
+        const dist = (2.5 + rnd() * 3.5) * scale;
+        const fLen = (5 + rnd() * 12) * scale;
+        const fx1 = isH ? basePt.x : basePt.x + side * dist;
+        const fy1 = isH ? basePt.y + side * dist : basePt.y;
+        const fx2 = isH ? fx1 + fLen : fx1;
+        const fy2 = isH ? fy1 : fy1 + fLen;
+        ctx.beginPath();
+        ctx.lineWidth = Math.max(0.5 * scale, lineWidth * 0.5);
+        ctx.moveTo(fx1, fy1);
+        ctx.lineTo(fx2, fy2);
         ctx.stroke();
       }
     }

@@ -290,38 +290,20 @@ export function render(target = getCtx(), mode = view) {
       } else {
         let texture = rough ? noise * 9 : noise * 3.5;
         let paperR = 248 - texture, paperG = 242 - texture, paperB = 226 - texture;
-        let dxLeft = x - pm, dxRight = W - 1 - pm - x;
-        let dyTop = y - pm, dyBottom = H - 1 - pm - y;
-        let minBorderDist = Math.min(dxLeft, dxRight, dyTop, dyBottom);
-        let bevel = 0;
-
-        if (minBorderDist < -bw) {
-          r = paperR + 2;
-          g = paperG + 1;
-          b = paperB;
-        } else if (minBorderDist <= bw) {
-          let t = (minBorderDist + bw) / (2 * bw);
-          let isShadowSide = (dxLeft < dxRight && dxLeft <= dyBottom) || (dyTop < dyBottom && dyTop <= dxRight);
-          bevel = isShadowSide ? (-54 * pressure * Math.sin(t * Math.PI)) : (38 * pressure * Math.sin(t * Math.PI));
-          r = Math.max(0, Math.min(255, paperR + bevel));
-          g = Math.max(0, Math.min(255, paperG + bevel));
-          b = Math.max(0, Math.min(255, paperB + bevel));
-        } else {
-          let dropOut = 0.07 * (1 - pressure);
-          let effD = Math.max(0, d - dropOut);
-          let transferRate = effD > 0 ? (1 - Math.exp(-effD * (1.8 + 13.0 * pressure))) : 0;
-          let burrInk = bu * 0.95 * ink * (0.30 + 0.70 * pressure);
-          let dryThreshold = Math.max(0, (0.65 - ink) * 1.65);
-          let dryBreak = (dryThreshold > 0 && noise < dryThreshold) ? 0.0 : 1.0;
-          let lineInk = (transferRate * (0.25 + 0.75 * ink) + burrInk) * dryBreak;
-          let variation = rough ? (0.75 + grainNoise[(i + seed * 997) % N] * 0.5) : 1;
-          let surfaceTone = tone * ink * 0.32;
-          let black = Math.min(0.98, lineInk * variation + surfaceTone);
-          let pressedR = paperR - 1.5, pressedG = paperG - 1.5, pressedB = paperB - 1;
-          r = Math.max(0, Math.min(255, pressedR * (1 - black)));
-          g = Math.max(0, Math.min(255, pressedG * (1 - black)));
-          b = Math.max(0, Math.min(255, pressedB * (1 - black)));
-        }
+        let dropOut = 0.07 * (1 - pressure);
+        let effD = Math.max(0, d - dropOut);
+        let transferRate = effD > 0 ? (1 - Math.exp(-effD * (1.8 + 13.0 * pressure))) : 0;
+        let burrInk = bu * 0.95 * ink * (0.30 + 0.70 * pressure);
+        let dryThreshold = Math.max(0, (0.65 - ink) * 1.65);
+        let dryBreak = (dryThreshold > 0 && noise < dryThreshold) ? 0.0 : 1.0;
+        let lineInk = (transferRate * (0.25 + 0.75 * ink) + burrInk) * dryBreak;
+        let variation = rough ? (0.75 + grainNoise[(i + seed * 997) % N] * 0.5) : 1;
+        let surfaceTone = tone * ink * 0.32;
+        let black = Math.min(0.98, lineInk * variation + surfaceTone);
+        let pressedR = paperR - 1.5, pressedG = paperG - 1.5, pressedB = paperB - 1;
+        r = Math.max(0, Math.min(255, pressedR * (1 - black)));
+        g = Math.max(0, Math.min(255, pressedG * (1 - black)));
+        b = Math.max(0, Math.min(255, pressedB * (1 - black)));
       }
       a[i * 4] = r;
       a[i * 4 + 1] = g;
@@ -335,14 +317,12 @@ export function render(target = getCtx(), mode = view) {
   if (mode === 'print' && target && typeof target.strokeRect === 'function') {
     let style = plateFrameStyle || (typeof document !== 'undefined' ? (document.getElementById('plateFrameStyle')?.value || document.getElementById('frameStyle')?.value) : 'double') || 'double';
     if (style !== 'none') {
-      let outerMargin = Math.round(14 * W / 900);
+      let margin = Math.round(26 * W / 900);
       let gap = Math.round(5 * W / 900);
-      let pw = W - 2 * pm;
-      let ph = H - 2 * pm;
-      let fx1 = pm + outerMargin;
-      let fy1 = pm + outerMargin;
-      let fw1 = pw - 2 * outerMargin;
-      let fh1 = ph - 2 * outerMargin;
+      let fx1 = margin;
+      let fy1 = margin;
+      let fw1 = W - 2 * margin;
+      let fh1 = H - 2 * margin;
 
       if (typeof target.save === 'function') target.save();
       target.strokeStyle = '#1a1918';
@@ -363,31 +343,73 @@ export function render(target = getCtx(), mode = view) {
         target.lineWidth = Math.max(1.0, 1.5 * W / 900);
         target.strokeRect(fx1, fy1, fw1, fh1);
       } else if (style === 'rough') {
-        target.lineWidth = Math.max(1.0, 1.5 * W / 900);
-        const sides = [
-          [[fx1, fy1], [fx1 + fw1, fy1]],
-          [[fx1 + fw1, fy1], [fx1 + fw1, fy1 + fh1]],
-          [[fx1 + fw1, fy1 + fh1], [fx1, fy1 + fh1]],
-          [[fx1, fy1 + fh1], [fx1, fy1]]
+        // Authentic Artisanal Hand-cut Rough Frame
+        const scale = Math.max(0.7, Math.min(fw1, fh1) / 660);
+        const cornerOvershoot = Math.round(7 * scale);
+        const lineWidth = Math.max(1.2, 1.6 * W / 900);
+        const edges = [
+          { p1: [fx1 - cornerOvershoot, fy1], p2: [fx1 + fw1 + cornerOvershoot, fy1], isH: true, seed: 101 },
+          { p1: [fx1 + fw1, fy1 - cornerOvershoot], p2: [fx1 + fw1, fy1 + fh1 + cornerOvershoot], isH: false, seed: 202 },
+          { p1: [fx1 + fw1 + cornerOvershoot, fy1 + fh1], p2: [fx1 - cornerOvershoot, fy1 + fh1], isH: true, seed: 303 },
+          { p1: [fx1, fy1 + fh1 + cornerOvershoot], p2: [fx1, fy1 - cornerOvershoot], isH: false, seed: 404 }
         ];
-        let seed = 42;
-        const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-        for (const [p1, p2] of sides) {
-          const parts = 14;
-          for (let p = 0; p < parts; p++) {
-            const t1 = p / parts;
-            const t2 = (p + 1) / parts;
-            const j1 = (rnd() - 0.5) * 1.5;
-            const j2 = (rnd() - 0.5) * 1.5;
-            const isH = (p1[1] === p2[1]);
-            const x1 = p1[0] + (p2[0] - p1[0]) * t1 + (isH ? 0 : j1);
-            const y1 = p1[1] + (p2[1] - p1[1]) * t1 + (isH ? j1 : 0);
-            const x2 = p1[0] + (p2[0] - p1[0]) * t2 + (isH ? 0 : j2);
-            const y2 = p1[1] + (p2[1] - p1[1]) * t2 + (isH ? j2 : 0);
+
+        for (const edge of edges) {
+          const { p1, p2, isH, seed: eSeed } = edge;
+          const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+          const segments = Math.max(48, Math.round(len / 8));
+          let s = eSeed;
+          const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+          const pts = [];
+          for (let k = 0; k <= segments; k++) {
+            const t = k / segments;
+            const wave1 = Math.sin(t * Math.PI * 3 + eSeed * 0.1) * 1.8 * scale;
+            const wave2 = Math.sin(t * Math.PI * 8 + eSeed * 0.2) * 1.0 * scale;
+            const wave3 = Math.sin(t * Math.PI * 23 + eSeed * 0.3) * 0.5 * scale;
+            const jitter = (rnd() - 0.5) * 1.6 * scale;
+            const offset = wave1 + wave2 + wave3 + jitter;
+
+            const basePx = p1[0] + (p2[0] - p1[0]) * t;
+            const basePy = p1[1] + (p2[1] - p1[1]) * t;
+
+            const px = isH ? basePx : basePx + offset;
+            const py = isH ? basePy + offset : basePy;
+
+            const widthPulse = Math.sin(t * Math.PI * 4 + eSeed * 0.15);
+            const widthJitter = (rnd() - 0.5) * 0.5;
+            const strokeW = Math.max(0.6 * scale, lineWidth * (1.1 + 0.65 * widthPulse + widthJitter));
+
+            pts.push({ x: px, y: py, width: strokeW });
+          }
+
+          for (let k = 1; k < pts.length; k++) {
             if (typeof target.beginPath === 'function') {
               target.beginPath();
-              target.moveTo(x1, y1);
-              target.lineTo(x2, y2);
+              target.lineWidth = pts[k].width;
+              target.moveTo(pts[k - 1].x, pts[k - 1].y);
+              target.lineTo(pts[k].x, pts[k].y);
+              target.stroke();
+            }
+          }
+
+          const fleckCount = Math.floor(4 + rnd() * 4);
+          for (let f = 0; f < fleckCount; f++) {
+            const ft = 0.1 + rnd() * 0.8;
+            const idx = Math.floor(ft * segments);
+            const basePt = pts[idx];
+            const side = rnd() > 0.5 ? 1 : -1;
+            const dist = (2.5 + rnd() * 3.5) * scale;
+            const fLen = (5 + rnd() * 12) * scale;
+            const fxA = isH ? basePt.x : basePt.x + side * dist;
+            const fyA = isH ? basePt.y + side * dist : basePt.y;
+            const fxB = isH ? fxA + fLen : fxA;
+            const fyB = isH ? fyA : fyA + fLen;
+            if (typeof target.beginPath === 'function') {
+              target.beginPath();
+              target.lineWidth = Math.max(0.5 * scale, lineWidth * 0.5);
+              target.moveTo(fxA, fyA);
+              target.lineTo(fxB, fyB);
               target.stroke();
             }
           }
