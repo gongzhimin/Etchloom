@@ -8,6 +8,7 @@
     "model:start": "powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1",
     "test": "node scripts/test-runner.cjs",
     "benchmark": "node scripts/benchmark.cjs",
+    "build": "node scripts/prepare-desktop.cjs",
     "build:desktop": "node scripts/prepare-desktop.cjs",
     "icons:generate": "node scripts/generate-icons.cjs"
   },
