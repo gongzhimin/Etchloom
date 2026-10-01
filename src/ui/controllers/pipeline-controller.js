@@ -190,17 +190,19 @@ export class PipelineController {
             if (stage === 1 && artifact) {
               this.lastStage1LineMap = artifact;
               this.stepGrid.updateStepPreview(1, artifact);
-              this.stepGrid.setStepStatus(1, 'DONE', neuralLineUsed ? 'Informative Drawings (CUDA)' : '边缘线描感知', stageElapsed);
-              this.log('管线', `阶段 1 完成: 灰度线描感知抽取 (${neuralLineUsed ? 'CUDA 神经网络' : '几何退避'})`, 'done');
+              this.stepGrid.setStepStatus(1, 'DONE', neuralLineUsed ? 'Informative Drawings (CUDA)' : '线描感知', stageElapsed);
+              this.log('管线', `阶段 1 完成: 线描感知抽取 (${neuralLineUsed ? 'CUDA 神经网络' : '几何退避'})`, 'done');
             } else if (stage === 2 && artifact) {
+              this.lastStage2Artifact = artifact;
               this.stepGrid.updateStepPreview(2, artifact);
               this.stepGrid.setStepStatus(2, 'DONE', '3D几何等高流场', stageElapsed);
               this.log('管线', '阶段 2 完成: 3D 几何等高流场与色调场合成', 'done');
             } else if (stage === 3 && artifact?.vectorContours) {
               this.lastContours = artifact.vectorContours;
+              this.lastContourMask = artifact.contourMask;
               this.stepGrid.updateStepPaths(3, artifact.vectorContours, curW, curH);
               this.stepGrid.setStepStatus(3, 'DONE', `${artifact.vectorContours.length} 条空间轮廓`, stageElapsed);
-              this.log('管线', `阶段 3 完成: 空气透视与空间骨干轮廓 (${artifact.vectorContours.length} 条轮廓)`, 'done');
+              this.log('管线', `阶段 3 完成: 透视空间骨干轮廓 (${artifact.vectorContours.length} 条轮廓)`, 'done');
             } else if (stage === 4 && artifact?.hatchingPaths) {
               this.lastHatching = artifact.hatchingPaths;
               this.stepGrid.updateStepPaths(4, artifact.hatchingPaths, curW, curH);
@@ -211,7 +213,29 @@ export class PipelineController {
           }
         });
 
-        this.lastMasterPaths = outputs.masterResult?.paths || [];
+        const masterPaths = outputs.stage5?.paths || outputs.masterResult?.paths || [...(this.lastContours || []), ...(this.lastHatching || [])];
+        this.lastMasterPaths = masterPaths;
+
+        if (this.stageCache) {
+          const s1Params = { lotus3D: $('lotus3D')?.checked ?? true };
+          const s2Params = { exposure: recipe.params.lineThreshold, blackPoint: Number($('blackPoint')?.value || 0), whitePoint: Number($('whitePoint')?.value || 100) };
+          const s3Params = { contourDetail: recipe.params.contourDetail, aerialStrength: recipe.params.aerialStrength, needleWidth: recipe.params.needleWidth };
+          const s4Params = { density: recipe.params.density, cross: recipe.params.cross, curvatureGate: Number($('curvatureGate')?.value || 70) };
+          const s5Params = {};
+
+          const h1 = this.stageCache.computeStageHash(1, s1Params, '');
+          const h2 = this.stageCache.computeStageHash(2, s2Params, h1);
+          const h3 = this.stageCache.computeStageHash(3, s3Params, h2);
+          const h4 = this.stageCache.computeStageHash(4, s4Params, h3);
+          const h5 = this.stageCache.computeStageHash(5, s5Params, h4);
+
+          if (outputs.stage1) this.stageCache.put(1, h1, outputs.stage1);
+          if (outputs.stage2) this.stageCache.put(2, h2, outputs.stage2);
+          if (outputs.stage3) this.stageCache.put(3, h3, outputs.stage3);
+          if (outputs.stage4) this.stageCache.put(4, h4, outputs.stage4);
+          if (outputs.stage5) this.stageCache.put(5, h5, outputs.stage5);
+        }
+
         if (this.stepGrid) {
           const stage5Elapsed = parseFloat((_now() - stageStart).toFixed(1));
           this.stepGrid.updateStepPaths(5, this.lastMasterPaths, curW, curH);
@@ -220,12 +244,12 @@ export class PipelineController {
 
           const renderStart = _now();
           this.stepGrid.updateStepPaths(6, this.lastMasterPaths, curW, curH, {
-            bgTone: '#f0ebd9',
+            bgTone: '#faf7f0',
             strokeColor: '#1a1918'
           });
           const renderElapsed = parseFloat((_now() - renderStart).toFixed(1));
-          this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样仿真', renderElapsed);
-          this.log('仿真', '阶段 6 完成: 纯棉纸凹版印样压印仿真完成', 'done');
+          this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', renderElapsed);
+          this.log('仿真', '阶段 6 完成: 纯棉纸凹版印样仿真完成', 'done');
         }
 
         const tEnd = (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -327,7 +351,72 @@ export class PipelineController {
         stepCanvas.toBlob(b => b && download(b, 'step5_master_vector.png'));
       }
     } else if (stepIdx === 6) {
-      if (stepCanvas) {
+      // Export pristine physical fine-art print on cotton paper with plate bevel
+      const expW = Math.max(1200, curW);
+      const expH = Math.max(880, Math.round(curH * (expW / curW)));
+      const c = document.createElement('canvas');
+      c.width = expW;
+      c.height = expH;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        // Pure archival cotton paper
+        ctx.fillStyle = '#faf7f0';
+        ctx.fillRect(0, 0, expW, expH);
+
+        const pm = Math.round(36 * expW / 900);
+        const bw = Math.round(8 * expW / 900);
+        const pw = expW - 2 * pm;
+        const ph = expH - 2 * pm;
+
+        // Impressed plate indentation
+        ctx.fillStyle = '#f7f4ec';
+        ctx.fillRect(pm, pm, pw, ph);
+
+        // Bevel top/left shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+        ctx.fillRect(pm - bw, pm - bw, pw + 2 * bw, bw);
+        ctx.fillRect(pm - bw, pm - bw, bw, ph + 2 * bw);
+
+        // Bevel bottom/right highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillRect(pm - bw, pm + ph, pw + 2 * bw, bw);
+        ctx.fillRect(pm + pw, pm - bw, bw, ph + 2 * bw);
+
+        // Plate edge
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(pm, pm, pw, ph);
+
+        // Render intaglio ink strokes
+        if (this.lastMasterPaths && this.lastMasterPaths.length > 0) {
+          const scale = Math.min(pw / curW, ph / curH);
+          const offX = pm + Math.round((pw - curW * scale) / 2);
+          const offY = pm + Math.round((ph - curH * scale) / 2);
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(pm, pm, pw, ph);
+          ctx.clip();
+
+          ctx.strokeStyle = '#1a1918';
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+
+          for (const path of this.lastMasterPaths) {
+            const pts = path.points || path;
+            if (!pts || pts.length < 2) continue;
+            ctx.beginPath();
+            ctx.lineWidth = Math.max(0.6, (path.width || 0.8) * scale);
+            ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+            for (let j = 1; j < pts.length; j++) {
+              ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+            }
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+        c.toBlob(b => b && download(b, 'step6_plate_print.png'));
+      } else if (stepCanvas) {
         stepCanvas.toBlob(b => b && download(b, 'step6_plate_print.png'));
       }
     }
@@ -419,11 +508,11 @@ export class PipelineController {
       if (!Runner) return;
 
       const previousOutputs = {
-        stage1: this.stageCache ? this.stageCache.get(1) : (this.lastStage1LineMap ? { width: curW, height: curH, data: this.lastStage1LineMap.pixels || this.lastStage1LineMap } : null),
-        stage2: this.stageCache ? this.stageCache.get(2) : null,
-        stage3: this.stageCache ? this.stageCache.get(3) : null,
-        stage4: this.stageCache ? this.stageCache.get(4) : null,
-        stage5: this.stageCache ? this.stageCache.get(5) : null
+        stage1: (this.stageCache && this.stageCache.get(1)) || (this.lastStage1LineMap ? { width: curW, height: curH, data: this.lastStage1LineMap.pixels || this.lastStage1LineMap } : null),
+        stage2: (this.stageCache && this.stageCache.get(2)) || this.lastStage2Artifact || null,
+        stage3: (this.stageCache && this.stageCache.get(3)) || (this.lastContours ? { vectorContours: this.lastContours, contourMask: this.lastContourMask } : null),
+        stage4: (this.stageCache && this.stageCache.get(4)) || (this.lastHatching ? { hatchingPaths: this.lastHatching } : null),
+        stage5: (this.stageCache && this.stageCache.get(5)) || null
       };
 
       if (!previousOutputs.stage1 && this.lastStage1LineMap) {
@@ -443,10 +532,12 @@ export class PipelineController {
         if (!this.stepGrid) return;
         const stageElapsed = parseFloat((_now() - stageStart).toFixed(1));
         if (stage === 2 && artifact) {
+          this.lastStage2Artifact = artifact;
           this.stepGrid.updateStepPreview(2, artifact);
           this.stepGrid.setStepStatus(2, 'DONE', '3D几何流场', stageElapsed);
         } else if (stage === 3 && artifact?.vectorContours) {
           this.lastContours = artifact.vectorContours;
+          this.lastContourMask = artifact.contourMask;
           this.stepGrid.updateStepPaths(3, artifact.vectorContours, curW, curH);
           this.stepGrid.setStepStatus(3, 'DONE', `${artifact.vectorContours.length} 条空间轮廓`, stageElapsed);
         } else if (stage === 4 && artifact?.hatchingPaths) {
@@ -459,7 +550,7 @@ export class PipelineController {
 
       if (signal && signal.aborted) return;
 
-      const masterPaths = outputs.stage5?.masterResult?.paths || outputs.masterResult?.paths || [...(this.lastContours || []), ...(this.lastHatching || [])];
+      const masterPaths = outputs.stage5?.paths || outputs.stage5?.masterResult?.paths || outputs.masterResult?.paths || [...(this.lastContours || []), ...(this.lastHatching || [])];
       this.lastMasterPaths = masterPaths;
 
       if (this.stepGrid) {
@@ -468,10 +559,10 @@ export class PipelineController {
         this.stepGrid.setStepStatus(5, 'DONE', `${masterPaths.length} 矢量母版线条`, s5Elapsed);
 
         this.stepGrid.updateStepPaths(6, masterPaths, curW, curH, {
-          bgTone: '#f0ebd9',
+          bgTone: '#faf7f0',
           strokeColor: '#1a1918'
         });
-        this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样仿真', 10.0);
+        this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', 10.0);
       }
 
       if (this.stageCache) {

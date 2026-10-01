@@ -184,6 +184,18 @@ class StepFlowGrid {
         state.badgeEl.textContent = this.i18n ? this.i18n.t('card.computing') : '计算中...';
         state.badgeEl.className = 'card-badge badge-compute';
       }
+      // Purge previous image/paths immediately so no stale canvas is shown
+      const cv = state.canvas;
+      if (cv) {
+        const ctx = cv.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, cv.width, cv.height);
+          ctx.fillStyle = '#faf8f5';
+          ctx.fillRect(0, 0, cv.width, cv.height);
+        }
+      }
+      state.lastImage = null;
+      state.lastPaths = null;
     } else if (status === 'CACHED') {
       card.classList.add('status-cached');
       if (state.badgeEl) {
@@ -265,7 +277,7 @@ class StepFlowGrid {
     const cw = canvas.width, ch = canvas.height;
 
     const drawContained = (sourceCanvasOrImg, sw, sh) => {
-      ctx.fillStyle = '#191d1a';
+      ctx.fillStyle = '#faf8f5';
       ctx.fillRect(0, 0, cw, ch);
       const scale = Math.min(cw / (sw || cw), ch / (sh || ch));
       const dw = Math.round((sw || cw) * scale);
@@ -421,23 +433,78 @@ class StepFlowGrid {
     const ch = canvas.height;
     const sw = srcWidth || cw;
     const sh = srcHeight || ch;
+
+    if (stepIndex === 6) {
+      // Step 6: Authentic Hand-printed Intaglio Sample on Cotton Rag Paper
+      ctx.fillStyle = options.bgTone || '#faf7f0';
+      ctx.fillRect(0, 0, cw, ch);
+
+      const pm = Math.round(26 * cw / 900);
+      const bw = Math.round(6 * cw / 900);
+      const pw = cw - 2 * pm;
+      const ph = ch - 2 * pm;
+
+      // Soft paper plate depression (impressed intaglio plate surface)
+      ctx.fillStyle = '#f7f4ec';
+      ctx.fillRect(pm, pm, pw, ph);
+
+      // Debossed plate bevel: top & left shadow side
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+      ctx.fillRect(pm - bw, pm - bw, pw + 2 * bw, bw);
+      ctx.fillRect(pm - bw, pm - bw, bw, ph + 2 * bw);
+
+      // Bottom & right highlight side
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillRect(pm - bw, pm + ph, pw + 2 * bw, bw);
+      ctx.fillRect(pm + pw, pm - bw, bw, ph + 2 * bw);
+
+      // Bevel boundary seam
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pm, pm, pw, ph);
+
+      // Scale and position paths strictly inside the plate area
+      const scale = Math.min(pw / sw, ph / sh);
+      const offX = pm + Math.round((pw - sw * scale) / 2);
+      const offY = pm + Math.round((ph - sh * scale) / 2);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pm, pm, pw, ph);
+      ctx.clip();
+
+      ctx.strokeStyle = options.strokeColor || '#1a1918';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 0; i < paths.length; i++) {
+        const path = paths[i];
+        const pts = path.points || path;
+        if (!pts || pts.length < 2) continue;
+
+        ctx.beginPath();
+        const strokeW = Math.max(0.4, (path.width || 0.8) * scale);
+        ctx.lineWidth = strokeW;
+        ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+        for (let j = 1; j < pts.length; j++) {
+          ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
+
     const scale = Math.min(cw / sw, ch / sh);
     const offX = Math.round((cw - sw * scale) / 2);
     const offY = Math.round((ch - sh * scale) / 2);
 
     // Background tone
-    ctx.fillStyle = options.bgTone || (stepIndex === 5 ? '#f5efe0' : stepIndex === 6 ? '#f0ebd9' : '#191d1a');
+    const isLightBg = stepIndex === 5;
+    ctx.fillStyle = options.bgTone || (isLightBg ? '#fcfbf8' : '#1e2220');
     ctx.fillRect(0, 0, cw, ch);
 
-    if (stepIndex === 5 || stepIndex === 6) {
-      // Plate debossed bevel / shadow border for master & print preview
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(10, 10, cw - 20, ch - 20);
-    }
-
     // Default ink color
-    const isLightBg = stepIndex === 5 || stepIndex === 6;
     ctx.strokeStyle = options.strokeColor || (isLightBg ? '#1b1b1b' : '#ded9cc');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -453,10 +520,8 @@ class StepFlowGrid {
 
       // Subtle nuance by stage
       if (stepIndex === 3) {
-        // Aerial perspective: stroke opacity or tint
         ctx.strokeStyle = isLightBg ? 'rgba(20, 20, 20, 0.85)' : '#c8b67e';
       } else if (stepIndex === 4) {
-        // Curvature hatching: delicate dark engraving ink
         ctx.strokeStyle = isLightBg ? 'rgba(30, 28, 26, 0.9)' : '#b4c0ab';
       }
 

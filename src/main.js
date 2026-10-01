@@ -389,11 +389,21 @@ function initEventBindings() {
     });
   }
 
-  // Loupe Magnifier Init on Plate Canvas
+  // Plate Fullscreen Lightbox Trigger (Replaces Loupe with full-viewport close-up)
   const canvas = $('canvas');
-  const LoupeLib = (typeof LoupeMagnifier !== 'undefined' ? LoupeMagnifier : (typeof window !== 'undefined' ? window.LoupeMagnifier : null));
-  if (canvas && LoupeLib) {
-    new LoupeLib(canvas, { diameter: 160, zoom: 4 });
+  const plateFullscreenBtn = $('plateFullscreenBtn');
+  const openPlateLightbox = () => {
+    if (!canvas) return;
+    const mode = (window.getPlateState ? window.getPlateState().view : 'plate') || 'plate';
+    const titles = { plate: '虚拟铜版 · 全屏特写', depth: '刻深图 · 全屏特写', print: '压印预览 · 全屏特写' };
+    lightbox.open(titles[mode] || '虚拟铜版 · 全屏特写', canvas, `${canvas.width} × ${canvas.height} 物理网格`);
+  };
+
+  if (plateFullscreenBtn) {
+    plateFullscreenBtn.onclick = openPlateLightbox;
+  }
+  if (canvas) {
+    canvas.ondblclick = openPlateLightbox;
   }
 
   bindPlateStudioEvents({
