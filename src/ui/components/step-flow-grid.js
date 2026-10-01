@@ -24,6 +24,10 @@ class StepFlowGrid {
     this.onStepLoupe = options.onStepLoupe || (() => {});
     this.onStepFullscreen = options.onStepFullscreen || (() => {});
 
+    this.frameStyle = options.frameStyle || 'double';
+    this.lastSrcWidth = 900;
+    this.lastSrcHeight = 660;
+
     this.stepStates = Array.from({ length: 7 }, (_, idx) => ({
       index: idx,
       status: 'IDLE', // 'IDLE' | 'COMPUTING' | 'CACHED' | 'DONE' | 'ERROR'
@@ -38,6 +42,15 @@ class StepFlowGrid {
 
     if (this.container) {
       this.render();
+    }
+  }
+
+  setFrameStyle(style) {
+    this.frameStyle = style || 'double';
+    if (this.stepStates[6]?.lastPaths) {
+      this.updateStepPaths(6, this.stepStates[6].lastPaths, this.lastSrcWidth, this.lastSrcHeight, {
+        frameStyle: this.frameStyle
+      });
     }
   }
 
@@ -487,68 +500,22 @@ class StepFlowGrid {
 
     if (stepIndex === 6) {
       // Step 6: Authentic Hand-printed Intaglio Sample on Cotton Rag Paper
+      this.lastSrcWidth = sw;
+      this.lastSrcHeight = sh;
+
+      const frameStyle = options.frameStyle || this.frameStyle || 'double';
+      const geom = getFrameGeometry(cw, ch, frameStyle);
+
+      // 1. Paper ground
       ctx.fillStyle = options.bgTone || '#faf7f0';
       ctx.fillRect(0, 0, cw, ch);
 
-      const pm = Math.round(26 * cw / 900);
-      const bw = Math.round(6 * cw / 900);
-      const pw = cw - 2 * pm;
-      const ph = ch - 2 * pm;
+      // 2. Draw impressed paper depression, plate bevel, and chosen frame style (outer, fine, rough)
+      drawEngravedFrame(ctx, cw, ch, geom, options.strokeColor || '#1a1918');
 
-      // Soft paper plate depression (impressed intaglio plate surface)
-      ctx.fillStyle = '#f7f4ec';
-      ctx.fillRect(pm, pm, pw, ph);
-
-      // Debossed plate bevel: top & left shadow side
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
-      ctx.fillRect(pm - bw, pm - bw, pw + 2 * bw, bw);
-      ctx.fillRect(pm - bw, pm - bw, bw, ph + 2 * bw);
-
-      // Bottom & right highlight side
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.fillRect(pm - bw, pm + ph, pw + 2 * bw, bw);
-      ctx.fillRect(pm + pw, pm - bw, bw, ph + 2 * bw);
-
-      // Bevel boundary seam
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(pm, pm, pw, ph);
-
-      // Classical Engraved Double-Line Outer Frame Border (古典版画双线外框/边框)
-      // Preserved from historical Etchloom printmaking design (PhotoPro.framePaths & output-ui.js)
-      const outerMargin = Math.round(14 * cw / 900);
-      const gap = Math.round(5 * cw / 900);
-      const clearance = Math.round(8 * cw / 900);
-
-      const fx1 = pm + outerMargin;
-      const fy1 = pm + outerMargin;
-      const fw1 = pw - 2 * outerMargin;
-      const fh1 = ph - 2 * outerMargin;
-
-      const fx2 = fx1 + gap;
-      const fy2 = fy1 + gap;
-      const fw2 = fw1 - 2 * gap;
-      const fh2 = fh1 - 2 * gap;
-
-      ctx.save();
-      ctx.strokeStyle = options.strokeColor || '#1a1918';
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // 1. Primary Outer Frame Rule (外框主线)
-      ctx.lineWidth = Math.max(1.2, 1.8 * cw / 900);
-      ctx.strokeRect(fx1, fy1, fw1, fh1);
-
-      // 2. Parallel Inner Hairline Frame (细内边框)
-      ctx.lineWidth = Math.max(0.6, 0.9 * cw / 900);
-      ctx.strokeRect(fx2, fy2, fw2, fh2);
-      ctx.restore();
-
-      // Artwork nesting area strictly inside the inner frame clearance
-      const artX = fx2 + clearance;
-      const artY = fy2 + clearance;
-      const artW = fw2 - 2 * clearance;
-      const artH = fh2 - 2 * clearance;
+      // 3. Artwork nesting area strictly inside the innermost frame clearance
+      // Guarantees artwork NEVER extends outside the frame rules (outer frame is strictly outside artwork)
+      const { x: artX, y: artY, w: artW, h: artH } = geom.art;
 
       const scale = Math.min(artW / sw, artH / sh);
       const offX = artX + Math.round((artW - sw * scale) / 2);
@@ -639,13 +606,171 @@ class StepFlowGrid {
   }
 }
 
-const api = { StepFlowGrid };
+/**
+ * Calculates authentic printmaking frame geometry.
+ * Guarantees that the frame is strictly on the OUTSIDE of the artwork (artwork bounds are strictly inside).
+ * @param {number} cw - Canvas width
+ * @param {number} ch - Canvas height
+ * @param {string} [style='double'] - 'double' | 'fine' | 'rough' | 'none'
+ */
+function getFrameGeometry(cw, ch, style = 'double') {
+  const short = Math.min(cw, ch);
+  const pm = Math.round(26 * short / 660); // 纸边留白 (Paper Margin)
+  const bw = Math.round(6 * short / 660);  // 倒角凹痕 (Plate Bevel)
+  const pw = cw - 2 * pm;
+  const ph = ch - 2 * pm;
+
+  const outerMargin = Math.round(14 * short / 660);
+  const gap = Math.round(5 * short / 660);
+  const clearance = Math.round(10 * short / 660);
+
+  const fx1 = pm + outerMargin;
+  const fy1 = pm + outerMargin;
+  const fw1 = pw - 2 * outerMargin;
+  const fh1 = ph - 2 * outerMargin;
+
+  let artX, artY, artW, artH;
+
+  if (style === 'double') {
+    const fx2 = fx1 + gap;
+    const fy2 = fy1 + gap;
+    const fw2 = fw1 - 2 * gap;
+    const fh2 = fh1 - 2 * gap;
+
+    artX = fx2 + clearance;
+    artY = fy2 + clearance;
+    artW = fw2 - 2 * clearance;
+    artH = fh2 - 2 * clearance;
+
+    return {
+      style,
+      pm, bw, pw, ph,
+      outer: { x: fx1, y: fy1, w: fw1, h: fh1, lineWidth: Math.max(1.3, 1.8 * short / 660) },
+      inner: { x: fx2, y: fy2, w: fw2, h: fh2, lineWidth: Math.max(0.6, 0.9 * short / 660) },
+      art: { x: artX, y: artY, w: artW, h: artH }
+    };
+  } else if (style === 'fine' || style === 'rough') {
+    artX = fx1 + clearance;
+    artY = fy1 + clearance;
+    artW = fw1 - 2 * clearance;
+    artH = fh1 - 2 * clearance;
+
+    return {
+      style,
+      pm, bw, pw, ph,
+      outer: { x: fx1, y: fy1, w: fw1, h: fh1, lineWidth: Math.max(1.0, 1.4 * short / 660) },
+      inner: null,
+      art: { x: artX, y: artY, w: artW, h: artH }
+    };
+  } else {
+    // 'none'
+    artX = pm + outerMargin;
+    artY = pm + outerMargin;
+    artW = pw - 2 * outerMargin;
+    artH = ph - 2 * outerMargin;
+
+    return {
+      style: 'none',
+      pm, bw, pw, ph,
+      outer: null,
+      inner: null,
+      art: { x: artX, y: artY, w: artW, h: artH }
+    };
+  }
+}
+
+/**
+ * Draws paper depression, plate bevel, and the chosen outer frame style.
+ * Frame rules are strictly drawn on the outside of the artwork.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cw
+ * @param {number} ch
+ * @param {Object} geom - Computed geometry from getFrameGeometry
+ * @param {string} [strokeColor='#1a1918']
+ */
+function drawEngravedFrame(ctx, cw, ch, geom, strokeColor = '#1a1918') {
+  if (!ctx || !geom) return;
+
+  // 1. Soft paper plate depression (impressed intaglio plate surface)
+  ctx.fillStyle = '#f7f4ec';
+  ctx.fillRect(geom.pm, geom.pm, geom.pw, geom.ph);
+
+  // 2. Debossed plate bevel: top & left shadow side
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+  ctx.fillRect(geom.pm - geom.bw, geom.pm - geom.bw, geom.pw + 2 * geom.bw, geom.bw);
+  ctx.fillRect(geom.pm - geom.bw, geom.pm - geom.bw, geom.bw, geom.ph + 2 * geom.bw);
+
+  // Bottom & right highlight side
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.fillRect(geom.pm - geom.bw, geom.pm + geom.ph, geom.pw + 2 * geom.bw, geom.bw);
+  ctx.fillRect(geom.pm + geom.pw, geom.pm - geom.bw, geom.bw, geom.ph + 2 * geom.bw);
+
+  // Bevel boundary seam
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(geom.pm, geom.pm, geom.pw, geom.ph);
+
+  // 3. Render Chosen Frame Style Rules
+  ctx.save();
+  ctx.strokeStyle = strokeColor;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (geom.style === 'double') {
+    // 1. Primary Outer Frame Rule (外框主线)
+    ctx.lineWidth = geom.outer.lineWidth;
+    ctx.strokeRect(geom.outer.x, geom.outer.y, geom.outer.w, geom.outer.h);
+
+    // 2. Parallel Inner Hairline Frame (细内边框)
+    ctx.lineWidth = geom.inner.lineWidth;
+    ctx.strokeRect(geom.inner.x, geom.inner.y, geom.inner.w, geom.inner.h);
+  } else if (geom.style === 'fine') {
+    // Single fine hairline rule
+    ctx.lineWidth = geom.outer.lineWidth;
+    ctx.strokeRect(geom.outer.x, geom.outer.y, geom.outer.w, geom.outer.h);
+  } else if (geom.style === 'rough') {
+    // Artisanal rough segmented hand-engraved border
+    const { x, y, w, h, lineWidth } = geom.outer;
+    const sides = [
+      [[x, y], [x + w, y]],
+      [[x + w, y], [x + w, y + h]],
+      [[x + w, y + h], [x, y + h]],
+      [[x, y + h], [x, y]]
+    ];
+    let seed = 42;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for (const [p1, p2] of sides) {
+      const parts = 14;
+      for (let p = 0; p < parts; p++) {
+        const t1 = p / parts;
+        const t2 = (p + 1) / parts;
+        const j1 = (rnd() - 0.5) * 1.5;
+        const j2 = (rnd() - 0.5) * 1.5;
+        const isH = (p1[1] === p2[1]);
+        const x1 = p1[0] + (p2[0] - p1[0]) * t1 + (isH ? 0 : j1);
+        const y1 = p1[1] + (p2[1] - p1[1]) * t1 + (isH ? j1 : 0);
+        const x2 = p1[0] + (p2[0] - p1[0]) * t2 + (isH ? 0 : j2);
+        const y2 = p1[1] + (p2[1] - p1[1]) * t2 + (isH ? j2 : 0);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineWidth = lineWidth * (0.8 + rnd() * 0.45);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = api;
 }
 if (typeof globalThis !== 'undefined') {
   globalThis.StepFlowGrid = StepFlowGrid;
+  globalThis.getFrameGeometry = getFrameGeometry;
+  globalThis.drawEngravedFrame = drawEngravedFrame;
 }
 
 

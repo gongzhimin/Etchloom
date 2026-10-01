@@ -47,7 +47,11 @@ export class LightboxController {
     if (this.zoomResetBtn) {
       this.zoomResetBtn.onclick = (e) => {
         e.stopPropagation();
-        this.resetView();
+        // 1:1 pixel representation toggle or reset
+        this.scale = 1.0;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.updateTransform();
       };
     }
 
@@ -55,6 +59,20 @@ export class LightboxController {
       this.zoomFitBtn.onclick = (e) => {
         e.stopPropagation();
         this.resetView();
+      };
+    }
+
+    this.nativeFsBtn = document.getElementById('lightboxNativeFs');
+    if (this.nativeFsBtn) {
+      this.nativeFsBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (typeof document !== 'undefined') {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen?.().catch(() => {});
+          } else {
+            document.exitFullscreen?.().catch(() => {});
+          }
+        }
       };
     }
 
@@ -154,9 +172,17 @@ export class LightboxController {
     this.canvas.width = sw;
     this.canvas.height = sh;
 
-    const wrapW = this.viewportWrap?.clientWidth || 900;
-    const wrapH = this.viewportWrap?.clientHeight || 560;
-    const fitScale = Math.min(wrapW / sw, wrapH / sh, 1.0);
+    // True Fullscreen: calculate available viewport dimensions
+    const winW = (typeof window !== 'undefined' ? window.innerWidth : 1920) || 1920;
+    const winH = (typeof window !== 'undefined' ? window.innerHeight : 1080) || 1080;
+    const wrapW = this.viewportWrap?.clientWidth || winW;
+    const wrapH = this.viewportWrap?.clientHeight || winH;
+
+    // Use full screen minus minimal breathing margins (24px horizontal, 54px vertical)
+    const availW = Math.max(300, wrapW - 24);
+    const availH = Math.max(300, wrapH - 54);
+    const fitScale = Math.min(availW / sw, availH / sh);
+
     this.canvas.style.width = `${Math.round(sw * fitScale)}px`;
     this.canvas.style.height = `${Math.round(sh * fitScale)}px`;
 

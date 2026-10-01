@@ -78,6 +78,14 @@ export const sidebarTemplate = `
 
       <label><span data-i18n="sec.2.cross">交叉排线</span> <output id="crossHatchVal">65%</output></label>
       <input id="crossHatch" type="range" min="0" max="100" value="65">
+
+      <label><span data-i18n="sec.2.frame">版画外框</span></label>
+      <select id="frameStyle">
+        <option value="double" selected data-i18n="frame.double">双层古典边框</option>
+        <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
+        <option value="rough" data-i18n="frame.rough">手工古拙边框</option>
+        <option value="none" data-i18n="frame.none">无外框</option>
+      </select>
     </section>
 
     <!-- Drawer 03: 铜版工坊 -->
@@ -142,6 +150,14 @@ export const sidebarTemplate = `
         <select id="paper">
           <option value="rough" data-i18n="paper.rough">暖白 · 粗纹棉纸</option>
           <option value="smooth" data-i18n="paper.smooth">象牙白 · 细纹纸</option>
+        </select>
+
+        <label data-i18n="sec.3.frame">印样外框</label>
+        <select id="plateFrameStyle">
+          <option value="double" selected data-i18n="frame.double">双层古典边框</option>
+          <option value="fine" data-i18n="frame.fine">单线精细刻框</option>
+          <option value="rough" data-i18n="frame.rough">手工古拙边框</option>
+          <option value="none" data-i18n="frame.none">无外框</option>
         </select>
 
         <button id="print" class="primary" style="margin-top:10px" data-i18n="sec.3.print">取一张印样</button>
@@ -281,28 +297,28 @@ export const telemetryFooterTemplate = `
 `;
 
 export const modalsTemplate = `
-  <!-- Modal Dialog (Close-up & Fullscreen Lightbox) -->
-  <div id="modalOverlay" class="etchloom-modal-overlay" hidden>
-    <div class="etchloom-modal lightbox-modal">
-      <div class="modal-header">
-        <div style="display:flex;align-items:center;gap:16px;">
-          <h3 id="modalTitle" class="modal-title">特写检查</h3>
-          <div class="lightbox-toolbar">
-            <button id="lightboxZoomOut" class="card-btn" title="缩小" style="padding:2px 8px;">−</button>
-            <span id="lightboxZoomLevel" class="lightbox-zoom-badge">100%</span>
-            <button id="lightboxZoomIn" class="card-btn" title="放大" style="padding:2px 8px;">+</button>
-            <button id="lightboxReset" class="card-btn" title="重置视图" style="padding:2px 8px;">重置</button>
-            <button id="lightboxFit" class="card-btn" title="自适应窗口" style="padding:2px 8px;">自适应</button>
-          </div>
-        </div>
-        <button id="modalClose" class="card-btn" style="padding:2px 8px;">✕</button>
+  <!-- True Fullscreen Viewport (全屏沉浸式特写画廊，全屏饱满铺满，彻底消除卡片框束缚) -->
+  <div id="modalOverlay" class="fullscreen-viewport-overlay" hidden>
+    <!-- Floating Translucent Control Header Capsule -->
+    <header class="fullscreen-floating-header">
+      <div class="fullscreen-header-info">
+        <h3 id="modalTitle" class="fullscreen-title">特写检查</h3>
+        <span id="modalDescription" class="fullscreen-meta"></span>
       </div>
-      <div id="modalBody" class="modal-body lightbox-modal-body" style="padding:10px;">
-        <div id="modalViewportWrap" class="modal-viewport-wrap lightbox-viewport">
-          <canvas id="modalCanvas" class="lightbox-canvas"></canvas>
-        </div>
-        <div id="modalDescription" class="lightbox-desc" style="margin-top:8px;font-size:12px;color:var(--text-secondary);line-height:1.5;"></div>
+      <div class="fullscreen-toolbar">
+        <button id="lightboxZoomOut" class="fullscreen-btn" title="缩小 (−)">−</button>
+        <span id="lightboxZoomLevel" class="fullscreen-zoom-badge">100%</span>
+        <button id="lightboxZoomIn" class="fullscreen-btn" title="放大 (+)">+</button>
+        <button id="lightboxFit" class="fullscreen-btn" title="全屏自适应">自适应</button>
+        <button id="lightboxReset" class="fullscreen-btn" title="1:1 原始像素">1:1</button>
+        <button id="lightboxNativeFs" class="fullscreen-btn" title="真全屏切换 (F11)">⛶ 全屏</button>
+        <button id="modalClose" class="fullscreen-btn fullscreen-close-btn" title="退出特写 (ESC)">✕</button>
       </div>
+    </header>
+
+    <!-- Edge-to-Edge Fullscreen Canvas Viewport -->
+    <div id="modalViewportWrap" class="fullscreen-canvas-viewport">
+      <canvas id="modalCanvas" class="fullscreen-canvas"></canvas>
     </div>
   </div>
 

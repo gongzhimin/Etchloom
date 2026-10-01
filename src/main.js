@@ -9,7 +9,7 @@ import { PipelineController } from './ui/controllers/pipeline-controller.js';
 import {
   W, H, N, depth, exposed, blocked, burr,
   allocatePlate, snapshot, stop, setView, line,
-  setPlateStage, bindPlateStudioEvents
+  setPlateStage, bindPlateStudioEvents, setPlateFrameStyle
 } from './ui/controllers/plate-studio-controller.js';
 import { mountAppLayout } from './ui/templates/layout-templates.js';
 
@@ -131,10 +131,13 @@ const pipelineController = new PipelineController({
   stepGrid,
   log: logMessage,
   onPlateCarve: (allPaths, w, h) => {
-    // Initial demo hairline engraving onto copperplate
-    const scale = Math.min(W / w, H / h);
-    const offX = Math.round((W - w * scale) / 2);
-    const offY = Math.round((H - h * scale) / 2);
+    // Initial demo hairline engraving onto copperplate with frameMargin nesting
+    const frameMargin = Math.round(54 * W / 900);
+    const artW = W - 2 * frameMargin;
+    const artH = H - 2 * frameMargin;
+    const scale = Math.min(artW / w, artH / h);
+    const offX = frameMargin + Math.round((artW - w * scale) / 2);
+    const offY = frameMargin + Math.round((artH - h * scale) / 2);
     for (const path of allPaths) {
       const pts = path.points;
       if (pts && pts.length >= 2) {
@@ -172,9 +175,14 @@ const transferWizard = new TransferWizardController({
 
     const srcW = pipelineController.currentLoadedImage?.width || 900;
     const srcH = pipelineController.currentLoadedImage?.height || 660;
-    const scale = Math.min(W / srcW, H / srcH);
-    const offX = Math.round((W - srcW * scale) / 2);
-    const offY = Math.round((H - srcH * scale) / 2);
+
+    // Leave plate margin so engraving lines are strictly INSIDE the frame rules!
+    const frameMargin = Math.round(54 * W / 900);
+    const artW = W - 2 * frameMargin;
+    const artH = H - 2 * frameMargin;
+    const scale = Math.min(artW / srcW, artH / srcH);
+    const offX = frameMargin + Math.round((artW - srcW * scale) / 2);
+    const offY = frameMargin + Math.round((artH - srcH * scale) / 2);
 
     mctx.strokeStyle = '#000000';
     mctx.lineCap = 'round';
@@ -387,6 +395,25 @@ function initEventBindings() {
     lotusCheck.addEventListener('change', () => {
       pipelineController.scheduleParameterRun();
     });
+  }
+
+  // Frame Style selection synchronization (Algorithm Master Step 6 & Virtual Plate Studio)
+  const frameSelect = $('frameStyle');
+  const plateFrameSelect = $('plateFrameStyle');
+  const handleFrameChange = (style) => {
+    if (frameSelect && frameSelect.value !== style) frameSelect.value = style;
+    if (plateFrameSelect && plateFrameSelect.value !== style) plateFrameSelect.value = style;
+    if (stepGrid) {
+      stepGrid.setFrameStyle(style);
+    }
+    setPlateFrameStyle(style);
+    logMessage('版画', `版画外框风格已更新: ${style === 'double' ? '双层古典边框' : style === 'fine' ? '单线精细刻框' : style === 'rough' ? '手工古拙边框' : '无外框'}`);
+  };
+  if (frameSelect) {
+    frameSelect.addEventListener('change', () => handleFrameChange(frameSelect.value));
+  }
+  if (plateFrameSelect) {
+    plateFrameSelect.addEventListener('change', () => handleFrameChange(plateFrameSelect.value));
   }
 
   // Plate Fullscreen Lightbox Trigger (Replaces Loupe with full-viewport close-up)

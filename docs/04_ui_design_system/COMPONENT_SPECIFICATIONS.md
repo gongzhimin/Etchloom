@@ -34,10 +34,15 @@
   - 顶层容器 `#app` 严格继承 `height: 100%; overflow: hidden;`，`main.app-main` 占满剩余视口净高；
   - `.workspace-area` 设置 `overflow-y: auto; overflow-x: hidden;`，用户通过鼠标滚轮或滚动条可无阻碍向下纵览全部 2 列 4 行大卡片及底部日志控制台。
 - **计算中清空画布机制**：当卡片处于 `COMPUTING` 状态时，执行 `ctx.clearRect` 并注入淡雅占位底，彻底清空上一张图或静物范式的生成残留。
-- **物理倒角压痕与古典双线外框 (Plate Bevel & Classical Engraved Double Frame)**：
+- **物理倒角压痕与多型古典外边框 (Plate Bevel & Multi-Style Engraved Outer Frames)**：
   - 继承历史版画经典边框架构（源自 `PhotoPro.framePaths` 与 `output-ui.js`），第 06 步印样卡片与独立导出均真实模拟纯棉纸四周留白（Paper Margin）与 45° 倒角压印凹痕（Plate Bevel）；
-  - **古典外侧双线边框**：在凹痕内侧绘制双层精细边框——外框主线（Primary Outer Frame Rule，线宽 ~1.8-2.0px / 900px 基准）与内框平行细线（Parallel Inner Hairline Frame，线宽 ~0.9-1.0px），并在内框向内留出安全呼吸边距（Clearance = 8px），将所有凹版版画线条优雅嵌于双线外框内，严密杜绝线条与外框穿模或挤出；
-  - 导出纯净画作本身（含纯棉纸留白、倒角压痕与古典双线外框），彻底剥离网页工作台边框与 DOM 界面元素。
+  - **外框严格位于版画外侧，绝不小于画面 (Strict Outer Enclosure)**：外框主线坐标严格基于纸面留白外圈（`geom.outer.w > geom.art.w`, `geom.outer.h > geom.art.h`），内部版画面积严格嵌套于内框的安全呼吸边距（Clearance = 10px）内并执行物理裁切，**数学上绝对保证外边框位于画面外侧，杜绝画面溢出外框或外框切入画面的缺陷**；
+  - **4 种专业外框类型支持 (Multi-Style Frame Engine)**：
+    1. `double`（双层古典边框）：外框主线（1.8px）+ 平行内细线（0.9px）+ 均匀间距，重现经典工坊双层印痕；
+    2. `fine`（单线精细刻框）：单线精雅轮廓（1.4px），留白清透典雅；
+    3. `rough`（手工古拙边框）：四边由 14 段手工古拙刻痕拼接，微颤不规则刻痕真实还原手工雕刻铜版时的刀感；
+    4. `none`（无外框）：仅保留纯棉纸底色与金属倒角凹印，纯净自然；
+  - 导出纯净画作本身（含纯棉纸留白、倒角压痕与所选外边框），彻底剥离网页工作台边框与 DOM 界面元素。
 - **响应式降级**：屏幕宽度 `< 860px` 时自动重排为单列垂直流。
 - **DOM 挂载点**：`#stepFlowGridContainer`
 
@@ -77,7 +82,11 @@
 - **步骤节点**：1. 上版 → 2. 刻绘 → 3. 腐蚀 → 4. 填墨 → 5. 试印
 - **状态流转**：通过 `.stepper-step.active`（淡鼠尾草绿高亮）与 `.stepper-step.done` 驱动全流程引导。
 
-### 1.7 模态视口系统 (LightboxModal & TransferWizardModal)
-- **特写灯箱模态框 (`#modalOverlay`)**：提供 100%~500% 鼠标滚轮平滑无级缩放、双击还原与鼠标左键按住拖拽漫游；
+### 1.7 模态视口系统 (True Fullscreen Viewport & TransferWizardModal)
+- **真全屏沉浸式特写画廊 (`#modalOverlay.fullscreen-viewport-overlay`)**：
+  - **彻底移除卡片框与视口限制**：彻底废弃限制在 64vh 与固定弹窗内的伪全屏。视口铺满 100vw × 100vh 整个屏幕，深色半透明微质感磨砂背景 (`rgba(12, 13, 14, 0.94)`)；
+  - **最大化屏幕利用率**：进入特写时画布直接按当前浏览器可用视口极限比例（仅留微小边距）全屏展现，**尺寸远大于主工作区卡片，真实还原本体细节**；
+  - **悬浮胶囊控制条 (Floating Capsule)**：顶部居中悬浮极简半透明操作胶囊，提供缩小、放大、全屏自适应、1:1 像素复位、原生真全屏切换（F11 API 支持）及关闭按钮；
+  - **微观交互**：支持 80%~800% 鼠标滚轮无级缩放、双击在全屏与微观特写间无缝切换、鼠标左键拖拽漫游、点击画作外背景或按 ESC 快速退出。
 - **上版工艺向导模态框 (`#transferModalOverlay`)**：支持蚀刻针/干刻直刻技法分流、900/1500/3000 三档网格规格单选、图层选择（全部/仅轮廓/仅排线）与针尖压力模拟。
 

@@ -1007,54 +1007,150 @@ footer.telemetry-footer {
   margin: 0 0 12px 0;
   color: var(--text-primary);
 }
-.etchloom-modal.lightbox-modal {
-  max-width: 1120px;
-  width: 94vw;
+/* --------------------------------------------------------------------------
+   True Fullscreen Immersive Lightbox (100vw x 100vh Edge-to-Edge)
+   -------------------------------------------------------------------------- */
+.fullscreen-viewport-overlay,
+#modalOverlay.fullscreen-viewport-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(12, 13, 14, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
 }
-.lightbox-toolbar {
+
+.fullscreen-viewport-overlay[hidden],
+#modalOverlay[hidden] {
+  display: none !important;
+}
+
+.fullscreen-floating-header {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 18px;
+  background: rgba(28, 30, 32, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  max-width: 94vw;
+  color: #f1f0ea;
+}
+
+.fullscreen-header-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.fullscreen-title {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: #faf8f5;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.fullscreen-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+}
+
+.fullscreen-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
+.fullscreen-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f5f5f5;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.fullscreen-zoom-badge,
 .lightbox-zoom-badge {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--accent-gold);
-  background: var(--bg-input);
+  color: #d4a373;
+  background: rgba(0, 0, 0, 0.4);
   padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   min-width: 48px;
   text-align: center;
   font-weight: 600;
 }
 
+.fullscreen-close-btn {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  font-weight: 700;
+  padding: 4px 12px;
+}
+
+.fullscreen-close-btn:hover {
+  background: rgba(239, 68, 68, 0.65) !important;
+  color: #fff !important;
+}
+
+.fullscreen-canvas-viewport,
 .modal-viewport-wrap {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  height: 64vh;
-  min-height: 460px;
-  padding: 0;
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  background: var(--paper-ivory);
-  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 0.8px, transparent 0.8px);
-  background-size: 10px 10px;
+  justify-content: center;
+  overflow: hidden;
   cursor: grab;
   user-select: none;
-  border-radius: 6px;
-  border: 1px solid var(--border-subtle);
+  background: transparent;
 }
+
+.fullscreen-canvas-viewport.is-dragging,
 .modal-viewport-wrap.is-dragging {
   cursor: grabbing;
 }
+
+.fullscreen-canvas,
 .modal-viewport-wrap canvas {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.65);
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
   pointer-events: none;
-  background: #ffffff;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 /* --------------------------------------------------------------------------

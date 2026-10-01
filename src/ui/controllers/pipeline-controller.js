@@ -5,6 +5,7 @@
  */
 
 import { AIServiceGateway } from '../../services/client/ai-service-gateway.js';
+import { getFrameGeometry, drawEngravedFrame } from '../components/step-flow-grid.js';
 
 export class PipelineController {
   constructor(options = {}) {
@@ -246,9 +247,11 @@ export class PipelineController {
           this.log('管线', `阶段 5 完成: 母版矢量合成 (${this.lastMasterPaths.length} 矢量线条)`, 'done');
 
           const renderStart = _now();
+          const selectedFrame = (typeof document !== 'undefined' ? document.getElementById('frameStyle')?.value : null) || 'double';
           this.stepGrid.updateStepPaths(6, this.lastMasterPaths, curW, curH, {
             bgTone: '#faf7f0',
-            strokeColor: '#1a1918'
+            strokeColor: '#1a1918',
+            frameStyle: selectedFrame
           });
           const renderElapsed = parseFloat((_now() - renderStart).toFixed(1));
           this.stepGrid.setStepStatus(6, 'DONE', '纯棉纸凹版印样', renderElapsed);
@@ -362,69 +365,18 @@ export class PipelineController {
       c.height = expH;
       const ctx = c.getContext('2d');
       if (ctx) {
+        const frameStyle = (typeof document !== 'undefined' ? document.getElementById('frameStyle')?.value : null) || 'double';
+        const geom = getFrameGeometry(expW, expH, frameStyle);
+
         // Pure archival cotton paper
         ctx.fillStyle = '#faf7f0';
         ctx.fillRect(0, 0, expW, expH);
 
-        const pm = Math.round(36 * expW / 900);
-        const bw = Math.round(8 * expW / 900);
-        const pw = expW - 2 * pm;
-        const ph = expH - 2 * pm;
-
-        // Impressed plate indentation
-        ctx.fillStyle = '#f7f4ec';
-        ctx.fillRect(pm, pm, pw, ph);
-
-        // Bevel top/left shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
-        ctx.fillRect(pm - bw, pm - bw, pw + 2 * bw, bw);
-        ctx.fillRect(pm - bw, pm - bw, bw, ph + 2 * bw);
-
-        // Bevel bottom/right highlight
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.fillRect(pm - bw, pm + ph, pw + 2 * bw, bw);
-        ctx.fillRect(pm + pw, pm - bw, bw, ph + 2 * bw);
-
-        // Plate edge
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(pm, pm, pw, ph);
-
-        // Classical Engraved Double-Line Outer Frame Border (古典版画双线外框/边框)
-        // Preserved from historical Etchloom printmaking design (PhotoPro.framePaths & output-ui.js)
-        const outerMargin = Math.round(14 * expW / 900);
-        const gap = Math.round(5 * expW / 900);
-        const clearance = Math.round(8 * expW / 900);
-
-        const fx1 = pm + outerMargin;
-        const fy1 = pm + outerMargin;
-        const fw1 = pw - 2 * outerMargin;
-        const fh1 = ph - 2 * outerMargin;
-
-        const fx2 = fx1 + gap;
-        const fy2 = fy1 + gap;
-        const fw2 = fw1 - 2 * gap;
-        const fh2 = fh1 - 2 * gap;
-
-        ctx.save();
-        ctx.strokeStyle = '#1a1918';
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        // 1. Primary Outer Frame Rule (外框主线)
-        ctx.lineWidth = Math.max(1.4, 2.0 * expW / 900);
-        ctx.strokeRect(fx1, fy1, fw1, fh1);
-
-        // 2. Parallel Inner Hairline Frame (细内边框)
-        ctx.lineWidth = Math.max(0.7, 1.0 * expW / 900);
-        ctx.strokeRect(fx2, fy2, fw2, fh2);
-        ctx.restore();
+        // Draw impressed paper depression, plate bevel, and chosen frame style (outer, fine, rough)
+        drawEngravedFrame(ctx, expW, expH, geom, '#1a1918');
 
         // Artwork Display Area strictly nested within inner frame clearance
-        const artX = fx2 + clearance;
-        const artY = fy2 + clearance;
-        const artW = fw2 - 2 * clearance;
-        const artH = fh2 - 2 * clearance;
+        const { x: artX, y: artY, w: artW, h: artH } = geom.art;
 
         // Render intaglio ink strokes
         if (this.lastMasterPaths && this.lastMasterPaths.length > 0) {

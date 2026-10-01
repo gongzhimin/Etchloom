@@ -30,6 +30,15 @@ export let seed = 17;
 export let dirty = true;
 export let plateSources = [];
 export let grainNoise = new Float32Array(N);
+export let plateFrameStyle = 'double';
+
+export function setPlateFrameStyle(style) {
+  plateFrameStyle = style || 'double';
+  dirty = true;
+}
+export function getPlateFrameStyle() {
+  return plateFrameStyle;
+}
 
 if (typeof window !== 'undefined') {
   window.getPlateState = () => ({ W, H, N, depth, exposed, burr, blocked, tool, view, running, elapsed });
@@ -295,28 +304,70 @@ export function render(target = getCtx(), mode = view) {
   }
   target.putImageData(im, 0, 0);
 
-  // Classical Engraved Double-Line Outer Frame Border (古典版画双线外框/边框)
+  // Classical Engraved Frame Border (古典版画外框/边框)
   if (mode === 'print' && target && typeof target.strokeRect === 'function') {
-    let outerMargin = Math.round(14 * W / 900);
-    let gap = Math.round(5 * W / 900);
-    let pw = W - 2 * pm;
-    let ph = H - 2 * pm;
-    let fx1 = pm + outerMargin;
-    let fy1 = pm + outerMargin;
-    let fw1 = pw - 2 * outerMargin;
-    let fh1 = ph - 2 * outerMargin;
-    let fx2 = fx1 + gap;
-    let fy2 = fy1 + gap;
-    let fw2 = fw1 - 2 * gap;
-    let fh2 = fh1 - 2 * gap;
+    let style = plateFrameStyle || (typeof document !== 'undefined' ? (document.getElementById('plateFrameStyle')?.value || document.getElementById('frameStyle')?.value) : 'double') || 'double';
+    if (style !== 'none') {
+      let outerMargin = Math.round(14 * W / 900);
+      let gap = Math.round(5 * W / 900);
+      let pw = W - 2 * pm;
+      let ph = H - 2 * pm;
+      let fx1 = pm + outerMargin;
+      let fy1 = pm + outerMargin;
+      let fw1 = pw - 2 * outerMargin;
+      let fh1 = ph - 2 * outerMargin;
 
-    if (typeof target.save === 'function') target.save();
-    target.strokeStyle = '#1a1918';
-    target.lineWidth = Math.max(1.2, 1.8 * W / 900);
-    target.strokeRect(fx1, fy1, fw1, fh1);
-    target.lineWidth = Math.max(0.6, 0.9 * W / 900);
-    target.strokeRect(fx2, fy2, fw2, fh2);
-    if (typeof target.restore === 'function') target.restore();
+      if (typeof target.save === 'function') target.save();
+      target.strokeStyle = '#1a1918';
+      target.lineCap = 'round';
+      target.lineJoin = 'round';
+
+      if (style === 'double') {
+        let fx2 = fx1 + gap;
+        let fy2 = fy1 + gap;
+        let fw2 = fw1 - 2 * gap;
+        let fh2 = fh1 - 2 * gap;
+
+        target.lineWidth = Math.max(1.2, 1.8 * W / 900);
+        target.strokeRect(fx1, fy1, fw1, fh1);
+        target.lineWidth = Math.max(0.6, 0.9 * W / 900);
+        target.strokeRect(fx2, fy2, fw2, fh2);
+      } else if (style === 'fine') {
+        target.lineWidth = Math.max(1.0, 1.5 * W / 900);
+        target.strokeRect(fx1, fy1, fw1, fh1);
+      } else if (style === 'rough') {
+        target.lineWidth = Math.max(1.0, 1.5 * W / 900);
+        const sides = [
+          [[fx1, fy1], [fx1 + fw1, fy1]],
+          [[fx1 + fw1, fy1], [fx1 + fw1, fy1 + fh1]],
+          [[fx1 + fw1, fy1 + fh1], [fx1, fy1 + fh1]],
+          [[fx1, fy1 + fh1], [fx1, fy1]]
+        ];
+        let seed = 42;
+        const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+        for (const [p1, p2] of sides) {
+          const parts = 14;
+          for (let p = 0; p < parts; p++) {
+            const t1 = p / parts;
+            const t2 = (p + 1) / parts;
+            const j1 = (rnd() - 0.5) * 1.5;
+            const j2 = (rnd() - 0.5) * 1.5;
+            const isH = (p1[1] === p2[1]);
+            const x1 = p1[0] + (p2[0] - p1[0]) * t1 + (isH ? 0 : j1);
+            const y1 = p1[1] + (p2[1] - p1[1]) * t1 + (isH ? j1 : 0);
+            const x2 = p1[0] + (p2[0] - p1[0]) * t2 + (isH ? 0 : j2);
+            const y2 = p1[1] + (p2[1] - p1[1]) * t2 + (isH ? j2 : 0);
+            if (typeof target.beginPath === 'function') {
+              target.beginPath();
+              target.moveTo(x1, y1);
+              target.lineTo(x2, y2);
+              target.stroke();
+            }
+          }
+        }
+      }
+      if (typeof target.restore === 'function') target.restore();
+    }
   }
 }
 
