@@ -259,11 +259,23 @@ function initEventBindings() {
 
   const activityLogWrap = document.querySelector('.activity-log-wrap');
   const activityLogHeader = document.querySelector('.activity-log-header');
+  const logToggleBtn = $('activityLogToggle');
+
+  const toggleLogDrawer = () => {
+    if (!activityLogWrap) return;
+    const isCollapsed = activityLogWrap.classList.toggle('collapsed');
+    const indicator = $('logToggleIndicator');
+    if (indicator) indicator.textContent = isCollapsed ? '▲' : '▼';
+  };
+
   if (activityLogHeader && activityLogWrap) {
     activityLogHeader.onclick = (e) => {
       if (e.target && (e.target.id === 'clearLogBtn' || e.target.closest('#clearLogBtn'))) return;
-      activityLogWrap.classList.toggle('collapsed');
+      toggleLogDrawer();
     };
+  }
+  if (logToggleBtn) {
+    logToggleBtn.onclick = () => toggleLogDrawer();
   }
 
   const uploadBtn = $('uploadPhoto');

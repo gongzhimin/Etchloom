@@ -104,23 +104,22 @@ class StepFlowGrid {
         this.onStepSelect(i);
         this.onStepFullscreen(i, canvas);
       };
-      card.appendChild(viewport);
-      this.stepStates[i].canvas = canvas;
-
-      // Card Footer (Metadata & Actions)
-      const footer = document.createElement('div');
-      footer.className = 'card-footer';
-
-      const meta = document.createElement('span');
-      meta.className = 'card-meta';
-      meta.textContent = i === 0 ? '原始像素基准' : '等待计算...';
-      footer.appendChild(meta);
-      this.stepStates[i].metaEl = meta;
-
+      // Floating Ghost Hover Action Toolbar (特写 + 导出)
       const actions = document.createElement('div');
       actions.className = 'card-actions';
 
-      // Export Button
+      const inspectBtn = document.createElement('button');
+      inspectBtn.className = 'card-btn btn-inspect-layer';
+      inspectBtn.title = '特写检查 (支持滚轮缩放与拖拽)';
+      inspectBtn.innerHTML = '⛶ <span data-i18n="card.inspect">特写</span>';
+      inspectBtn.onclick = (e) => {
+        e?.stopPropagation?.();
+        this.setActiveStep(i);
+        this.onStepSelect(i);
+        this.onStepFullscreen(i, canvas);
+      };
+      actions.appendChild(inspectBtn);
+
       const exportBtn = document.createElement('button');
       exportBtn.className = 'card-btn btn-export-layer';
       exportBtn.title = '独立导出图层';
@@ -131,7 +130,20 @@ class StepFlowGrid {
       };
       actions.appendChild(exportBtn);
 
-      footer.appendChild(actions);
+      viewport.appendChild(actions);
+      card.appendChild(viewport);
+      this.stepStates[i].canvas = canvas;
+
+      // Card Footer (Metadata & Status)
+      const footer = document.createElement('div');
+      footer.className = 'card-footer';
+
+      const meta = document.createElement('span');
+      meta.className = 'card-meta';
+      meta.textContent = i === 0 ? '原始像素基准' : '等待计算...';
+      footer.appendChild(meta);
+      this.stepStates[i].metaEl = meta;
+
       card.appendChild(footer);
 
       card.onclick = () => {

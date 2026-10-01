@@ -175,12 +175,13 @@ export const masterWorkspaceTemplate = `
     <!-- 7-Stage Adaptive Grid -->
     <div id="stepFlowGridContainer"></div>
 
-    <!-- Atelier Activity Log Console -->
-    <div class="activity-log-wrap">
+    <!-- Atelier Slide-up Activity Log Console -->
+    <div id="activityLogWrap" class="activity-log-wrap collapsed">
       <div class="activity-log-header">
         <span class="log-title" data-i18n="console.title">工坊实时运行日志</span>
         <span id="logStatusBadge" class="badge badge-green">IDLE</span>
         <button id="clearLogBtn" class="card-btn" style="margin-left:auto;padding:2px 8px" data-i18n="action.clear">清空日志</button>
+        <span id="logToggleIndicator" class="log-toggle-arrow">▲</span>
       </div>
       <div id="activityLog" class="activity-log-body">
         <div class="log-line"><span class="log-time">[00:00:00]</span> <span class="log-cat">[系统]</span> Etchloom v2.0 古典版画工坊初始化完成，等待载入原图。</div>
@@ -263,7 +264,8 @@ export const plateWorkspaceTemplate = `
 
 export const telemetryFooterTemplate = `
   <footer class="telemetry-footer">
-    <div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="activityLogToggle" class="card-btn log-drawer-trigger" style="padding:2px 8px;font-size:11px;">📋 <span data-i18n="console.title">运行日志</span></button>
       <span><span data-i18n="telemetry.status">状态</span>: <span id="telemetryStatus" class="telemetry-status-val">运行就绪</span></span> |
       <span><span data-i18n="telemetry.task">活跃任务</span>: <span id="telemetryTask" class="telemetry-status-val">IDLE</span></span> |
       <span><span data-i18n="telemetry.duration">总耗时</span>: <span id="telemetryDuration" class="telemetry-status-val">0ms</span></span> |
@@ -271,7 +273,7 @@ export const telemetryFooterTemplate = `
       <span><span data-i18n="telemetry.cache">拓扑缓存命中</span>: <span id="telemetryCache" class="telemetry-status-val">0/5</span></span>
     </div>
     <div style="margin-left:auto">
-      <span style="color:var(--accent-gold)">Etchloom v2.0 Atelier</span>
+      <span style="color:var(--accent-gold);font-weight:600;">Etchloom v2.0 Atelier</span>
     </div>
   </footer>
 `;
@@ -319,21 +321,21 @@ export const modalsTemplate = `
 
         <!-- Section 1: 工艺技法 -->
         <div class="wizard-group">
-          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--paper-ivory);">
+          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-primary);">
             1. 选择雕刻转录工艺技法:
           </label>
           <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <label class="wizard-card active" style="padding:10px 12px;background:var(--bg-app);border:1px solid var(--border-strong);border-radius:6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
               <input type="radio" name="transferTechnique" value="etching" checked style="margin-top:3px;">
               <div>
-                <strong style="color:var(--paper-ivory);display:block;">蚀刻针划线 (Etching)</strong>
+                <strong style="color:var(--text-primary);display:block;">蚀刻针划线 (Etching)</strong>
                 <span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:2px;">划破表面防蚀防酸保护漆，等待酸液咬蚀形成深沟。</span>
               </div>
             </label>
             <label class="wizard-card" style="padding:10px 12px;background:var(--bg-app);border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
               <input type="radio" name="transferTechnique" value="drypoint" style="margin-top:3px;">
               <div>
-                <strong style="color:var(--paper-ivory);display:block;">干刻直刻 (Drypoint)</strong>
+                <strong style="color:var(--text-primary);display:block;">干刻直刻 (Drypoint)</strong>
                 <span style="font-size:11px;color:var(--text-secondary);display:block;margin-top:2px;">锋利钢针直接切削铜板，边缘翻起金属毛刺，暗部极深润。</span>
               </div>
             </label>
@@ -342,7 +344,7 @@ export const modalsTemplate = `
 
         <!-- Section 2: 目标物理铜版规格 -->
         <div class="wizard-group">
-          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--paper-ivory);">
+          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-primary);">
             2. 目标物理铜版规格:
           </label>
           <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
@@ -366,7 +368,7 @@ export const modalsTemplate = `
 
         <!-- Section 3: 转移图层选择 -->
         <div class="wizard-group">
-          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--paper-ivory);">
+          <label class="wizard-label" style="display:block;font-weight:600;margin-bottom:8px;color:var(--text-primary);">
             3. 选择转录矢量图层:
           </label>
           <div class="wizard-radio-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
@@ -391,7 +393,7 @@ export const modalsTemplate = `
         <!-- Section 4: 针尖下压力度 -->
         <div class="wizard-group">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <label for="wizardNeedlePressure" style="font-weight:600;color:var(--paper-ivory);">针尖刻划下压力度:</label>
+            <label for="wizardNeedlePressure" style="font-weight:600;color:var(--text-primary);">针尖刻划下压力度:</label>
             <output id="wizardNeedlePressureVal" style="font-family:var(--font-mono);color:var(--accent-gold);">65%</output>
           </div>
           <input type="range" id="wizardNeedlePressure" min="10" max="100" value="65" style="width:100%;">
