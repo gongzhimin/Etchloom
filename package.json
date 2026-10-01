@@ -4,6 +4,7 @@
   "private": true,
   "description": "A local-first generative digital printmaking studio.",
   "scripts": {
+    "tauri": "tauri",
     "start": "node scripts/serve.cjs",
     "model:start": "powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1",
     "test": "node scripts/test-runner.cjs",
