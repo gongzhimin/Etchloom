@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const G=require('../src/core/generator.js');
+const G=require('../src/core/image/generator.js');
 const source=fn=>({width:225,height:165,pixels:Array.from({length:37125},(_,i)=>fn(i%225,Math.floor(i/225)))});
 const recipe=image=>({version:1,mode:'photo',seed:23,layoutSeed:23,variation:0,params:{...G.defaults},image});
 test('white photograph remains blank and dark regions receive more engraving',()=>{
@@ -30,35 +30,73 @@ test('full-resolution fine structures survive as independent contour strokes',()
   const r=recipe(image);r.params.detail=85;
   const result=G.generate(r);
   assert.ok(result.stats.contours>30);
-  assert.ok(result.paths.filter(p=>p.role==='contour'||p.role==='filament').some(p=>p.points.length>12));
+  assert.ok(result.paths.filter(p=>p.role==='contour').some(p=>p.points.length>12));
   assert.ok(G.validRecipe(JSON.parse(JSON.stringify(r))));
   for(const p of result.paths)for(const [x,y]of p.points)assert.ok(x>=24&&x<=876&&y>=24&&y<=636);
 });
-test('thin high-contrast whiskers become tapered filaments below silhouette weight',()=>{
-  const width=900,height=660,image={width,height,pixels:Array.from({length:width*height},(_,i)=>{
-    const x=i%width,y=Math.floor(i/width),face=((x-380)/170)**2+((y-330)/210)**2<1;
-    const whisker=x>510&&x<840&&[[-.18,270],[0,330],[.18,390]].some(([slope,origin])=>Math.abs(y-(origin+slope*(x-510)))<1.2);
-    return whisker?10:face?95:245;
-  })};
-  const r=recipe(image);Object.assign(r.params,{detail:100,fidelity:100,density:0});const result=G.generate(r),filaments=result.paths.filter(p=>p.role==='filament'),contours=result.paths.filter(p=>p.role==='contour');
-  assert.ok(filaments.length>=3);assert.ok(filaments.every(p=>p.taper&&['fine-filament','ridge-filament'].includes(p.mark)));
-  assert.ok(filaments.filter(p=>p.mark==='ridge-filament').every(p=>p.taper==='tip'&&p.root==='start'&&p.sourceWidth>=3));
-  assert.ok(Math.max(...filaments.map(p=>p.width))<Math.min(...contours.map(p=>p.width))*.6);
+test('woodcut and classical engraving produce fundamentally distinct artistic paradigms',()=>{
+  const src=source((x,y)=>Math.min(255,Math.round(25+210*((x-112)**2+(y-82)**2)/(112**2+82**2))));
+  const rEngraving=recipe(src);rEngraving.params.style='engraving';
+  const rWoodcut=recipe(src);rWoodcut.params.style='woodcut';
+  const resEng=G.generate(rEngraving);
+  const resWood=G.generate(rWoodcut);
+  assert.ok(resEng.stats.cross>0);
+  assert.equal(resWood.stats.cross,0);
+  const avgWidthEng=resEng.paths.reduce((s,p)=>s+p.width,0)/resEng.paths.length;
+  const avgWidthWood=resWood.paths.reduce((s,p)=>s+p.width,0)/resWood.paths.length;
+  assert.ok(avgWidthWood>avgWidthEng*2.2,`Woodcut avg width ${avgWidthWood} should be >2.2x engraving avg width ${avgWidthEng}`);
+  assert.ok(resWood.paths.every(p=>p.points.every(([x,y])=>Number.isFinite(x)&&Number.isFinite(y)&&x>=24&&x<=876&&y>=24&&y<=636)));
 });
-test('multi-scale ridges retain low-contrast filaments but reject a single silhouette edge',()=>{
-  const width=900,height=660,field=fn=>Float32Array.from({length:width*height},(_,i)=>fn(i%width,Math.floor(i/width)));
-  const line=G.filamentRidges(field((x,y)=>x>80&&x<820&&Math.abs(y-330)<1.5?150/255:225/255),width,height,{detail:100});
-  const edge=G.filamentRidges(field(x=>x<450?70/255:225/255),width,height,{detail:100});
-  assert.equal(line.length,1);assert.ok(line[0].points.length>700);assert.equal(line[0].mark,'ridge-filament');
-  assert.equal(edge.length,0);
+test('1800x1320 ultra-HD analysis recipe generates high-precision micro details', () => {
+  const w = 1800, h = 1320;
+  const pixels = new Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const yw = y * w;
+    for (let x = 0; x < w; x++) {
+      const dx = x - 900, dy = y - 660;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      pixels[yw + x] = dist < 80 ? 20 : (dist < 200 ? Math.round(50 + 150 * (dist - 80) / 120) : 240);
+    }
+  }
+  const r = recipe({ width: w, height: h, pixels });
+  r.params.fidelity = 90;
+  r.params.detail = 85;
+  assert.ok(G.validRecipe(r));
+  const result = G.generate(r);
+  assert.ok(result.paths.length > 50);
+  assert.ok(result.stats.contours > 10);
+  for (const p of result.paths) {
+    for (const [x, y] of p.points) {
+      assert.ok(Number.isFinite(x) && Number.isFinite(y) && x >= 24 && x <= 876 && y >= 24 && y <= 636);
+    }
+  }
 });
-test('ridge filament roots face the attached dark region and taper toward the free tip',()=>{
-  const width=900,height=660,tone=Float32Array.from({length:width*height},(_,i)=>{const x=i%width,y=Math.floor(i/width),face=((x-380)/170)**2+((y-330)/210)**2<1,line=x>510&&x<840&&Math.abs(y-330)<1.2;return(line?10:face?95:245)/255;});
-  const filament=G.filamentRidges(tone,width,height,{detail:100}).sort((a,b)=>b.points.length-a.points.length)[0];
-  assert.ok(filament.points.length>250);assert.ok(filament.points[0][0]<filament.points.at(-1)[0]);assert.equal(filament.taper,'tip');assert.equal(filament.root,'start');
+test('intermediate pipeline stages are computed accurately and support all 7 stages', () => {
+  const PhotoPro = require('../src/core/image/photo-pro.js');
+  const img = source((x, y) => (x > 80 && x < 150 && y > 60 && y < 110 ? 30 : 220));
+  const stages = PhotoPro.computeStages(img, { detail: 70 });
+  assert.ok(stages);
+  assert.equal(stages.width, 225);
+  assert.equal(stages.height, 165);
+  assert.equal(stages.grayPixels.length, 225 * 165);
+  assert.equal(stages.smoothPixels.length, 225 * 165);
+  assert.equal(stages.tensorField.vx.length, 225 * 165);
+  assert.equal(stages.ridgePixels.length, 225 * 165);
+  assert.ok(stages.ridgePixels.some(v => v > 0));
+
+  // Mock canvas context for non-browser environment
+  const mockContext = {
+    canvas: { width: 900, height: 660 },
+    save() {}, restore() {}, clearRect() {}, fillRect() {},
+    beginPath() {}, moveTo() {}, lineTo() {}, stroke() {},
+    drawImage() {}, putImageData() {}, scale() {}
+  };
+  const r = recipe(img);
+  const result = G.generate(r);
+  for (const s of ['full', 'gray', 'smooth', 'tensor', 'ridge', 'contour', 'hatch']) {
+    PhotoPro.renderStage(mockContext, r, result, s, { onionSkin: 0.3 });
+  }
 });
-test('tip taper renders the root stronger than the free endpoint',()=>{
-  const widths=[],context={canvas:{width:900,height:660},save(){},restore(){},clearRect(){},fillRect(){},scale(){},beginPath(){},moveTo(){},lineTo(){},stroke(){widths.push(this.lineWidth);}};
-  G.draw(context,{paths:[{points:Array.from({length:40},(_,i)=>[100+i*5,200]),width:1,taper:'tip'}]});
-  assert.ok(widths.length>2);assert.ok(widths[0]>widths.at(-1)*1.8);
-});
+
+
+

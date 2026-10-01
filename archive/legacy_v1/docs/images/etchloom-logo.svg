@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom logo</title>
+  <desc id="desc">A copper printing plate crossed by woven engraving lines.</desc>
+  <defs>
+    <clipPath id="plate"><rect x="18" y="18" width="144" height="144" rx="25"/></clipPath>
+    <linearGradient id="copper" x1="20" y1="20" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d2bd7d"/><stop offset="1" stop-color="#8d7544"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="18" width="144" height="144" rx="25" fill="#1d2420" stroke="url(#copper)" stroke-width="5"/>
+  <g clip-path="url(#plate)" fill="none" stroke="#d8c58a" stroke-linecap="round">
+    <path d="M-8 132 78 46M8 148 94 62M24 164 110 78M40 180 126 94M56 196 142 110" stroke-width="4"/>
+    <path d="m82 38 84 84M70 54l84 84M58 70l84 84" stroke-width="2" opacity=".58"/>
+  </g>
+  <path d="M58 47v86m0-82h66M58 89h51m-51 40h69" fill="none" stroke="#f1e9d4" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="141" cy="39" r="5" fill="#d2bd7d"/>
+</svg>

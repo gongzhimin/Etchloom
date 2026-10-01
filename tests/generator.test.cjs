@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const G = require('../src/core/generator.js');
+const G = require('../src/core/image/generator.js');
 const recipe = (mode = 'wind', seed = 123456) => ({ version: 1, mode, seed, layoutSeed: seed, variation: 0, params: { ...G.defaults } });
 
 test('same recipe reproduces every point and width after JSON round trip', () => {

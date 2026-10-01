@@ -7,8 +7,8 @@ Thumbs.db
 coverage/
 dist/
 *.tmp
-.venv-model/
-services/informative_drawings/weights/
-services/informative_drawings/upstream_app.py
+data/engravings_raw/*.jpg
+data/engravings_patches/
+*.pth
 __pycache__/
-*.pyc
+experiments/im2pencil_train_previews/

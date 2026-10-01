@@ -1,0 +1,58 @@
+{
+  "cases": [
+    "Pressure 0 / Ink 90",
+    "Pressure 100 / Ink 90",
+    "Pressure 0 / Ink 144",
+    "Pressure 100 / Ink 30",
+    "Smooth / Tone 0",
+    "Smooth / Tone 20",
+    "Rough / Seed 17",
+    "Rough / Seed 18"
+  ],
+  "engine": "Unmodified index.html render() and etch(), executed in a Node VM with Canvas ImageData sink",
+  "pressureInkEquivalence": {
+    "changedPixels": 0,
+    "maxChannelDifference": 0,
+    "meanMaxChannelDifference": 0
+  },
+  "smoothSuccessiveImpressions": {
+    "changedPixels": 0,
+    "maxChannelDifference": 0,
+    "meanMaxChannelDifference": 0
+  },
+  "roughSuccessiveImpressions": {
+    "changedPixels": 22257,
+    "maxChannelDifference": 62,
+    "meanMaxChannelDifference": 4.2303255208333335
+  },
+  "plateChangedByPrinting": false,
+  "zeroPressureCenterRGB": [
+    219,
+    213,
+    199
+  ],
+  "toneOnBlankPaperRGB": {
+    "before": [
+      243,
+      237,
+      221
+    ],
+    "after": [
+      199,
+      194,
+      181
+    ]
+  },
+  "resolutionDependentEtching": [
+    {
+      "pixels": 100,
+      "rmsSpreadPixels": 0.7471476202297188,
+      "rmsSpreadAt254mm": 1.8977549553834856
+    },
+    {
+      "pixels": 400,
+      "rmsSpreadPixels": 0.7471476202297188,
+      "rmsSpreadAt254mm": 0.4744387388458714
+    }
+  ]
+}

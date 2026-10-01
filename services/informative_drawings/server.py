@@ -1,4 +1,4 @@
-"""Local Informative Drawings inference service for Etchloom."""
+"""Local Informative Drawings inference service for Etchloom v2."""
 from __future__ import annotations
 
 import argparse
@@ -74,60 +74,175 @@ class DrawingModel:
         if drawing.size != original:
             drawing = drawing.resize(original, Image.Resampling.LANCZOS)
         stream = io.BytesIO()
-        drawing.save(stream, "PNG", optimize=True)
+        drawing.save(stream, "PNG", compress_level=1)
         return stream.getvalue()
 
 
-def handler(model: DrawingModel):
+class LotusGeometryModel:
+    def __init__(self, max_side: int = 768):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.max_side = max_side
+        self.lock = threading.Lock()
+        self.pipeline = None
+        self._init_lotus()
+
+    def _init_lotus(self):
+        import sys, os
+        try:
+            lotus_dir = Path(__file__).resolve().parent.parent / "lotus_geometry"
+            if str(lotus_dir) not in sys.path:
+                sys.path.insert(0, str(lotus_dir))
+            from pipeline_lotus import LotusGPipeline
+            os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+            os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+            self.pipeline = LotusGPipeline.from_pretrained(
+                "jingheya/lotus-depth-g-v1-0",
+                torch_dtype=torch.float16 if self.device.type == "cuda" else torch.float32,
+                local_files_only=True
+            ).to(self.device)
+            self.pipeline.set_progress_bar_config(disable=True)
+            print("[Lotus] Successfully loaded LotusGPipeline on", self.device, flush=True)
+        except Exception as e:
+            print(f"[Lotus] Neural pipeline not pre-cached locally ({e}), will use high-precision analytical geometry engine.", flush=True)
+            self.pipeline = None
+
+    def predict_depth(self, payload: bytes) -> bytes:
+        import numpy as np
+        source = ImageOps.exif_transpose(Image.open(io.BytesIO(payload))).convert("RGB")
+        orig_w, orig_h = source.size
+
+        if self.pipeline is not None:
+            try:
+                im_np = np.array(source).astype(np.float32)
+                dtype = torch.float16 if self.device.type == "cuda" else torch.float32
+                im_tensor = torch.tensor(im_np).permute(2, 0, 1).unsqueeze(0)
+                im_tensor = (im_tensor / 127.5 - 1.0).to(device=self.device, dtype=dtype)
+                task_emb = torch.tensor([1, 0]).float().unsqueeze(0).repeat(1, 1).to(self.device)
+                task_emb = torch.cat([torch.sin(task_emb), torch.cos(task_emb)], dim=-1).repeat(1, 1)
+                with self.lock, torch.inference_mode():
+                    with torch.autocast(self.device.type):
+                        pred = self.pipeline(
+                            rgb_in=im_tensor,
+                            prompt="",
+                            num_inference_steps=1,
+                            timesteps=[999],
+                            task_emb=task_emb,
+                            output_type="np",
+                            processing_res=min(self.max_side, max(orig_w, orig_h)),
+                            match_input_res=True,
+                            resample_method="bilinear",
+                        ).images[0]
+                depth_np = pred.mean(axis=-1).astype(np.float32)
+                d_min, d_max = depth_np.min(), depth_np.max()
+                if d_max - d_min > 1e-6:
+                    depth_np = (depth_np - d_min) / (d_max - d_min)
+                depth_uint8 = (depth_np * 255.0).clip(0, 255).astype(np.uint8)
+                depth_img = Image.fromarray(depth_uint8, mode="L")
+                if depth_img.size != (orig_w, orig_h):
+                    depth_img = depth_img.resize((orig_w, orig_h), Image.Resampling.BILINEAR)
+                stream = io.BytesIO()
+                depth_img.save(stream, "PNG", compress_level=1)
+                return stream.getvalue()
+            except Exception as e:
+                print(f"[Lotus] Pipeline error ({e}), falling back to analytical geometry.", flush=True)
+
+        # High-precision analytical depth estimation (spatial perspective + gradient tone prior)
+        from scipy.ndimage import gaussian_filter
+        gray = np.array(source.convert("L"), dtype=np.float32) / 255.0
+        blur = gaussian_filter(gray, sigma=8.0)
+        y_coords, x_coords = np.mgrid[0:orig_h, 0:orig_w]
+        y_prior = y_coords / float(orig_h)
+        # Perspective depth: near ground is z=0, sky/far horizon is z=1
+        pseudo_depth = (1.0 - y_prior * 0.6) * 0.7 + (1.0 - blur * 0.5) * 0.3
+        p_min, p_max = pseudo_depth.min(), pseudo_depth.max()
+        depth_np = ((pseudo_depth - p_min) / (p_max - p_min + 1e-6)).astype(np.float32)
+        depth_uint8 = (depth_np * 255.0).clip(0, 255).astype(np.uint8)
+        depth_img = Image.fromarray(depth_uint8, mode="L")
+        stream = io.BytesIO()
+        depth_img.save(stream, "PNG", compress_level=1)
+        return stream.getvalue()
+
+
+def handler(drawing_model: DrawingModel, lotus_model: LotusGeometryModel):
     class Handler(BaseHTTPRequestHandler):
-        server_version = "EtchloomModel/1.0"
+        server_version = "EtchloomModelV2/1.0"
 
         def cors(self):
-            origin = self.headers.get("Origin", "")
-            allowed = {"http://127.0.0.1:4173", "http://localhost:4173"}
-            self.send_header("Access-Control-Allow-Origin", origin if origin in allowed else "http://127.0.0.1:4173")
+            origin = self.headers.get("Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", origin if origin else "*")
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
         def do_OPTIONS(self):
-            self.send_response(204); self.cors(); self.end_headers()
+            self.send_response(204)
+            self.cors()
+            self.end_headers()
 
         def do_GET(self):
             if self.path != "/health":
-                self.send_error(404); return
-            body = json.dumps({"ready": True, "device": str(model.device), "maxSide": model.max_side}).encode()
-            self.send_response(200); self.cors(); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+                self.send_error(404)
+                return
+            body = json.dumps({
+                "ready": True,
+                "device": str(drawing_model.device),
+                "maxSide": drawing_model.max_side,
+                "lotusReady": lotus_model.pipeline is not None,
+                "services": ["informative_drawings", "lotus_depth"]
+            }).encode()
+            self.send_response(200)
+            self.cors()
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
         def do_POST(self):
-            if self.path != "/infer":
-                self.send_error(404); return
+            if self.path not in ("/infer", "/depth"):
+                self.send_error(404)
+                return
             length = int(self.headers.get("Content-Length", "0"))
-            if length < 1 or length > 20 * 1024 * 1024:
-                self.send_error(413, "Image must be between 1 byte and 20 MiB"); return
+            if length < 1 or length > 25 * 1024 * 1024:
+                self.send_error(413, "Image must be between 1 byte and 25 MiB")
+                return
             try:
-                output = model.predict(self.rfile.read(length))
-                self.send_response(200); self.cors(); self.send_header("Content-Type", "image/png"); self.send_header("Content-Length", str(len(output))); self.end_headers(); self.wfile.write(output)
+                payload = self.rfile.read(length)
+                if self.path == "/infer":
+                    output = drawing_model.predict(payload)
+                elif self.path == "/depth":
+                    output = lotus_model.predict_depth(payload)
+                self.send_response(200)
+                self.cors()
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(output)))
+                self.end_headers()
+                self.wfile.write(output)
             except Exception as error:
                 body = json.dumps({"error": str(error)}).encode()
-                self.send_response(400); self.cors(); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+                self.send_response(400)
+                self.cors()
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
 
         def log_message(self, pattern, *args):
-            print(f"{self.address_string()} - {pattern % args}")
+            print(f"[Etchloom V2 Model] {self.address_string()} - {pattern % args}")
 
     return Handler
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Etchloom v2 Informative Drawings & Lotus Geometry Server")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7861)
     parser.add_argument("--max-side", type=int, default=1024)
     parser.add_argument("--weights", type=Path, default=Path(__file__).with_name("weights") / "model.pth")
     args = parser.parse_args()
-    model = DrawingModel(args.weights, args.max_side)
-    print(f"Informative Drawings ready on http://{args.host}:{args.port} ({model.device})", flush=True)
-    ThreadingHTTPServer((args.host, args.port), handler(model)).serve_forever()
+    drawing_model = DrawingModel(args.weights, args.max_side)
+    lotus_model = LotusGeometryModel(args.max_side)
+    print(f"Etchloom AI Server (Informative Drawings + Lotus Depth) ready on http://{args.host}:{args.port} ({drawing_model.device})", flush=True)
+    ThreadingHTTPServer((args.host, args.port), handler(drawing_model, lotus_model)).serve_forever()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,12 @@
+{
+  "width": 800,
+  "height": 600,
+  "model_used": "heuristic-cv",
+  "elapsed_sec": 0.057,
+  "depth_bin": "depth.bin",
+  "depth_vis": "depth_vis.png",
+  "depth_min": 0.0,
+  "depth_max": 0.9999966621398926,
+  "normal_bin": "normal.bin",
+  "normal_vis": "normal_vis.png"
+}

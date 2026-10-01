@@ -1,0 +1,1 @@
+Processing temple.png ...vectorized in 3.457841 Seconds, USM surgery in 7.909638 Seconds, stroke grouping in 9.586213 Seconds, total in 20.953692 Seconds
