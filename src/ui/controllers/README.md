@@ -12,9 +12,9 @@
    连续载图时通过来源版本和 `AbortSignal` 阻止旧计算提交；超出 1200 万像素或单边 4096 像素的原图在创建处理画布前等比缩小。
    母版就绪时通过 `onMasterReady` 通知入口；主动载入的示例不显示固定的伪耗时。
    参数重绘由 `TaskScheduler` 防抖调度，`onRecomputeState` 通知界面显示或隐藏不确定进度条。
-   七阶段卡片的动态说明以 `{ key, args }` 传给 `StepFlowGrid`，避免在控制器中写入固定中文。
+   七阶段卡片的动态说明以 `{ key, args }` 传给 `StepFlowGrid`，避免在控制器中写入固定中文；`downloadStepExport(stepIdx)` 统一生成 `Etchloom-step${stepIdx}-${type}-${timestamp}.${ext}` 时间戳命名。
 2. `PlateStudioController`：管理虚拟铜版工坊画布渲染、4 工具划线涂抹与酸液控制台联动；
-   腐蚀计时保持真实秒数，反应步长为实际秒数的 `0.4` 倍。
+   腐蚀计时保持真实秒数，反应步长为实际秒数的 `0.4` 倍；平均刻槽深度聚焦有效雕刻与腐蚀区域（`exposed >= 0.05 || depth >= 0.005`）动态度量；印样导出与铜版保存集成 `getPlateTimestamp()` 时间戳。
 3. `TransferWizardController`：控制图稿上版向导模态框，执行矢量笔画 Bresenham 离散划线并写入物理网格；
 4. `LightboxController`：管理超高清全屏视口，支持 100%~500% 鼠标滚轮平滑缩放与拖拽漫游。
 
@@ -37,10 +37,11 @@
 - [`tests/plate.test.cjs`](../../../tests/plate.test.cjs)（工具划线、状态保存、大网格分配）
 - [`tests/ui-button-clicks.test.cjs`](../../../tests/ui-button-clicks.test.cjs)（按钮点击流、向导交互、模态框开关）
 - [`tests/two-stage-ui.test.cjs`](../../../tests/two-stage-ui.test.cjs)（双阶段模板与酸液状态）
+- [`tests/theme-bridge.test.cjs`](../../../tests/theme-bridge.test.cjs)（设计 Token、零内联样式、动态刻深与导出命名规范）
 
 运行命令：
 ```bash
-node --test tests/plate.test.cjs tests/ui-button-clicks.test.cjs
+node --test tests/plate.test.cjs tests/ui-button-clicks.test.cjs tests/theme-bridge.test.cjs
 ```
 
 ---

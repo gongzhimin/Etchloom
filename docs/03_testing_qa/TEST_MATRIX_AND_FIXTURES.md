@@ -32,7 +32,7 @@
 | 20 | `tests/virtual-plate-engine.test.cjs` | 铜版无 DOM 物理引擎、化学腐蚀 PDE | 8 | 物理内存分配；偏微分酸蚀扩散；无头纯位图压印；零刻深守卫 |
 | 21 | `tests/app-entry-mount.test.cjs` | 应用入口模块图与 DOM 装配 | 1 | 真实入口可加载并挂载，无语法死锁 |
 | 22 | `tests/lightbox-vector.test.cjs` | 七阶段 SVG 与灯箱全屏检查器 | 3 | 矢量双引擎渲染；视口缩放与拖拽；图层导出 |
-| 23 | `tests/theme-bridge.test.cjs` | 主题网桥与设计 Token 约束 | 7 | 无头主题解析；样式模板约束；铜版初始空版守卫 |
+| 23 | `tests/theme-bridge.test.cjs` | 主题网桥与设计 Token 约束 | 7 | 无头主题解析；样式模板约束；铜版初始空版守卫；酸蚀动态刻深增长；导出文件名时间戳防重名 |
 | 24 | `tests/web-ai-client.test.cjs` | 浏览器端神经网络与离线降级 | 1 | Node 环境能力探测与离线纯 JS 退避模式 |
 | 25 | `tests/preview-server.test.cjs` | 本机预览服务安全边界 | 1 | 应用资产可访问，归档和文档不可越权访问 |
 | 26 | `tests/pipeline-source-cache.test.cjs` | 换图缓存隔离与版本递增 | 2 | 新来源取消待执行任务、清空旧产物并递增来源版本 |

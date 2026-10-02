@@ -94,4 +94,15 @@
   - `src/ui/templates/layout-templates.js` 彻底剔除所有内联 `style="..."` 声明；
   - 所有间距、边框、尺寸统一由 `styles/app.css` 中的语义类与 Token 梯队定义（如 `.transfer-wizard-modal`、`.wizard-stats-box`、`.u-space-4` 等）。
 
+### 1.9 腐蚀深度计量去重与时间戳命名规范 (Acid Gauge Deduplication & Timestamped Export Naming)
+- **腐蚀指标展示与向后兼容解耦**：
+  - 铜版工序 3（控制腐蚀）统一采用美观结构化的 `.acid-metrics-box` 卡片呈现实时累计腐蚀时间（`#etchTimeVal`）、平均刻槽深度（`#etchDepthVal`）与深度进度条（`#etchProgressBar`）；
+  - 旧测试兼容标签 `#plateAcidGauge` 添加 `hidden` 属性，彻底消除“开始腐蚀”按钮下方重复出现的第二行读数，同时保障老版单元测试无损读取；
+  - 刻槽深度采样与计算聚焦于真正有划线或刻槽的物理区域（`exposed[i] >= 0.05 || depth[i] >= 0.005`），自适应步长采样，彻底杜绝粗糙抽样遗漏刻线以及边缘侧蚀极微量斑点稀释深度数值导致的“深度恒为 0.0 μm”缺陷。
+- **全系统规范化时间戳导出命名 (Timestamped Export Naming)**：
+  - 为防止多次连续下载覆盖已有文件或产生浏览器的 `(1)`, `(2)` 杂乱后缀，所有导出统一采用时间序天然可排序的命名结构：
+    `Etchloom-[类别/步骤]-[标识/种子]-[YYYYMMDD-HHmmss].[扩展名]`；
+  - 覆盖步骤流各阶段导出（`Etchloom-step0-source-...` ~ `Etchloom-step6-transfer-...`）、凹版试印（`Etchloom-print-seed[SEED]-...`）、铜版存档与备份（`Etchloom-plate-...`）以及调色方案（`Etchloom-scheme-...`）。
+
+
 

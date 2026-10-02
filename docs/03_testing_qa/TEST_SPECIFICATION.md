@@ -15,14 +15,14 @@
                 ▲
                / \
               /   \
-             / Tier \      Tier 4: UI 交互、主题网桥与 DOM 装配测试 (40 项)
+             / Tier \      Tier 4: UI 交互、主题网桥与 DOM 装配测试 (43 项)
             /   4    \     [tests/ui-button-clicks.test.cjs, tests/two-stage-ui.test.cjs, tests/theme-bridge.test.cjs...]
            /───────────\
           /   Tier 3    \    Tier 3: 异步调度、DAG 缓存与管线集成测试 (16 项)
          /───────────────\   [tests/pipeline-runner.test.cjs, tests/orchestrator.test.cjs, tests/stage-cache.test.cjs...]
         /     Tier 2      \  Tier 2: 虚拟铜版物理引擎与偏微分方程测试 (15 项)
        /───────────────────\ [tests/virtual-plate-engine.test.cjs, tests/plate.test.cjs]
-      /       Tier 1        \ Tier 1: 纯几何流场、排线算法、导出与离线端侧推理测试 (74 项)
+      /       Tier 1        \ Tier 1: 纯几何流场、排线算法、导出与离线端侧推理测试 (71 项)
      /───────────────────────\[tests/geometry-flow.test.cjs, tests/hatching-modular.test.cjs, tests/exporter.test.cjs...]
 ```
 
