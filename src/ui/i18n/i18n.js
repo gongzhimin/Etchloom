@@ -236,7 +236,7 @@ const DICTIONARY = {
     // AI Status
     'model.offline': '基础离线模式 (纯几何)',
     'model.localAi': '本机服务',
-    'model.online': '联网模型',
+    'model.online': '本地模型',
 
     // Two-Stage Progressive Atelier UI Keys
     'nav.step1': '制作母版',
@@ -382,7 +382,7 @@ const DICTIONARY = {
     // Sidebar 00: 图像感知
     'sec.0.title': '00 / Input & 3D Perception',
     'sec.0.upload': 'Upload Photo',
-    'sec.0.lotus': 'Lotus 3D Geometry Enhancement',
+    'sec.0.lotus': '3D Geometry Enhancement',
     'sec.0.exposure': 'Exposure',
     'sec.0.black': 'Black Point',
     'sec.0.white': 'White Point',
@@ -562,7 +562,7 @@ const DICTIONARY = {
     // AI Status
     'model.offline': 'Offline Mode (Geometric)',
     'model.localAi': 'Local AI',
-    'model.online': 'Online Model',
+    'model.online': 'Local Model',
 
     // Two-Stage Progressive Atelier UI Keys
     'nav.step1': 'Create Master',
@@ -708,7 +708,7 @@ const DICTIONARY = {
     // Sidebar 00: 图像感知
     'sec.0.title': '00 / Tri nhận hình ảnh',
     'sec.0.upload': 'Tải ảnh lên',
-    'sec.0.lotus': 'Tăng cường hình học 3D Lotus',
+    'sec.0.lotus': 'Tăng cường hình học 3D',
     'sec.0.exposure': 'Độ phơi sáng',
     'sec.0.black': 'Điểm đen',
     'sec.0.white': 'Điểm trắng',
@@ -888,7 +888,7 @@ const DICTIONARY = {
     // AI Status
     'model.offline': 'Chế độ ngoại tuyến (Hình học thuần)',
     'model.localAi': 'AI Cục bộ',
-    'model.online': 'Mô hình trực tuyến',
+    'model.online': 'Mô hình cục bộ',
 
     // Two-Stage Progressive Atelier UI Keys
     'nav.step1': 'Tạo bản mẫu',

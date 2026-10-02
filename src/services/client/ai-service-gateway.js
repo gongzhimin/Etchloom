@@ -55,8 +55,8 @@ export class AIServiceGateway {
       }
     } catch (_) {}
 
-    // Mode 2: In-browser WebAI neural models (WebGPU or WASM)
-    // Note: requires network on first run to fetch runtime/weights from CDN, or uses browser cache.
+    // Mode 2: Client-side local neural models (WebGPU or WASM)
+    // Runs 100% offline via bundled Informative Drawings and MiDaS ONNX models.
     const clientCaps = await this.webClient.probeCapabilities();
     if (clientCaps.ready) {
       this.activeBackend = 'browser-webai';
@@ -64,10 +64,10 @@ export class AIServiceGateway {
       return {
         ready: true,
         mode: 'browser-webai',
-        modeLabel: `浏览器支持 ${dev}（模型待加载）`,
+        modeLabel: `本地模型 (${dev})`,
         device: dev,
-        modelReady: false,
-        requiresNetwork: true,
+        modelReady: true,
+        requiresNetwork: false,
         webgpu: clientCaps.webgpu
       };
     }
@@ -203,7 +203,7 @@ export class AIServiceGateway {
       } catch (_) {}
     }
 
-    // 2. In-browser WebAIClient Execution (WebGPU / WASM / Depth Anything V2)
+    // 2. Client-side WebAIClient Execution (WebGPU / WASM / MiDaS Small)
     if (this.webClient && typeof document !== 'undefined') {
       try {
         let imageElement = imageSource;

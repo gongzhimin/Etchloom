@@ -118,9 +118,9 @@ export class PipelineController {
       label = `${prefix} · ${health.device}`;
       badgeClass = 'badge badge-green';
     } else if (health.mode === 'browser-webai') {
-      const prefix = i18n ? i18n.t('model.online') : (loc === 'en-US' ? 'Online Model' : (loc === 'vi-VN' ? 'Mô hình trực tuyến' : '联网模型'));
+      const prefix = i18n ? i18n.t('model.online') : (loc === 'en-US' ? 'Local Model' : (loc === 'vi-VN' ? 'Mô hình cục bộ' : '本地模型'));
       label = `${prefix} · ${health.device}`;
-      badgeClass = 'badge badge-gold';
+      badgeClass = 'badge badge-green';
     } else {
       label = i18n ? i18n.t('model.offline') : (loc === 'en-US' ? 'Offline Mode (Geometric)' : (loc === 'vi-VN' ? 'Chế độ ngoại tuyến (Hình học thuần)' : '基础离线模式 (纯几何)'));
       badgeClass = 'badge badge-green';

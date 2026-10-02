@@ -9,7 +9,7 @@
 
 1. **服务探活与模式探测 (`checkHealth`)**：分级自适应探测本地 Python 服务（CUDA/CPU）、浏览器端 WebAI 神经网络（WebGPU/WASM）及离线纯几何模式；
 2. **神经线描推理请求 (`requestLineDrawing`)**：将输入图像请求至 `/infer` 或浏览器端 Informative Drawings ONNX 模型；
-3. **空间几何深度估计 (`requestDepthMap`)**：向 `/depth` 请求 Lotus 空间绝对深度图或浏览器端 Depth Anything V2；
+3. **空间几何深度估计 (`requestDepthMap`)**：向 `/depth` 请求 Lotus 空间绝对深度图或客户端本地内置 MiDaS v2.1 Small；
 4. **统一并发管线 (`requestParallelPipeline`)**：并发调度线描与深度图抽取，返回归一化 Float32Array 空间场；
 5. **主题色彩桥接 (`ThemeBridge`)**：统一 Canvas 2D/SVG 与 CSS `:root` 变量桥接，提供环境自适应主题色彩映射。
 

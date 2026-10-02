@@ -106,7 +106,7 @@ The system can use three processing paths. Model availability is shown in the ad
 | Execution Tier | Runtime Environment | Connectivity & Dependencies | Capabilities & Primary Use Case |
 | :--- | :--- | :--- | :--- |
 | **1. Base Offline**<br>`Offline Mode (Geometric)` | Browser with a local HTTP server (`npm start`) | Base geometry processing requires no external network or runtime packages | Native ESM modules need HTTP loading; direct `file://` opening is not a supported startup method. |
-| **2. Browser WebAI**<br>`Online Model (WebGPU/WASM)` | Modern Chromium/Edge Browser | Initial download needs network access; later offline reuse depends on browser cache and complete model availability | Loads the runtime and depth model on demand, then attempts browser inference; loading failures fall back to analytical geometry. |
+| **2. Local WebAI**<br>`Local Model (WebGPU/WASM)` | Modern Browser / Standalone App | Zero network dependencies, 100% offline bundled models | In-app neural inference with bundled Informative Drawings and MiDaS v2.1 Small ONNX models via WebGPU hardware acceleration (or WASM fallback). |
 | **3. Local Python AI** | Host Python environment | Optional service at `http://127.0.0.1:7861` | Runs available neural inference locally; acceleration depends on the installed runtime and hardware. |
 
 ### 5.1 Quick Start Frontend Studio

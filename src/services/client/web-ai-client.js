@@ -1,12 +1,12 @@
 /**
  * WebAIClient: Client-Side Web Neural Inference Engine for Etchloom v2.
- * Executes Informative Drawings line extraction and Depth Anything V2 depth estimation
- * in the browser via WebGPU / WASM.
+ * Executes Informative Drawings line extraction and MiDaS v2.1 Small depth estimation
+ * locally via WebGPU / WASM.
  * 
  * IMPORTANT ARCHITECTURAL NOTE:
- * - This path requires initial network access to fetch the ONNX Runtime and model weights
- *   from remote CDNs (jsdelivr / HuggingFace), after which they are persisted in browser CacheStorage.
- * - If offline and no cache exists, the system automatically falls back to pure JavaScript
+ * - Model weights (informative-drawings.onnx and midas-small.onnx) are 100% bundled locally
+ *   in models/, with zero overseas CDN or HuggingFace runtime download requirements.
+ * - If model loading is interrupted or unsupported, the system automatically falls back to pure JavaScript
  *   spatial analytical depth estimation (computeAnalyticalDepth), ensuring 100% offline baseline execution.
  */
 

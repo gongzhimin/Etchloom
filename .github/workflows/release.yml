@@ -46,7 +46,7 @@ jobs:
                 repo: context.repo.repo,
                 tag_name: tag,
                 name: `Etchloom ${tag}`,
-                body: `## Etchloom Desktop & Mobile Release\n\n- **Android**: Download the \`.apk\` (ARM64) package below to install directly on your Android phone or tablet.\n- **Windows**: Download the \`.exe\` (NSIS installer) or \`.msi\` package below.\n- **macOS**: Download the \`.dmg\` package below.\n\n### Features:\n- Featherweight standalone cross-platform application (~15-20 MB)\n- 100% Offline classical printmaking engine & physical acid simulation\n- Optimized touch-first mobile interaction with adaptive aspect ratio and bottom sheet drawers\n- Integrated in-app WebGPU / WASM neural acceleration (Depth Anything V2 & Informative Drawings)\n- Automatic discovery & promotion to local Python CUDA service (\`127.0.0.1:7861\`)`,
+                body: `## Etchloom Desktop & Mobile Release\n\n- **Android**: Download the \`.apk\` (ARM64) package below to install directly on your Android phone or tablet.\n- **Windows**: Download the \`.exe\` (NSIS installer) or \`.msi\` package below.\n- **macOS**: Download the \`.dmg\` package below.\n\n### Features:\n- 100% Offline standalone application (~35-40 MB)\n- Embedded dual neural networks (Informative Drawings & MiDaS v2.1 Small ONNX)\n- Integrated in-app WebGPU / WASM local hardware acceleration with zero CDN dependencies\n- Classical printmaking engine & physical acid simulation\n- Optimized touch-first mobile interaction with adaptive aspect ratio and bottom sheet drawers\n- Automatic discovery & promotion to local Python CUDA service (\`127.0.0.1:7861\`)`,
                 draft: false,
                 prerelease: false
               });
