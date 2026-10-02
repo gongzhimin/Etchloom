@@ -255,8 +255,9 @@ export const plateWorkspaceTemplate = `
 
     <!-- Main Workspace Body: Dynamic Left Sidebar + Right Canvas Area -->
     <div class="plate-body">
-      <!-- Dynamic Left Sidebar with 4 Stage Panels -->
-      <aside class="plate-sidebar">
+      <!-- Dynamic Left Sidebar with 4 Stage Panels (Mobile: Bottom Sheet) -->
+      <aside class="plate-sidebar" id="plateSidebar">
+        <div class="bottom-sheet-drag-handle" id="plateSheetHandle" data-i18n-aria="sheet.toggle" aria-label="切换面板展开"></div>
         <!-- Panel 1: 工序 1 · 图稿上版 -->
         <div id="plateStagePanel1" class="plate-stage-panel active">
           <div>

@@ -585,13 +585,28 @@ export function setPlateStage(stageNum) {
       panel.classList.toggle('active', i === stageNum);
     }
   }
+
+  // Auto-reveal controls if sheet was collapsed on mobile
+  const sidebar = $('plateSidebar') || (typeof document !== 'undefined' && document.querySelector ? document.querySelector('.plate-sidebar') : null);
+  if (sidebar && sidebar.classList && sidebar.classList.contains('sheet-collapsed')) {
+    sidebar.classList.remove('sheet-collapsed');
+  }
 }
 
 // Bind DOM event listeners for buttons and canvas
 export function bindPlateStudioEvents(options = {}) {
   const canvas = getCanvas();
   if (canvas) {
+    const activePointers = new Map();
+
     canvas.onpointerdown = e => {
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+      // Multi-touch guard: if 2 or more touches are active, suppress carving to allow gestures
+      if (activePointers.size > 1) {
+        drawing = false;
+        last = null;
+        return;
+      }
       if (view === 'print') {
         if (typeof options.openPlateFullscreen === 'function') {
           options.openPlateFullscreen();
@@ -600,20 +615,32 @@ export function bindPlateStudioEvents(options = {}) {
       }
       snapshot();
       drawing = true;
-      if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+      if (canvas.setPointerCapture) {
+        try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+      }
       last = point(e);
       dab(last.x, last.y, last.p);
     };
+
     canvas.onpointermove = e => {
-      if (!drawing) return;
+      if (activePointers.has(e.pointerId)) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
+      }
+      if (!drawing || activePointers.size > 1) return;
       const p = point(e);
       line(last, p);
       last = p;
     };
-    canvas.onpointerup = canvas.onpointercancel = () => {
-      drawing = false;
-      last = null;
+
+    const finishPointer = e => {
+      if (e && e.pointerId != null) activePointers.delete(e.pointerId);
+      if (activePointers.size === 0) {
+        drawing = false;
+        last = null;
+      }
     };
+    canvas.onpointerup = canvas.onpointercancel = finishPointer;
+
     canvas.onclick = e => {
       if (view === 'print' && typeof options.openPlateFullscreen === 'function') {
         options.openPlateFullscreen();
@@ -634,6 +661,46 @@ export function bindPlateStudioEvents(options = {}) {
         }
       };
     }
+  }
+
+  // Mobile Bottom Sheet toggle and swipe interaction
+  const sheetHandle = $('plateSheetHandle');
+  const plateSidebar = $('plateSidebar') || (typeof document !== 'undefined' && document.querySelector ? document.querySelector('.plate-sidebar') : null);
+  if (sheetHandle && plateSidebar) {
+    sheetHandle.onclick = (e) => {
+      e?.stopPropagation?.();
+      if (plateSidebar.classList.contains('sheet-expanded')) {
+        plateSidebar.classList.remove('sheet-expanded');
+        plateSidebar.classList.add('sheet-collapsed');
+      } else if (plateSidebar.classList.contains('sheet-collapsed')) {
+        plateSidebar.classList.remove('sheet-collapsed');
+      } else {
+        plateSidebar.classList.add('sheet-expanded');
+      }
+    };
+
+    let touchStartY = 0;
+    sheetHandle.addEventListener?.('touchstart', e => {
+      if (e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    sheetHandle.addEventListener?.('touchend', e => {
+      if (e.changedTouches && e.changedTouches.length === 1) {
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+        if (deltaY < -25) {
+          plateSidebar.classList.remove('sheet-collapsed');
+          plateSidebar.classList.add('sheet-expanded');
+        } else if (deltaY > 25) {
+          if (plateSidebar.classList.contains('sheet-expanded')) {
+            plateSidebar.classList.remove('sheet-expanded');
+          } else {
+            plateSidebar.classList.add('sheet-collapsed');
+          }
+        }
+      }
+    }, { passive: true });
   }
 
   if ($('print')) $('print').onclick = () => {
