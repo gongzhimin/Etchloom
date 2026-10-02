@@ -120,8 +120,8 @@ export const masterWorkspaceTemplate = `
 
     <!-- Section: Full Inventory of 25 Parameters in 3 Drawers -->
     <div class="param-drawers-container" data-master-result hidden>
-      <!-- Drawer 1: 常用外观效果 (3 项默认展开) -->
-      <details class="param-drawer" open>
+      <!-- Drawer 1: 常用外观效果 (3 项默认折叠) -->
+      <details class="param-drawer">
         <summary>
           <span data-i18n="m1.drawerAppearance">外观调整</span>
           <span class="u-text-muted font-mono" aria-hidden="true">▾</span>
