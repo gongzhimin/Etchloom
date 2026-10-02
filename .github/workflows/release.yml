@@ -46,7 +46,7 @@ jobs:
                 repo: context.repo.repo,
                 tag_name: tag,
                 name: `Etchloom ${tag}`,
-                body: `## Etchloom Desktop Release\n\n- **Windows**: Download the \`.exe\` (NSIS installer) or \`.msi\` package below.\n- **macOS**: Download the \`.dmg\` package below.\n\n### Features:\n- Featherweight standalone desktop application (~15 MB)\n- 100% Offline base geometric printmaking engine & physical acid simulation\n- Integrated in-app WebGPU / WASM neural acceleration (Depth Anything V2 & Informative Drawings)\n- Automatic discovery & promotion to local Python CUDA service (\`127.0.0.1:7861\`)`,
+                body: `## Etchloom Desktop & Mobile Release\n\n- **Android**: Download the \`.apk\` (ARM64) package below to install directly on your Android phone or tablet.\n- **Windows**: Download the \`.exe\` (NSIS installer) or \`.msi\` package below.\n- **macOS**: Download the \`.dmg\` package below.\n\n### Features:\n- Featherweight standalone cross-platform application (~15-20 MB)\n- 100% Offline classical printmaking engine & physical acid simulation\n- Optimized touch-first mobile interaction with adaptive aspect ratio and bottom sheet drawers\n- Integrated in-app WebGPU / WASM neural acceleration (Depth Anything V2 & Informative Drawings)\n- Automatic discovery & promotion to local Python CUDA service (\`127.0.0.1:7861\`)`,
                 draft: false,
                 prerelease: false
               });
@@ -90,3 +90,99 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
+
+  build-android:
+    needs: create-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK & Build Tools
+        run: |
+          echo "y" | sdkmanager "ndk;26.1.10909125" "cmake;3.22.1" "build-tools;34.0.0" "platforms;android-34"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Rust stable & Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+
+      - name: Prepare web bundle
+        run: npm run build
+
+      - name: Initialize Android project if needed
+        run: |
+          if [ ! -d "src-tauri/gen/android" ]; then
+            npx tauri android init --ci
+          fi
+
+      - name: Build Android APK
+        run: |
+          npx tauri android build --apk --target aarch64
+
+      - name: Sign & Package APK
+        id: package-apk
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [ -z "$TAG" ] || [ "${{ github.ref_type }}" != "tag" ]; then
+            TAG="v0.1.3"
+          fi
+
+          APK_SRC=$(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" | head -n 1)
+          echo "Found raw APK: $APK_SRC"
+
+          if [ -z "$APK_SRC" ]; then
+            echo "Error: No APK file generated!"
+            exit 1
+          fi
+
+          # Generate a self-signed keystore to sign the release APK
+          keytool -genkeypair -v -keystore release.jks -alias etchloom -keyalg RSA -keysize 2048 -validity 10000 -storepass etchloom123 -keypass etchloom123 -dname "CN=Etchloom, OU=Studio, O=Etchloom, L=Studio, S=State, C=US"
+
+          BUILD_TOOLS_DIR=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
+          echo "Using Android Build Tools at: $BUILD_TOOLS_DIR"
+
+          OUTPUT_APK="Etchloom-${TAG}-android-arm64.apk"
+
+          # Align and sign
+          "$BUILD_TOOLS_DIR/zipalign" -v -p 4 "$APK_SRC" aligned.apk || cp "$APK_SRC" aligned.apk
+          "$BUILD_TOOLS_DIR/apksigner" sign --ks release.jks --ks-pass pass:etchloom123 --key-pass pass:etchloom123 --out "$OUTPUT_APK" aligned.apk
+
+          echo "Successfully generated signed APK: $OUTPUT_APK"
+          echo "apk_path=$OUTPUT_APK" >> $GITHUB_OUTPUT
+          echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package-apk.outputs.apk_path }}
+          path: ${{ steps.package-apk.outputs.apk_path }}
+
+      - name: Upload APK to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.package-apk.outputs.release_tag }}"
+          APK_FILE="${{ steps.package-apk.outputs.apk_path }}"
+          echo "Uploading $APK_FILE to GitHub Release $TAG..."
+          gh release upload "$TAG" "$APK_FILE" --clobber

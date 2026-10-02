@@ -11,6 +11,8 @@
     "benchmark": "node scripts/benchmark.cjs",
     "build": "node scripts/prepare-desktop.cjs",
     "build:desktop": "node scripts/prepare-desktop.cjs",
+    "android:init": "tauri android init",
+    "build:android": "tauri android build --apk",
     "icons:generate": "node scripts/generate-icons.cjs"
   },
   "engines": {
