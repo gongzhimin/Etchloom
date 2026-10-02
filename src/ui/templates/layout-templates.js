@@ -683,12 +683,10 @@ export const modalsTemplate = `
         </div>
         <section class="about-community" aria-labelledby="aboutCommunityTitle">
           <h4 id="aboutCommunityTitle" data-i18n="about.communityTitle">项目与反馈</h4>
-          <p data-i18n="about.communityBody">在 GitHub 查看最新代码与下载说明；发现问题或有改进建议，欢迎提交 Issue。</p>
           <div class="about-community-links">
-            <a href="https://github.com/gongzhimin/Etchloom" target="_blank" rel="noopener noreferrer" data-i18n="about.repositoryLink">查看 GitHub 仓库 ↗</a>
-            <a href="https://github.com/gongzhimin/Etchloom/issues" target="_blank" rel="noopener noreferrer" data-i18n="about.issuesLink">提交 Issue ↗</a>
+            <a href="https://github.com/gongzhimin/Etchloom/releases" target="_blank" rel="noopener noreferrer" data-i18n="about.repositoryLink">下载 ↗</a>
+            <a href="https://github.com/gongzhimin/Etchloom/issues" target="_blank" rel="noopener noreferrer" data-i18n="about.issuesLink">反馈 ↗</a>
           </div>
-          <span class="about-repository-url">github.com/gongzhimin/Etchloom</span>
         </section>
         <div class="about-details">
           <section>

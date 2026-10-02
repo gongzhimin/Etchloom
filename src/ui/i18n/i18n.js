@@ -229,8 +229,8 @@ const DICTIONARY = {
     'about.outputBody': '可导出母版 SVG、下载试印 PNG，并保存铜版进度。',
     'about.communityTitle': '项目与反馈',
     'about.communityBody': '在 GitHub 查看最新代码与下载说明；发现问题或有改进建议，欢迎提交 Issue。',
-    'about.repositoryLink': '查看 GitHub 仓库 ↗',
-    'about.issuesLink': '提交 Issue ↗',
+    'about.repositoryLink': '下载 ↗',
+    'about.issuesLink': '反馈 ↗',
     'about.meta': '开源许可：MIT',
 
     // AI Status
@@ -555,8 +555,8 @@ const DICTIONARY = {
     'about.outputBody': 'Export the master as SVG, download a PNG proof, or save plate progress.',
     'about.communityTitle': 'Project and feedback',
     'about.communityBody': 'Find the latest code and download instructions on GitHub. Report bugs or suggest improvements through Issues.',
-    'about.repositoryLink': 'View GitHub repository ↗',
-    'about.issuesLink': 'Open Issues ↗',
+    'about.repositoryLink': 'Download ↗',
+    'about.issuesLink': 'Feedback ↗',
     'about.meta': 'Open-source license: MIT',
 
     // AI Status
@@ -881,8 +881,8 @@ const DICTIONARY = {
     'about.outputBody': 'Xuất bản mẫu SVG, tải bản in thử PNG hoặc lưu tiến trình bản đồng.',
     'about.communityTitle': 'Dự án và phản hồi',
     'about.communityBody': 'Xem mã nguồn mới nhất và hướng dẫn tải xuống trên GitHub. Báo lỗi hoặc đề xuất cải tiến qua Issues.',
-    'about.repositoryLink': 'Xem kho GitHub ↗',
-    'about.issuesLink': 'Mở Issues ↗',
+    'about.repositoryLink': 'Tải về ↗',
+    'about.issuesLink': 'Phản hồi ↗',
     'about.meta': 'Giấy phép mã nguồn mở: MIT',
 
     // AI Status

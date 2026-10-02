@@ -195,7 +195,7 @@ test('About uses a dedicated dialog with two workflow sections', async () => {
   assert.match(modalsTemplate, /id="aboutClose"/);
   assert.match(modalsTemplate, /data-i18n="about.stage1Title"/);
   assert.match(modalsTemplate, /data-i18n="about.stage2Title"/);
-  assert.match(modalsTemplate, /href="https:\/\/github\.com\/gongzhimin\/Etchloom"[^>]*rel="noopener noreferrer"/);
+  assert.match(modalsTemplate, /href="https:\/\/github\.com\/gongzhimin\/Etchloom(\/releases)?"[^>]*rel="noopener noreferrer"/);
   assert.match(modalsTemplate, /href="https:\/\/github\.com\/gongzhimin\/Etchloom\/issues"/);
   assert.doesNotMatch(modalsTemplate, /data-i18n-html="about\./);
 });
