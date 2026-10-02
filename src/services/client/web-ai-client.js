@@ -70,10 +70,14 @@ export class WebAIClient {
       return this.ort;
     }
 
-    const setupOrtEnv = (ortInstance) => {
+    const setupOrtEnv = (ortInstance, isLocal = true) => {
       if (ortInstance?.env?.wasm) {
         ortInstance.env.wasm.simd = true;
-        if (!ortInstance.env.wasm.wasmPaths) {
+        const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 760 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+        if (isMobile || (typeof window !== 'undefined' && !window.crossOriginIsolated)) {
+          ortInstance.env.wasm.numThreads = 1;
+        }
+        if (isLocal && !ortInstance.env.wasm.wasmPaths) {
           ortInstance.env.wasm.wasmPaths = this.modelsBasePath;
         }
       }
@@ -86,7 +90,7 @@ export class WebAIClient {
       localScript.src = this.modelsBasePath + 'ort.min.js';
       localScript.async = true;
       localScript.onload = () => {
-        this.ort = setupOrtEnv(window.ort || null);
+        this.ort = setupOrtEnv(window.ort || null, true);
         resolve(this.ort);
       };
       localScript.onerror = () => {
@@ -95,7 +99,7 @@ export class WebAIClient {
         script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.webgpu.min.js';
         script.async = true;
         script.onload = () => {
-          this.ort = setupOrtEnv(window.ort || null);
+          this.ort = setupOrtEnv(window.ort || null, false);
           resolve(this.ort);
         };
         script.onerror = () => {
@@ -103,7 +107,7 @@ export class WebAIClient {
           const fbScript = document.createElement('script');
           fbScript.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js';
           fbScript.onload = () => {
-            this.ort = setupOrtEnv(window.ort || null);
+            this.ort = setupOrtEnv(window.ort || null, false);
             resolve(this.ort);
           };
           fbScript.onerror = () => resolve(null);
@@ -179,6 +183,8 @@ export class WebAIClient {
     canvas.width = padW;
     canvas.height = padH;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, padW, padH);
     ctx.drawImage(sourceImg, 0, 0, scaledW, scaledH);
@@ -210,8 +216,8 @@ export class WebAIClient {
     if (!session || !this.ort) return null;
 
     try {
-      const isMobile = this.device === 'wasm' || (typeof window !== 'undefined' && (window.innerWidth <= 760 || /Android|iPhone|iPad/i.test(navigator.userAgent)));
-      const effMaxSide = isMobile ? Math.min(this.maxInferenceSide, 384) : this.maxInferenceSide;
+      const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 760 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+      const effMaxSide = isMobile ? Math.min(this.maxInferenceSide, 512) : Math.max(this.maxInferenceSide, 1024);
       const { floatData, padW, padH, scaledW, scaledH } = this._preprocessLineImage(sourceImage, effMaxSide);
       const tensor = new this.ort.Tensor('float32', floatData, [1, 3, padH, padW]);
       const feeds = { [session.inputNames[0]]: tensor };
@@ -232,7 +238,12 @@ export class WebAIClient {
       for (let y = 0; y < scaledH; y++) {
         for (let x = 0; x < scaledW; x++) {
           const srcIdx = y * padW + x;
-          const val = Math.round(Math.max(0, Math.min(1, rawData[srcIdx])) * 255);
+          let rawVal = Math.max(0, Math.min(1.0, rawData[srcIdx]));
+          // Enhance ink contrast for neural sketch lines (< 0.92 is line/shading, >= 0.92 is pure paper)
+          if (rawVal < 0.92) {
+            rawVal = Math.pow(rawVal / 0.92, 1.6) * 0.92;
+          }
+          const val = Math.round(rawVal * 255);
           const outIdx = (y * scaledW + x) * 4;
           d[outIdx] = val;
           d[outIdx + 1] = val;

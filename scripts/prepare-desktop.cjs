@@ -12,8 +12,8 @@ function copyRecursive(src, dest) {
     }
     const entries = fs.readdirSync(src);
     for (const entry of entries) {
-      // Ignore cache and test files
-      if (entry === '.git' || entry === 'node_modules' || entry === '__pycache__' || entry.endsWith('.pyc')) {
+      // Ignore cache, dev docs and markdown files in distribution package
+      if (entry === '.git' || entry === 'node_modules' || entry === '__pycache__' || entry.endsWith('.pyc') || entry === 'docs' || entry.endsWith('.md')) {
         continue;
       }
       copyRecursive(path.join(src, entry), path.join(dest, entry));
