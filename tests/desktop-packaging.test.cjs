@@ -57,6 +57,15 @@ test('Desktop Packaging: Tauri configuration and icon assets are present and val
     assert.ok(fs.existsSync(iconPath), `Icon ${icon} must exist`);
     assert.ok(fs.statSync(iconPath).size > 0, `Icon ${icon} must not be empty`);
   }
+
+  // Windows Desktop Optimizations verification
+  assert.strictEqual(tauriConf.bundle?.windows?.nsis?.compression, 'lzma', 'NSIS must use LZMA compression for compact distribution');
+  assert.strictEqual(tauriConf.app?.windows?.[0]?.backgroundColor, '#faf7f2', 'Window background must be paper tone to prevent white flash');
+  assert.ok(tauriConf.app?.windows?.[0]?.additionalBrowserArgs?.includes('WebGPU'), 'Browser args must enable WebGPU acceleration');
+
+  const cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
+  assert.ok(cargoToml.includes('[profile.release]'), 'Cargo.toml must have [profile.release] optimization');
+  assert.ok(cargoToml.includes('panic = "abort"'), 'Cargo.toml must specify panic = "abort" for minimal binary size');
 });
 
 test('Mobile Packaging: prepare-desktop --android omits WebGPU JSEP to optimize APK size while keeping full-precision models', () => {
