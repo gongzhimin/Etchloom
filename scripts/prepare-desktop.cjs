@@ -77,6 +77,13 @@ function prepareDesktop() {
     }
   }
 
+  // 5. Copy models/ (Informative Drawings line extraction & MiDaS v2.1 depth estimation)
+  const modelsSrc = path.join(ROOT_DIR, 'models');
+  if (fs.existsSync(modelsSrc)) {
+    const modelsDest = path.join(DIST_DIR, 'models');
+    copyRecursive(modelsSrc, modelsDest);
+  }
+
   const { totalBytes, fileCount } = calculateDirSize(DIST_DIR);
   const sizeMb = (totalBytes / (1024 * 1024)).toFixed(2);
   const sizeKb = (totalBytes / 1024).toFixed(1);

@@ -279,7 +279,7 @@ export class PipelineController {
           }
           if (depthMap) {
             fetchedDepthMap = depthMap;
-            const depthLabel = (backend && backend.startsWith('remote')) ? 'Lotus (本机服务)' : (backend === 'analytical' ? '视角梯度 (基础离线)' : 'Depth Anything V2 (联网浏览器模型)');
+            const depthLabel = (backend && backend.startsWith('remote')) ? 'Lotus (本机服务)' : (backend === 'analytical' ? '视角梯度 (基础离线)' : 'MiDaS (本地神经网络)');
             this.log('模型', `✓ ${depthLabel} 空间深度图计算成功 (${curW} × ${curH})，已激活空气透视调制`, 'done');
           }
         } catch (mErr) {

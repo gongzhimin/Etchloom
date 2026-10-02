@@ -26,7 +26,7 @@ export class WebAIClient {
 
     this.ort = null;
     this.lineSession = null;
-    this.depthPipeline = null;
+    this.depthSession = null;
     this.device = 'wasm';
     this.isSupported = typeof window !== 'undefined';
     this._initPromise = null;
@@ -115,26 +115,24 @@ export class WebAIClient {
   }
 
   /**
-   * Initialize or get the cached Depth Anything V2 pipeline.
+   * Initialize or get the cached local MiDaS v2.1 Small ONNX session.
    * @returns {Promise<any>}
    */
-  async getDepthPipeline() {
-    if (this.depthPipeline) return this.depthPipeline;
+  async getDepthSession() {
+    if (this.depthSession) return this.depthSession;
+    const ort = await this._loadOrt();
+    if (!ort) return null;
+
     try {
-      const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-      env.useBrowserCache = true;
-      env.allowLocalModels = false;
-      this.depthPipeline = await pipeline('depth-estimation', 'Xenova/depth-anything-small-hf', {
-        device: this.device === 'webgpu' ? 'webgpu' : 'wasm',
-        progress_callback: (p) => {
-          if (p.status === 'progress' && typeof this.onProgress === 'function') {
-            this.onProgress(p.progress || 0);
-          }
-        }
-      });
-      return this.depthPipeline;
+      const sessionOptions = {
+        executionProviders: this.device === 'webgpu' ? ['webgpu', 'wasm'] : ['wasm'],
+        graphOptimizationLevel: 'all'
+      };
+      const modelUrl = this.modelsBasePath + 'midas-small.onnx';
+      this.depthSession = await ort.InferenceSession.create(modelUrl, sessionOptions);
+      return this.depthSession;
     } catch (err) {
-      this.log('WebAI', 'Transformers.js 加载跳过 (' + err.message + ')，使用高精解析深度先验', 'info');
+      this.log('WebAI', 'MiDaS 深度模型载入失败 (' + err.message + ')，启动解析几何深度先验', 'warn');
       return null;
     }
   }
@@ -188,7 +186,9 @@ export class WebAIClient {
     if (!session || !this.ort) return null;
 
     try {
-      const { floatData, padW, padH, scaledW, scaledH } = this._preprocessLineImage(sourceImage, this.maxInferenceSide);
+      const isMobile = this.device === 'wasm' || (typeof window !== 'undefined' && (window.innerWidth <= 760 || /Android|iPhone|iPad/i.test(navigator.userAgent)));
+      const effMaxSide = isMobile ? Math.min(this.maxInferenceSide, 384) : this.maxInferenceSide;
+      const { floatData, padW, padH, scaledW, scaledH } = this._preprocessLineImage(sourceImage, effMaxSide);
       const tensor = new this.ort.Tensor('float32', floatData, [1, 3, padH, padW]);
       const feeds = { [session.inputNames[0]]: tensor };
       const results = await session.run(feeds);
@@ -240,7 +240,7 @@ export class WebAIClient {
   }
 
   /**
-   * Performs client-side depth estimation via Depth Anything V2 or analytical spatial fallback.
+   * Performs client-side depth estimation via local MiDaS v2.1 Small ONNX model or analytical spatial fallback.
    * @param {HTMLImageElement|HTMLCanvasElement} sourceImage
    * @param {number} targetW
    * @param {number} targetH
@@ -249,41 +249,85 @@ export class WebAIClient {
   async predictDepth(sourceImage, targetW, targetH) {
     if (typeof document === 'undefined') return null;
 
-    // 1. Try Depth Anything V2 Neural Pipeline
-    const pipeline = await this.getDepthPipeline();
-    if (pipeline) {
+    // 1. Try Local MiDaS v2.1 Small ONNX Session
+    const session = await this.getDepthSession();
+    if (session && this.ort) {
       try {
+        const inW = 256;
+        const inH = 256;
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = targetW;
-        tempCanvas.height = targetH;
+        tempCanvas.width = inW;
+        tempCanvas.height = inH;
         const ctx = tempCanvas.getContext('2d');
-        ctx.drawImage(sourceImage, 0, 0, targetW, targetH);
+        ctx.drawImage(sourceImage, 0, 0, inW, inH);
+        const imgData = ctx.getImageData(0, 0, inW, inH).data;
 
-        const out = await pipeline(tempCanvas.toDataURL('image/jpeg', 0.85));
-        if (out && out.depth) {
-          // Transformers.js depth image output
-          const depthImg = out.depth;
-          const dCanvas = document.createElement('canvas');
-          dCanvas.width = targetW;
-          dCanvas.height = targetH;
-          const dCtx = dCanvas.getContext('2d');
-          
-          if (depthImg.toCanvas) {
-            dCtx.drawImage(depthImg.toCanvas(), 0, 0, targetW, targetH);
-          } else {
-            // Raw tensor/image fallback
-            dCtx.drawImage(tempCanvas, 0, 0, targetW, targetH);
+        // ImageNet normalization for MiDaS: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        const floatData = new Float32Array(3 * inW * inH);
+        const planeSize = inW * inH;
+        for (let i = 0; i < planeSize; i++) {
+          const r = imgData[i * 4] / 255.0;
+          const g = imgData[i * 4 + 1] / 255.0;
+          const b = imgData[i * 4 + 2] / 255.0;
+          floatData[i] = (r - 0.485) / 0.229;
+          floatData[planeSize + i] = (g - 0.456) / 0.224;
+          floatData[2 * planeSize + i] = (b - 0.406) / 0.225;
+        }
+
+        const tensor = new this.ort.Tensor('float32', floatData, [1, 3, inH, inW]);
+        const inputName = session.inputNames[0];
+        const results = await session.run({ [inputName]: tensor });
+        const outputTensor = results[session.outputNames[0]];
+
+        if (outputTensor && outputTensor.data) {
+          const rawDepth = outputTensor.data; // [1, 256, 256]
+          let minVal = Infinity;
+          let maxVal = -Infinity;
+          for (let i = 0; i < rawDepth.length; i++) {
+            const v = rawDepth[i];
+            if (v < minVal) minVal = v;
+            if (v > maxVal) maxVal = v;
           }
+          const range = (maxVal - minVal > 1e-5) ? (maxVal - minVal) : 1.0;
 
-          const dData = dCtx.getImageData(0, 0, targetW, targetH).data;
+          // Invert disparity to depth: near=0 (foreground), far=1 (background)
+          const dCanvas = document.createElement('canvas');
+          dCanvas.width = inW;
+          dCanvas.height = inH;
+          const dCtx = dCanvas.getContext('2d');
+          const dImgData = dCtx.createImageData(inW, inH);
+          const d = dImgData.data;
+
+          for (let i = 0; i < rawDepth.length; i++) {
+            const dispNorm = (rawDepth[i] - minVal) / range;
+            const depthNorm = Math.max(0, Math.min(1.0, 1.0 - dispNorm));
+            const byteVal = Math.round(depthNorm * 255);
+            const idx = i * 4;
+            d[idx] = byteVal;
+            d[idx + 1] = byteVal;
+            d[idx + 2] = byteVal;
+            d[idx + 3] = 255;
+          }
+          dCtx.putImageData(dImgData, 0, 0);
+
+          // Bilinear upscale to targetW * targetH
+          const resampleCanvas = document.createElement('canvas');
+          resampleCanvas.width = targetW;
+          resampleCanvas.height = targetH;
+          const rCtx = resampleCanvas.getContext('2d');
+          rCtx.imageSmoothingEnabled = true;
+          rCtx.imageSmoothingQuality = 'high';
+          rCtx.drawImage(dCanvas, 0, 0, targetW, targetH);
+
+          const finalData = rCtx.getImageData(0, 0, targetW, targetH).data;
           const floats = new Float32Array(targetW * targetH);
           for (let i = 0; i < floats.length; i++) {
-            floats[i] = dData[i * 4] / 255.0;
+            floats[i] = finalData[i * 4] / 255.0;
           }
           return { width: targetW, height: targetH, data: floats };
         }
-      } catch (e) {
-        this.log('WebAI', 'Depth Anything 推理异常: ' + (e ? e.message : '未知错误') + '，启动解析几何深度先验', 'warn');
+      } catch (err) {
+        this.log('WebAI', 'MiDaS 推理异常: ' + (err ? err.message : '未知错误') + '，启动解析几何深度先验', 'warn');
       }
     }
 

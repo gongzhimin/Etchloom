@@ -19,6 +19,13 @@ test('Desktop Packaging: prepare-desktop creates minimal, complete dist bundle',
   assert.strictEqual(fs.existsSync(path.join(distDir, 'docs', 'images', 'legacy')), false, 'historical screenshots must not be bundled');
   assert.strictEqual(fs.existsSync(path.join(distDir, 'docs', 'images', 'etchloom-two-stage-layout.svg')), false, 'README diagrams must not be bundled');
 
+  // Verify models are bundled for 100% offline standalone execution
+  assert.ok(fs.existsSync(path.join(distDir, 'models')), 'dist/models must exist');
+  assert.ok(fs.existsSync(path.join(distDir, 'models', 'informative-drawings.onnx')), 'informative-drawings.onnx must exist in dist/models');
+  assert.ok(fs.statSync(path.join(distDir, 'models', 'informative-drawings.onnx')).size > 1000000, 'informative-drawings.onnx must be non-empty');
+  assert.ok(fs.existsSync(path.join(distDir, 'models', 'midas-small.onnx')), 'midas-small.onnx must exist in dist/models');
+  assert.ok(fs.statSync(path.join(distDir, 'models', 'midas-small.onnx')).size > 1000000, 'midas-small.onnx must be non-empty');
+
   // Verify heavy files are NOT included
   assert.strictEqual(fs.existsSync(path.join(distDir, 'services')), false, 'services/ must not be in dist');
   assert.strictEqual(fs.existsSync(path.join(distDir, 'tests')), false, 'tests/ must not be in dist');
