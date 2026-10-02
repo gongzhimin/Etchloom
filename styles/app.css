@@ -28,6 +28,9 @@
   --copper-glow: #9c755f;        /* Soft pottery terracotta tone */
   --paper-ivory: #faf7f0;        /* Archival fine-art paper ivory base */
   --ink-dark: #1b1c1b;           /* True printmaking deep black */
+  --atelier-linen-base: #ece5da; /* Master workspace drafting surface */
+  --atelier-paper-face: #fffdf8; /* Raised master sheet */
+  --atelier-board-base: #d4c5ae; /* Copperplate workbench surface */
 
   /* Spacing Scale (4px harmonic grid system) */
   --space-1: 4px;
@@ -973,14 +976,21 @@ body.mode-plate aside.app-sidebar #drawer2 {
 
 .plate-caption {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 8px 24px;
-  background: var(--bg-surface);
+  flex-wrap: wrap;
+  column-gap: 18px;
+  row-gap: 4px;
+  padding: 8px 16px;
+  background: rgba(255, 253, 248, 0.94);
   font-size: 12px;
   color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
+  border: 1px solid rgba(95, 75, 52, 0.18);
+  border-radius: 4px;
+  box-shadow: 0 2px 7px rgba(64, 45, 27, 0.12);
 }
+.plate-caption-text { min-width: 0; }
+.plate-caption-status { flex: none; white-space: nowrap; }
 
 /* --------------------------------------------------------------------------
    Transfer Wizard Modal
@@ -1680,6 +1690,13 @@ footer.telemetry-footer {
   overflow-x: hidden !important;
   height: 100% !important;
   box-sizing: border-box !important;
+  background-color: var(--atelier-linen-base);
+  background-image:
+    radial-gradient(rgba(105, 84, 58, 0.045) 0.6px, transparent 0.8px),
+    radial-gradient(rgba(255, 255, 255, 0.32) 0.7px, transparent 0.9px),
+    linear-gradient(145deg, #f4eee5, #e9dfd1);
+  background-size: 23px 29px, 31px 37px, auto;
+  background-position: 0 0, 11px 17px, 0 0;
 }
 
 #masterWorkspace.master-workspace-wrap > :not(.master-entry) {
@@ -1701,9 +1718,10 @@ footer.telemetry-footer {
 .master-entry-content {
   width: min(100%, clamp(500px, 62vw, 820px));
   padding: clamp(28px, 5vw, 64px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #ddd4c6;
   border-radius: 16px;
-  background: var(--bg-surface);
+  background: linear-gradient(155deg, #fffefa, var(--atelier-paper-face));
+  box-shadow: inset 0 1px 0 #fff, 0 3px 6px rgba(68, 51, 33, 0.06), 0 18px 38px rgba(68, 51, 33, 0.09);
   text-align: center;
   box-sizing: border-box;
 }
@@ -1813,8 +1831,12 @@ body[data-master-screen="computing"] footer.telemetry-footer {
 
 /* Hero Master Preview */
 .master-hero-viewport {
-  background: var(--bg-app);
-  border: 1px solid var(--border-subtle);
+  background-color: #e7ddcf;
+  background-image:
+    radial-gradient(rgba(93, 73, 50, 0.035) 0.6px, transparent 0.9px),
+    linear-gradient(135deg, #eee6da, #e2d6c6);
+  background-size: 27px 31px, auto;
+  border: 1px solid #d9cebe;
   border-radius: var(--radius-md);
   padding: var(--space-4);
   display: flex;
@@ -1831,15 +1853,15 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   width: fit-content;
   max-width: min(100%, 1180px);
   max-height: 100%;
-  background: var(--bg-surface);
+  background: var(--atelier-paper-face);
   border-radius: var(--radius-sm);
   padding: var(--space-3);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #e3dacc;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   position: relative;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 0 #fff, 0 3px 5px rgba(65, 48, 30, 0.07), 0 18px 32px rgba(65, 48, 30, 0.14);
 }
 
 .master-hero-canvas {
@@ -2069,6 +2091,10 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   justify-content: space-between;
   overflow-y: auto;
 }
+.plate-sidebar .wizard-radio-grid-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+.plate-sidebar .wizard-card-label > div { min-width: 0; }
 
 .plate-stage-panel {
   display: none;
@@ -2141,10 +2167,17 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   justify-content: center;
   position: relative;
   border-radius: var(--radius-sm);
-  border: 1px solid #c9bba8;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58), inset 0 0 28px rgba(83, 64, 43, 0.08), 0 8px 30px rgba(64, 48, 33, 0.12);
-  background-color: #d5c8b5;
-  background-image: linear-gradient(125deg, #e6dbc9, #cbbb9f 55%, #ded0b8);
+  border: 1px solid #ad9476;
+  box-shadow:
+    0 2px 5px rgba(68, 49, 31, 0.13),
+    0 9px 24px rgba(68, 49, 31, 0.16),
+    inset 0 0 0 1px rgba(112, 82, 52, 0.14);
+  background-color: var(--atelier-board-base);
+  background-image:
+    linear-gradient(rgba(255, 251, 243, 0.55), rgba(255, 251, 243, 0.55)),
+    url('../docs/images/oak-workbench.png');
+  background-size: auto, cover;
+  background-position: center;
 }
 
 .plate-canvas-frame canvas {
@@ -2154,7 +2187,10 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   height: auto;
   display: block;
   object-fit: contain;
-  box-shadow: 0 14px 28px rgba(61, 40, 24, 0.28), 0 2px 5px rgba(61, 40, 24, 0.19);
+  border: 1px solid rgba(74, 49, 34, 0.68);
+  box-shadow:
+    0 3px 6px rgba(61, 40, 24, 0.22),
+    0 14px 24px rgba(61, 40, 24, 0.28);
 }
 
 .plate-canvas-actions {
@@ -2360,9 +2396,16 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   .master-entry-content h2 { font-size: 26px; }
   .master-banner-actions button { flex: 1; }
   .param-grid-3, .param-grid-4 { grid-template-columns: minmax(0, 1fr); }
-  .plate-process-stepper { gap: 4px; }
-  .stepper-step { min-width: 0; padding: 6px 7px; }
+  .plate-process-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .stepper-step { min-width: 0; justify-content: center; gap: 4px; padding: 6px 2px; font-size: 11px; white-space: nowrap; }
   .stepper-arrow { display: none; }
+  .plate-top-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
   .plate-top-bar > * { max-width: 100%; }
+  .view-tabs { grid-column: 1 / -1; }
   .view-tabs, .resolution-selector { flex-wrap: wrap; }
 }

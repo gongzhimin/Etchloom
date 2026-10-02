@@ -423,19 +423,22 @@ export class PipelineController {
     const stepCanvas = this.stepGrid?.stepStates[stepIdx]?.canvas;
     const curW = this.currentLoadedImage?.width || 900;
     const curH = this.currentLoadedImage?.height || 660;
+    const pad = n => String(n).padStart(2, '0');
+    const now = new Date();
+    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 
     if (stepIdx === 0) {
       if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step0_source_image.png'));
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step0-source-${ts}.png`));
       } else if (this.currentLoadedImage?.rawImg) {
         const c = document.createElement('canvas');
         c.width = curW; c.height = curH;
         c.getContext('2d').drawImage(this.currentLoadedImage.rawImg, 0, 0);
-        c.toBlob(b => b && download(b, 'step0_source_image.png'));
+        c.toBlob(b => b && download(b, `Etchloom-step0-source-${ts}.png`));
       }
     } else if (stepIdx === 1) {
       if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step1_line_map.png'));
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step1-linemap-${ts}.png`));
       } else if (this.lastStage1LineMap) {
         const c = document.createElement('canvas');
         c.width = this.lastStage1LineMap.width || curW;
@@ -450,11 +453,11 @@ export class PipelineController {
           im.data[i * 4 + 3] = 255;
         }
         c.getContext('2d').putImageData(im, 0, 0);
-        c.toBlob(b => b && download(b, 'step1_line_map.png'));
+        c.toBlob(b => b && download(b, `Etchloom-step1-linemap-${ts}.png`));
       }
     } else if (stepIdx === 2) {
       if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step2_tone_flow.png'));
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step2-toneflow-${ts}.png`));
       }
     } else if (stepIdx === 3) {
       if (this.lastContours && ExporterLib) {
@@ -463,9 +466,9 @@ export class PipelineController {
           masterPaths: this.lastContours,
           options: { width: curW, height: curH }
         });
-        download(new Blob([svg.data], { type: svg.mimeType }), 'step3_contours.svg');
+        download(new Blob([svg.data], { type: svg.mimeType }), `Etchloom-step3-contours-${ts}.svg`);
       } else if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step3_contours.png'));
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step3-contours-${ts}.png`));
       }
     } else if (stepIdx === 4) {
       if (this.lastHatching && ExporterLib) {
@@ -474,9 +477,9 @@ export class PipelineController {
           masterPaths: this.lastHatching,
           options: { width: curW, height: curH }
         });
-        download(new Blob([svg.data], { type: svg.mimeType }), 'step4_hatching.svg');
+        download(new Blob([svg.data], { type: svg.mimeType }), `Etchloom-step4-hatching-${ts}.svg`);
       } else if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step4_hatching.png'));
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step4-hatching-${ts}.png`));
       }
     } else if (stepIdx === 5) {
       if (this.lastMasterPaths && ExporterLib) {
@@ -485,12 +488,21 @@ export class PipelineController {
           masterPaths: this.lastMasterPaths,
           options: { width: curW, height: curH }
         });
-        download(new Blob([svg.data], { type: svg.mimeType }), 'step5_master_vector.svg');
+        download(new Blob([svg.data], { type: svg.mimeType }), `Etchloom-step5-master-${ts}.svg`);
       } else if (stepCanvas) {
-        stepCanvas.toBlob(b => b && download(b, 'step5_master_vector.png'));
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step5-master-${ts}.png`));
       }
     } else if (stepIdx === 6) {
-      if (stepCanvas) stepCanvas.toBlob(b => b && download(b, 'step6_transfer_master.png'));
+      if (this.lastMasterPaths && ExporterLib) {
+        const svg = ExporterLib.exportPayload({
+          format: 'SVG',
+          masterPaths: this.lastMasterPaths,
+          options: { width: curW, height: curH }
+        });
+        download(new Blob([svg.data], { type: svg.mimeType }), `Etchloom-step6-transfer-${ts}.svg`);
+      } else if (stepCanvas) {
+        stepCanvas.toBlob(b => b && download(b, `Etchloom-step6-transfer-${ts}.png`));
+      }
     }
   }
 

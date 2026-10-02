@@ -55,8 +55,8 @@ src/core/plate/
 ## 4. 自动化测试与验证 (Testing & Verification)
 
 针对本模块的自动化测试包括：
-- [`tests/virtual-plate-engine.test.cjs`](../../../tests/virtual-plate-engine.test.cjs)（6 项：内存分配、4 工具物理正交性、偏微分酸蚀扩散、纯位图压印、快照撤销栈、PlateCodec 存盘）
-- [`tests/plate.test.cjs`](../../../tests/plate.test.cjs)（5 项：工具交互、撤销重做）
+- [`tests/virtual-plate-engine.test.cjs`](../../../tests/virtual-plate-engine.test.cjs)（内存分配、4 工具行为、酸蚀扩散、压印、快照撤销与 PlateCodec）
+- [`tests/plate.test.cjs`](../../../tests/plate.test.cjs)（工具交互、撤销重做）
 
 运行命令：
 ```bash

@@ -2,7 +2,9 @@
 
 > **位置**：`src/ui/docs/INTERFACE_SPEC.md`  
 > **所属层次**：Layer 3 & 4 交互呈现与视图总装层 (Decoupled UI Layer)  
-> **实现目标**：指导响应式全局状态机 (`store/`)、业务控制器 (`controllers/`)、原子交互组件 (`components/`) 与双语国际化 (`i18n/`) 的接口契约。
+> **实现目标**：指导响应式全局状态机 (`store/`)、业务控制器 (`controllers/`)、原子交互组件 (`components/`) 与中、英、越三语国际化 (`i18n/`) 的接口契约。
+
+> **状态说明**：本文第 1～7 节是早期接口提案 **[PLANNED]**，其中 TypeScript 接口并非仓库当前导出的类型。当前实现采用 JavaScript：`AppStore` 的状态字段为 `locale`、`activeWorkflow`、`recipe`、`stepFlow`、`artifacts`、`runtime` 等；`getState()` 返回内部状态对象，未深冻结；控制器没有统一的 `mount/destroy` 接口；模板由 `mountAppLayout()` 直接赋值给容器 `innerHTML`。现状请以 `src/ui/store/app-store.js`、`src/ui/templates/layout-templates.js` 和控制器源码为准。
 
 ---
 
@@ -118,7 +120,7 @@ export interface LoupeSampleCoords {
 1. **单向通知有序性**：
    当 `store.dispatch` 触发状态变更时，所有已注册的订阅者必须按注册顺序接收到最新的同一份状态快照。
 2. **国际化字典完备性不变量**：
-   凡是在微模板中声明了 `data-i18n="KEY"` 的字段，在 `i18n.js` 的 `zh` 与 `en` 字典中必须**100% 存在对应的字符串映射**，严禁在界面中残留未转义的占位符。
+   凡是在微模板中声明了 `data-i18n="KEY"` 的字段，目标是在 `i18n.js` 的 `zh-CN`、`en-US` 与 `vi-VN` 字典中均存在对应字符串。当前三语键完整性由 `tests/two-stage-ui.test.cjs` 检查。
 
 ---
 

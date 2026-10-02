@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="610" viewBox="0 0 1260 610" role="img" aria-labelledby="title desc">
+  <title id="title">Etchloom two-stage interface layout</title>
+  <desc id="desc">A schematic of the current interface: a master preview with collapsed process and appearance panels, followed by a copperplate workspace with manual transfer, a wooden bench, and a plate.</desc>
+  <defs>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#4b3b2b" flood-opacity=".12"/></filter>
+    <pattern id="wood" width="120" height="46" patternUnits="userSpaceOnUse">
+      <rect width="120" height="46" fill="#ead8bd"/>
+      <path d="M0 9 C25 4 51 14 79 9 S109 5 120 7 M0 22 C21 20 42 26 72 21 S105 18 120 20 M0 36 C29 31 55 40 80 36 S111 32 120 34" fill="none" stroke="#b99a72" stroke-opacity=".32" stroke-width="1.4"/>
+    </pattern>
+    <clipPath id="master-clip"><rect x="100" y="168" width="444" height="271" rx="2"/></clipPath>
+    <clipPath id="plate-clip"><rect x="871" y="212" width="289" height="253" rx="3"/></clipPath>
+  </defs>
+  <rect width="1260" height="610" fill="#faf8f5"/>
+  <text x="32" y="38" fill="#2a2b2a" font-family="Georgia,serif" font-size="24" font-weight="700">Etchloom</text>
+  <text x="32" y="60" fill="#6b6e69" font-family="Arial,sans-serif" font-size="13">Two-stage interface · current layout diagram</text>
+  <path d="M32 77 H1228" stroke="#e6dfd4"/>
+
+  <g filter="url(#lift)">
+    <rect x="24" y="98" width="602" height="485" rx="10" fill="#fff" stroke="#ddd4c6"/>
+    <rect x="638" y="98" width="598" height="485" rx="10" fill="#fff" stroke="#ddd4c6"/>
+  </g>
+  <circle cx="54" cy="126" r="14" fill="#536957"/><text x="54" y="131" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="13" font-weight="700">1</text>
+  <text x="79" y="132" fill="#2a2b2a" font-family="Arial,sans-serif" font-size="16" font-weight="700">Create master</text>
+  <text x="599" y="131" text-anchor="end" fill="#536957" font-family="Arial,sans-serif" font-size="12">Choose photo → preview</text>
+  <path d="M42 146 H608" stroke="#eee8df"/>
+
+  <rect x="43" y="161" width="564" height="321" rx="6" fill="#eee5d8"/>
+  <rect x="83" y="174" width="485" height="290" rx="4" fill="#fffdf8" stroke="#d7cbbb" filter="url(#lift)"/>
+  <rect x="100" y="190" width="451" height="248" fill="#f7f8f7" stroke="#c7d0cc"/>
+  <rect x="111" y="201" width="429" height="226" fill="none" stroke="#33463f" stroke-width="1.4"/>
+  <g clip-path="url(#master-clip)" fill="none" stroke="#394b44" stroke-width="1.2">
+    <rect x="187" y="330" width="262" height="34"/><rect x="168" y="364" width="300" height="24"/>
+    <rect x="248" y="254" width="28" height="76"/><path d="M252 254 V239 H272 V254"/>
+    <path d="M324 273 C312 290 300 318 317 338 C329 353 377 353 390 337 C408 317 388 282 374 269 C363 258 339 258 324 273Z"/>
+    <ellipse cx="416" cy="315" rx="25" ry="38"/>
+    <path d="M319 285 H389 M315 296 H395 M313 307 H398 M313 318 H398 M315 329 H395 M321 340 H389 M395 293 H437 M394 304 H440 M392 315 H442 M394 326 H440" stroke-opacity=".72"/>
+  </g>
+  <text x="101" y="455" fill="#727671" font-family="monospace" font-size="10">900 × 660 px</text>
+  <text x="549" y="455" text-anchor="end" fill="#727671" font-family="monospace" font-size="10">TRANSFER MASTER</text>
+  <rect x="43" y="497" width="564" height="30" rx="4" fill="#fff" stroke="#eae5dc"/>
+  <text x="57" y="517" fill="#3b403c" font-family="Arial,sans-serif" font-size="12">View Process</text><path d="m587 509 5 5 5-5" fill="none" stroke="#536957"/>
+  <rect x="43" y="537" width="564" height="30" rx="4" fill="#fff" stroke="#eae5dc"/>
+  <text x="57" y="557" fill="#3b403c" font-family="Arial,sans-serif" font-size="12">Appearance</text><path d="m587 549 5 5 5-5" fill="none" stroke="#536957"/>
+
+  <circle cx="668" cy="126" r="14" fill="#536957"/><text x="668" y="131" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="13" font-weight="700">2</text>
+  <text x="693" y="132" fill="#2a2b2a" font-family="Arial,sans-serif" font-size="16" font-weight="700">Etch plate</text>
+  <text x="1210" y="131" text-anchor="end" fill="#536957" font-family="Arial,sans-serif" font-size="12">Transfer → draw → etch → proof</text>
+  <path d="M654 146 H1220" stroke="#eee8df"/>
+  <g font-family="Arial,sans-serif" font-size="11" fill="#545b55">
+    <text x="676" y="174">1 Transfer</text><text x="802" y="174">2 Draw</text><text x="907" y="174">3 Etch</text><text x="1008" y="174">4 Proof</text>
+  </g>
+  <g fill="none" stroke="#ddd5ca"><path d="M748 170 H786 M853 170 H889 M958 170 H990"/></g>
+  <rect x="655" y="191" width="160" height="369" rx="3" fill="#fff" stroke="#e7e1d8"/>
+  <text x="666" y="214" fill="#2a2b2a" font-family="Arial,sans-serif" font-size="12" font-weight="700">Transfer method</text>
+  <rect x="666" y="235" width="138" height="44" rx="4" fill="#f4f1ec" stroke="#536957"/>
+  <circle cx="680" cy="255" r="5" fill="#536957"/><text x="692" y="259" fill="#2a2b2a" font-family="Arial,sans-serif" font-size="11">Etching needle</text>
+  <rect x="666" y="289" width="138" height="44" rx="4" fill="#f4f1ec" stroke="#e0d8cc"/>
+  <circle cx="680" cy="309" r="5" fill="none" stroke="#7b817b"/><text x="692" y="313" fill="#2a2b2a" font-family="Arial,sans-serif" font-size="11">Drypoint</text>
+  <rect x="666" y="494" width="138" height="28" rx="4" fill="#536957"/>
+  <text x="735" y="512" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="11" font-weight="700">Transfer &amp; draw</text>
+  <rect x="666" y="530" width="138" height="20" rx="4" fill="#fff" stroke="#dfd8cf"/>
+  <text x="735" y="544" text-anchor="middle" fill="#525b53" font-family="Arial,sans-serif" font-size="10">Adjust transfer</text>
+  <rect x="826" y="191" width="393" height="33" rx="4" fill="#fff" stroke="#e7e1d8"/>
+  <rect x="837" y="198" width="53" height="19" rx="4" fill="#536957"/>
+  <text x="864" y="211" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="10">Plate</text>
+  <text x="901" y="211" fill="#555e58" font-family="Arial,sans-serif" font-size="10">Depth</text>
+  <text x="951" y="211" fill="#555e58" font-family="Arial,sans-serif" font-size="10">Proof</text>
+  <rect x="826" y="233" width="393" height="291" rx="4" fill="url(#wood)" stroke="#ad9476" filter="url(#lift)"/>
+  <rect x="871" y="253" width="299" height="249" rx="3" fill="#8b624d" stroke="#644534" filter="url(#lift)"/>
+  <g clip-path="url(#plate-clip)" fill="none" stroke="#c89d78" stroke-opacity=".65" stroke-width="1.3">
+    <path d="M973 321 C954 346 959 389 982 398 C1001 406 1029 394 1031 370 C1034 345 1016 316 996 314 C986 314 978 317 973 321Z"/>
+    <path d="M993 330 H1017 M976 343 H1028 M970 356 H1031 M968 369 H1031 M971 382 H1028 M979 394 H1018"/>
+    <rect x="902" y="393" width="222" height="20"/>
+  </g>
+  <rect x="898" y="539" width="250" height="24" rx="4" fill="#fffdf8" stroke="#d7cbbb"/>
+  <text x="1023" y="555" text-anchor="middle" fill="#5e605d" font-family="Arial,sans-serif" font-size="10">Manual copperplate workbench</text>
+</svg>

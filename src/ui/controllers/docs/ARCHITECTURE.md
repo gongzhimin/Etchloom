@@ -14,7 +14,7 @@ graph TD
     Main --> TWC[TransferWizardController 图稿上版向导]
     Main --> LBC[LightboxController 高清灯箱特写]
 
-    PC --> Grid[StepFlowGrid 7阶段卡片网格]
+    PC --> Grid[StepFlowGrid 7阶段横向胶片栏]
     PC --> Loupe[LoupeMagnifier 悬停放大镜]
     PC --> Orch[Orchestrator 调度中枢]
 
@@ -79,4 +79,4 @@ sequenceDiagram
 试印提供 `rough`、`smooth`、`linen`、`rosaspina` 四种表面预设。后两者参考真实凹版纸的材质与纹理；实现通过底色、确定性空间纹理和着墨变化进行视觉区分，未对实体纸做物理标定。纸张选择会触发试印重绘，说明文案随 zh-CN、en-US、vi-VN 切换。`tests/virtual-plate-engine.test.cjs` 检查四种纸面的像素差异。
 
 
-蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。上版面板与上版细节弹窗的线宽控件同步，`lineWidthScale` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。
+蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。快捷上版固定使用 100% 线宽；上版细节弹窗中的 `wizardLineWidth` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。

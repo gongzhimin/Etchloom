@@ -20,9 +20,9 @@ graph TD
 
     Controllers --> Store[ui/store/app-store.js 响应式状态]
     Controllers --> Components[ui/components/]
-    Components --> Grid[step-flow-grid.js 2列4行全宽舒展卡片网格]
+    Components --> Grid[step-flow-grid.js 默认折叠的横向七卡胶片栏]
 
-    Main --> I18n[ui/i18n/i18n.js 双语绑定]
+    Main --> I18n[ui/i18n/i18n.js 三语绑定]
     Main --> LogDrawer[底部抽屉式日志联动]
     PSC --> PBevel[纯净画作导出与物理倒角凹痕]
 ```
@@ -50,6 +50,7 @@ graph TD
    - 第 06 阶段输出冷白底、定位标记和矢量线的上版母稿；铜版试印才使用纸张纹理、油墨和压印渲染。导出不包含工作台 DOM；
 4. **极淡清新美学配色 (Airy Linen & Pale Sage)**：
    - 采用亚麻纸白基底 (`#faf8f5`)、鼠尾草绿主操作色 (`#536957`)、分割线 (`#eae5dc`) 与暖炭灰文本 (`#2a2b2a`)；
+   - 母版工作区使用静态 CSS 纸纤维背景；铜版主工作区保持浅色，宽幅画框使用橡木纹理图像和浅色蒙层。工作台外缘与铜板画布分别通过边框及接触阴影分层，渲染画布像素不受这些 CSS 背景影响；
 5. **顶层统一挂载与 ESM 模块化**：
    - `index.html` 极简骨架加载后，`main.js` 统一装配 `mountAppLayout(root)`，各子控制器与纯数学/物理核心按需导入，保持高度解耦与零全局污染。
 
@@ -58,7 +59,7 @@ graph TD
 
 试印提供 `rough`、`smooth`、`linen`、`rosaspina` 四种表面预设。后两者参考真实凹版纸的材质与纹理；实现通过底色、确定性空间纹理和着墨变化进行视觉区分，未对实体纸做物理标定。纸张选择会触发试印重绘，说明文案随 zh-CN、en-US、vi-VN 切换。`tests/virtual-plate-engine.test.cjs` 检查四种纸面的像素差异。
 
-蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。上版面板与上版细节弹窗的线宽控件同步，`lineWidthScale` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。
+蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。快捷上版固定使用 100% 线宽；上版细节弹窗中的 `wizardLineWidth` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。
 
 关于页由 `aboutModalOverlay` 独立对话框承载，不再通过图像灯箱的纯文本说明字段显示 HTML。内容为两步工作流、操作提示及保存导出；使用 `data-i18n` 在 zh-CN、en-US、vi-VN 间同步切换。`tests/two-stage-ui.test.cjs` 核对翻译键和结构，`tests/ui-button-clicks.test.cjs` 核对对话框语义。
 

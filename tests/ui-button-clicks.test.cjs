@@ -379,45 +379,14 @@ test('UI Button Click: Activity Log Toggle and Clear Buttons', () => {
   assert.equal(logBody.children.length, 0);
 });
 
-test('UI Button Click: Virtual Plate Studio 5-Stage Stepper Navigation', () => {
-  let activeStage = 2;
-  const stages = [1, 2, 3, 4, 5].map(stepNum => {
-    const el = createMockElement('div', {
-      className: `stepper-step ${stepNum < activeStage ? 'done' : stepNum === activeStage ? 'active' : ''}`,
-      dataset: { step: String(stepNum) }
-    });
-    return el;
-  });
-
-  function setStage(n) {
-    activeStage = n;
-    stages.forEach(s => {
-      const num = Number(s.dataset.step);
-      s.classList.remove('active', 'done');
-      if (num < n) s.classList.add('done');
-      else if (num === n) s.classList.add('active');
-    });
-  }
-
-  stages.forEach(s => {
-    s.onclick = () => setStage(Number(s.dataset.step));
-  });
-
-  assert.equal(stages[0].classList.contains('done'), true);
-  assert.equal(stages[1].classList.contains('active'), true);
-  assert.equal(stages[2].classList.contains('active'), false);
-
-  // Click Step 3 (酸液腐蚀)
-  stages[2].click();
-  assert.equal(activeStage, 3);
-  assert.equal(stages[1].classList.contains('done'), true);
-  assert.equal(stages[2].classList.contains('active'), true);
-
-  // Click Step 5 (压印试印)
-  stages[4].click();
-  assert.equal(activeStage, 5);
-  assert.equal(stages[3].classList.contains('done'), true);
-  assert.equal(stages[4].classList.contains('active'), true);
+test('Virtual Plate Studio presents four process steps and matching panels', async () => {
+  const { plateWorkspaceTemplate } = await import('../src/ui/templates/layout-templates.js');
+  const stepNumbers = [...plateWorkspaceTemplate.matchAll(/class="stepper-step(?: active)?" data-step="(\d)"/g)]
+    .map((match) => Number(match[1]));
+  const panelNumbers = [...plateWorkspaceTemplate.matchAll(/id="plateStagePanel(\d)"/g)]
+    .map((match) => Number(match[1]));
+  assert.deepEqual(stepNumbers, [1, 2, 3, 4]);
+  assert.deepEqual(panelNumbers, stepNumbers);
 });
 
 test('plate resolution is displayed without a destructive switcher', async () => {

@@ -105,10 +105,6 @@ export class TransferWizardController {
       if (lineWidthSlider && lineWidthVal) {
         lineWidthSlider.oninput = () => {
           lineWidthVal.textContent = `${lineWidthSlider.value}%`;
-          const stageSlider = document.getElementById('transferLineWidth');
-          if (stageSlider) stageSlider.value = lineWidthSlider.value;
-          const stageOutput = document.getElementById('transferLineWidthVal');
-          if (stageOutput) stageOutput.textContent = `${lineWidthSlider.value}%`;
         };
       }
     }
@@ -126,14 +122,6 @@ export class TransferWizardController {
       this.overlay = document.getElementById('transferModalOverlay') || document.getElementById('transferWizardOverlay');
     }
     if (!this.overlay) return;
-    const stageLineWidth = document.getElementById('transferLineWidth');
-    const wizardLineWidth = document.getElementById('wizardLineWidth');
-    if (stageLineWidth && wizardLineWidth) {
-      wizardLineWidth.value = stageLineWidth.value;
-      const output = document.getElementById('wizardLineWidthVal');
-      if (output) output.textContent = `${wizardLineWidth.value}%`;
-    }
-
     const { masterPaths, contours, hatching } = this.getMasterData();
     const mLen = masterPaths?.length || 0;
     const cLen = contours?.length || 0;

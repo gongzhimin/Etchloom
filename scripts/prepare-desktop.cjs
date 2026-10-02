@@ -67,10 +67,14 @@ function prepareDesktop() {
   // 3. Copy src/ (core, ui, orchestration, services/client)
   copyRecursive(path.join(ROOT_DIR, 'src'), path.join(DIST_DIR, 'src'));
 
-  // 4. Copy docs/images/ (app branding & screenshots needed by UI)
+  // 4. Copy only image assets referenced by the application at runtime.
   const imagesSrc = path.join(ROOT_DIR, 'docs', 'images');
   if (fs.existsSync(imagesSrc)) {
-    copyRecursive(imagesSrc, path.join(DIST_DIR, 'docs', 'images'));
+    const imagesDest = path.join(DIST_DIR, 'docs', 'images');
+    fs.mkdirSync(imagesDest, { recursive: true });
+    for (const name of ['etchloom-logo.svg', 'oak-workbench.png']) {
+      fs.copyFileSync(path.join(imagesSrc, name), path.join(imagesDest, name));
+    }
   }
 
   const { totalBytes, fileCount } = calculateDirSize(DIST_DIR);

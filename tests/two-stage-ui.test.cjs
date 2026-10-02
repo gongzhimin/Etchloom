@@ -57,9 +57,11 @@ test('Two-Stage UI: first visit starts with a choice and translated visible cont
   assert.match(plateWorkspaceTemplate, /id="canvas" width="900" height="660"/);
   assert.match(plateWorkspaceTemplate, /id="plateResolutionValue"/);
   assert.doesNotMatch(plateWorkspaceTemplate, /class="res-btn/);
-  assert.match(plateWorkspaceTemplate, /id="transferLineWidth" type="range"/);
+  assert.doesNotMatch(plateWorkspaceTemplate, /id="transferLineWidth"/);
   assert.match(plateWorkspaceTemplate, /id="size" type="range"/);
   assert.match(modalsTemplate, /id="wizardLineWidth"/);
+  assert.doesNotMatch(plateWorkspaceTemplate, /id="stepInk"/);
+  assert.match(plateWorkspaceTemplate, /class="plate-caption-status telemetry-status-val"/);
 
   const templates = `${headerTemplate}${masterWorkspaceTemplate}${plateWorkspaceTemplate}${modalsTemplate}`;
   const keys = [...templates.matchAll(/data-i18n(?:-aria|-title|-html|-alt)?="([^"]+)"/g)].map(match => match[1]);

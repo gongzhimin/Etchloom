@@ -4,42 +4,19 @@
 
 ---
 
+## 两阶段工作台表面
+
+`#masterWorkspace` 使用静态低对比纸纤维层；`.master-entry-content` 和 `.master-hero-frame` 使用较浅纸面与接触阴影。铜版主工作区 `.plate-main` 保持浅色纯净背景；宽幅 `.plate-canvas-frame` 使用 `docs/images/oak-workbench.png` 橡木纹与 55% 浅色蒙层。工作台外缘使用木色边框，铜板画布使用深铜色细边和接触阴影；两处均不使用白色描边。纹理不覆盖正文或画布。侧栏上版方式卡片单列排列；窄屏工序条固定四列，底部说明与状态采用有间距的弹性布局。
+
 ## 1. 核心前端组件库与解耦规范
 
-### 1.1 步骤流 2列4行 自然舒展网格 (StepFlowGrid 2x4 Studio Grid)
-- **源码文件**：[src/ui/components/step-flow-grid.js](../../src/ui/components/step-flow-grid.js)
-- **网格机制**：采用 2 列 4 行弹性网格体系 (`grid-template-columns: repeat(2, minmax(0, 1fr))`)，水平宽度充满工作区，单卡片视口充裕（视口高度 380px+），主工作区通过 `overflow-y: auto` 垂直自然滚动：
-  - **第 1 行**：
-    - `[00] 原图输入` (Raw Image, `grid-column: span 1` = 50%)
-    - `[01] 线描感知` (Line Map, `grid-column: span 1` = 50%)
-  - **第 2 行**：
-    - `[02] 等高流场` (3D Flow Field, `grid-column: span 1` = 50%)
-    - `[03] 透视轮廓` (Contours, `grid-column: span 1` = 50%)
-  - **第 3 行**：
-    - `[04] 曲面排线` (Hatching, `grid-column: span 1` = 50%)
-    - `[05] 母版合成` (Master Vector, `grid-column: span 1` = 50%)
-  - **第 4 行**：
-    - `[06] 上版母稿` (Transfer Master, `grid-column: 1 / -1` = 100% 独占底部通栏跨行展示)
-- **卡片比例自适应与横向全宽填充 (Dynamic Aspect Ratio & Full-Width Fill)**：
-  - 7 张卡片与 Canvas 的宽高比根据导入图片的物理比例（`origW / origH`）动态自适应；
-  - Canvas 声明 `width: 100%; height: auto; display: block;`，横向 100% 饱满铺满卡片视口，高度根据原图比例自洽伸展，杜绝留白边与黑条；
-  - 通过 `stepGrid.setAspectRatio(width, height)` 统一驱动 7 个卡片的分辨率与 CSS `aspect-ratio`。
-- **主工作区视口约束与平滑垂直滚动 (Scrollable Workspace Viewport)**：
-  - 顶层容器 `#app` 严格继承 `height: 100%; overflow: hidden;`，`main.app-main` 占满剩余视口净高；
-  - `.workspace-area` 设置 `overflow-y: auto; overflow-x: hidden;`，用户通过鼠标滚轮或滚动条可无阻碍向下纵览全部 2 列 4 行大卡片及底部日志控制台。
-- **计算中清空画布机制**：当卡片处于 `COMPUTING` 状态时，执行 `ctx.clearRect` 并注入淡雅占位底，彻底清空上一张图或静物范式的生成残留。
-- **纯净版画样印与古典外边框 (Pure Fine-Art Print & Multi-Style Engraved Frames)**：
-  - **纯净样印输出（彻底剥离工作台铜版凹痕与阴影）**：彻底剔除虚拟工作台上金属铜版产生的 3D 倒角阴影条（Bevel Shadows）与凹槽灰底。导出与印样预览仅呈现纯净高级的纯棉艺术纸基（象牙白细纹 / 暖白粗纹纤维底）与选定外框，真实还原美术馆版画装裱品级；
-  - **外框严格位于版画外侧，绝不小于画面 (Strict Outer Enclosure)**：外框坐标严格基于纸面留白外圈（`geom.outer.w > geom.art.w`, `geom.outer.h > geom.art.h`），内部版画面积严格嵌套于内框的安全呼吸边距（Clearance = 10px）内并执行物理裁切，**数学上绝对保证外边框位于画面外侧，杜绝画面溢出外框或外框切入画面的缺陷**；
-  - **4 种专业外框类型支持 (Multi-Style Frame Engine)**：
-    1. `double`（双层古典边框）：外框主线（1.8px）+ 平行内细线（0.9px）+ 均匀间距，重现经典工坊双层印痕；
-    2. `fine`（单线精细刻框）：单线精雅轮廓（1.4px），留白清透典雅；
-    3. `rough`（手工古拙边框）：采用真多频刀痕算法，具备手工刀刻的顿挫粗细张力（1.0px~3.5px 随刀锋深浅动态起伏）、四角手工出刀交叉（Corner Chisel Overshoots 7px 出头痕）、以及沿边刻刀微颤飞刺（Burr Chatter & Companion Flecks），真实还原手工木版与铜版手刻古拙韵味；
-    4. `none`（无外框）：仅保留纯棉纸底色与纯净画作，纯净自然；
-  - 导出纯净画作本身（含纯棉纸留白与所选外边框），彻底剥离网页工作台边框、工作台阴影与 DOM 界面元素。
-- **响应式降级**：屏幕宽度 `< 860px` 时自动重排为单列垂直流。
-- **DOM 挂载点**：`#stepFlowGridContainer`
+### 1.1 七阶段制作过程胶片栏 (`StepFlowGrid`)
 
+- **源码**：[src/ui/components/step-flow-grid.js](../../src/ui/components/step-flow-grid.js)。
+- **实际挂载**：母版完成页的 `#filmstripDetails` 默认折叠。展开后，`.filmstrip-scroll` 将 `#stepFlowGridContainer` 设为单行横向滚动；每张卡片宽度为 `clamp(160px, 19vw, 260px)`，视口比例来自原图。
+- **卡片顺序**：00 原图、01 线描、02 等高流场、03 空间轮廓、04 曲面排线、05 母版合成、06 上版母稿。第 06 张是可转录的母稿，纸张材质与油墨效果只在铜版试印阶段出现。
+- **状态与操作**：计算中清空旧画布；完成徽章只显示 `✓`，状态文本保留在可访问名称中；卡片可检查、全屏查看或单独导出。底部说明按当前语言与实际尺寸、线条数生成。
+- **主工作区**：母版页优先显示单张大图预览和主操作按钮，参数抽屉及制作过程按需展开。主工作区不常驻七卡网格。
 ### 1.2 悬浮微交互工具条 (Ghost Action Toolbar)
 - **实现位置**：`.card-viewport .card-actions` 与铜版画板 `.plate-canvas-frame .plate-canvas-actions`
 - **交互规范**：
@@ -47,14 +24,12 @@
   - 悬停/聚焦状态：鼠标移入卡片视口时，`opacity: 1; transform: translateY(0);` 平滑浮现半透明微质感胶囊（`[⛶ 特写]`, `[⬇ 导出]`）；
   - 视觉样式：采用淡鼠尾草绿协调的浅色微毛玻璃轻阴影胶囊 (`background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.06);`)，杜绝暗色重边框遮挡画作细节。
 
-### 1.3 上下文解耦侧边栏 (Contextual Sidebar Drawer System)
-- **模板位置**：[src/ui/templates/layout-templates.js](../../src/ui/templates/layout-templates.js) 中的 `sidebarTemplate`
-- **极简化文案**：摒弃长篇大论的说教说明，提炼核心极简工艺标签（“00 / 图像感知”、“01 / 空间轮廓”、“02 / 曲面排线”、“03 / 铜版工坊”）。
-- **模式隔离机制**：
-  - `body.mode-master`（母版设计阶段）：自动隐藏工序 03（铜版工坊抽屉 `#drawer3`），聚焦图像感知与几何排线参数；
-  - `body.mode-plate`（虚拟铜版阶段）：自动隐藏抽屉 00/01/02，聚焦铜版工具选择、酸液浓度、留墨调子与压印材质。
-- **全管线增量依赖合成**：用户选图后调整左侧滑块，管线拓扑缓存保证空间轮廓（Stage 3）与曲面排线（Stage 4）加和复合至母版图稿（Stage 5）与印样（Stage 6），始终呈现全景完整效果。
+### 1.3 按阶段呈现的控制区
 
+- 母版首次进入只显示选图与示例入口；母版完成后才显示大图预览、制作过程胶片栏和外观参数抽屉。
+- 铜版页面使用 `.plate-sidebar` 呈现当前工序的上版、刻绘、蚀刻或试印控件；工序通过 `#plateStepper` 切换。
+- 上版页外侧只提供技法选择及快捷上版；精度、图层和转录线宽在“调整上版细节”弹窗中设置。刻绘工具直径在刻绘工序中调整。
+- 旧版 `aside.app-sidebar` 模板仍在装配结构中，但两阶段模式下不作为用户主要操作侧栏。两阶段的显隐由 `switchWorkflow`、工序控制器与 CSS 共同管理。
 ### 1.4 抽屉式运行日志托盘 (Slide-up Activity Log Drawer)
 - **DOM 结构**：`#activityLogWrap.activity-log-wrap.collapsed`
 - **交互规范**：
@@ -77,9 +52,9 @@
   - 虚拟铜版画板（`W, H`）及压印导出根据导入源图片的原始物理宽高比（`origW / origH`）自适应计算尺寸（如竖图 2:3、横图 16:9 等自洽缩放）；
   - 向铜版转录图稿、分辨率升档（900/1500/3000）及撤销恢复均严格遵循源图宽高比。
 
-### 1.6 铜版工坊 5 步步进器 (PlateProcessStepper)
+### 1.6 铜版工坊 4 步步进器 (PlateProcessStepper)
 - **模板位置**：`#plateStepper`
-- **步骤节点**：1. 上版 → 2. 刻绘 → 3. 腐蚀 → 4. 填墨 → 5. 试印
+- **步骤节点**：1. 上版 → 2. 刻绘 → 3. 腐蚀 → 4. 试印（试印面板包含着墨设置）
 - **状态流转**：通过 `.stepper-step.active`（淡鼠尾草绿高亮）与 `.stepper-step.done` 驱动全流程引导。
 
 ### 1.7 模态视口系统 (True Fullscreen Viewport & Dual-Engine Lightbox)

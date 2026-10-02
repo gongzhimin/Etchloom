@@ -102,7 +102,12 @@ export function allocatePlate(width, height = null) {
   if (resolutionValue) resolutionValue.textContent = `${W} × ${H}`;
 }
 
-export const val = id => Number($(id)?.value || 0) / 100;
+const DEFAULT_PARAM_VALS = { acid: 45, grain: 45, ink: 88, pressure: 70, tone: 3, size: 4 };
+export const val = id => {
+  const el = $(id);
+  const raw = (el && el.value != null && el.value !== '') ? Number(el.value) : (DEFAULT_PARAM_VALS[id] ?? 0);
+  return raw / 100;
+};
 
 export function snapshot() {
   if ($('irreversible')?.checked) return;
@@ -474,6 +479,11 @@ export function render(target = getCtx(), mode = view) {
   }
 }
 
+export function getPlateTimestamp(d = new Date()) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
 export function download(blob, name) {
   if (typeof URL === 'undefined' || !URL.createObjectURL) return;
   const url = URL.createObjectURL(blob);
@@ -518,9 +528,9 @@ export function toggleEtch() {
 
 export function updateAcidGauge() {
   let totalD = 0, count = 0;
-  const step = Math.max(1, Math.floor(N / 500));
+  const step = Math.max(1, Math.min(16, Math.floor(N / 50000)));
   for (let i = 0; i < N; i += step) {
-    if (depth[i] > 0) {
+    if (exposed[i] >= 0.05 || depth[i] >= 0.005) {
       totalD += depth[i];
       count++;
     }
@@ -640,10 +650,12 @@ export function bindPlateStudioEvents(options = {}) {
         return;
       }
       const PlateCodecLib = (typeof PlateCodec !== 'undefined' ? PlateCodec : (typeof window !== 'undefined' ? window.PlateCodec : null));
+      const ts = getPlateTimestamp();
+      const printFilename = `Etchloom-print-seed${seed}-${ts}.png`;
       if (PlateCodecLib && PlateCodecLib.pngDpi) {
-        download(await PlateCodecLib.pngDpi(b, W, window.printPaperMM || 254), 'Etchloom-print-' + seed + '.png');
+        download(await PlateCodecLib.pngDpi(b, W, window.printPaperMM || 254), printFilename);
       } else {
-        download(b, 'Etchloom-print-' + seed + '.png');
+        download(b, printFilename);
       }
       if ($('status')) $('status').textContent = '已生成 ' + W + ' × ' + H + ' 印样 · 已发起下载';
     });
@@ -651,6 +663,7 @@ export function bindPlateStudioEvents(options = {}) {
 
   if ($('save')) $('save').onclick = () => {
     const PlateCodecLib = (typeof PlateCodec !== 'undefined' ? PlateCodec : (typeof window !== 'undefined' ? window.PlateCodec : null));
+    const ts = getPlateTimestamp();
     download(
       new Blob([
         JSON.stringify({
@@ -673,7 +686,7 @@ export function bindPlateStudioEvents(options = {}) {
           )
         })
       ], { type: 'application/json' }),
-      'Etchloom-plate.json'
+      `Etchloom-plate-${ts}.json`
     );
   };
 
@@ -938,7 +951,7 @@ export function savePlateBackup() {
         timestamp: new Date().toISOString()
       })
     ], { type: 'application/json' }),
-    'Etchloom-plate-backup-' + Date.now() + '.json'
+    'Etchloom-plate-backup-' + getPlateTimestamp() + '.json'
   );
 }
 

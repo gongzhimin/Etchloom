@@ -15,6 +15,9 @@ test('Desktop Packaging: prepare-desktop creates minimal, complete dist bundle',
   assert.ok(fs.existsSync(path.join(distDir, 'styles', 'app.css')), 'dist/styles/app.css must exist');
   assert.ok(fs.existsSync(path.join(distDir, 'src', 'main.js')), 'dist/src/main.js must exist');
   assert.ok(fs.existsSync(path.join(distDir, 'docs', 'images', 'etchloom-logo.svg')), 'dist logo must exist');
+  assert.ok(fs.existsSync(path.join(distDir, 'docs', 'images', 'oak-workbench.png')), 'dist workbench texture must exist');
+  assert.strictEqual(fs.existsSync(path.join(distDir, 'docs', 'images', 'legacy')), false, 'historical screenshots must not be bundled');
+  assert.strictEqual(fs.existsSync(path.join(distDir, 'docs', 'images', 'etchloom-two-stage-layout.svg')), false, 'README diagrams must not be bundled');
 
   // Verify heavy files are NOT included
   assert.strictEqual(fs.existsSync(path.join(distDir, 'services')), false, 'services/ must not be in dist');

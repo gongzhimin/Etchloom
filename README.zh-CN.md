@@ -4,7 +4,7 @@
 
 <h1 align="center">Etchloom (数字古典版画工坊系统)</h1>
 
-<p align="center"><strong>基于三维几何驱动的纯算法矢量生成与虚拟铜版物理仿真系统</strong></p>
+<p align="center"><strong>照片制版与亲手刻绘的虚拟铜版工作台</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
@@ -12,13 +12,13 @@
 
 <p align="center">
   <img alt="Node 20+" src="https://img.shields.io/badge/Node.js-20%2B-596f50?style=flat-square">
-  <img alt="零运行依赖" src="https://img.shields.io/badge/runtime_dependencies-0-c8b67e?style=flat-square">
-  <img alt="测试通过率" src="https://img.shields.io/badge/tests-140%2F140%20PASS-16a34a?style=flat-square">
-  <img alt="测试文件" src="https://img.shields.io/badge/test_files-29-2f3932?style=flat-square">
+  <img alt="测试命令" src="https://img.shields.io/badge/tests-npm%20test-16a34a?style=flat-square">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f3932?style=flat-square"></a>
 </p>
 
-![Etchloom 工作台：左侧参数抽屉与右侧 7 阶段步骤流网格](docs/images/etchloom-workbench-zh.png)
+![当前双阶段界面示意：先制作母版，再进入铜版工作台](docs/images/etchloom-two-stage-layout-zh.svg)
+
+上图是当前界面结构示意，并非屏幕截图。先选择照片制作线条母版；制作过程卡片和外观参数按需展开。随后把母版上版到铜板，亲手刻绘、蚀刻并试印。
 
 ---
 
@@ -29,7 +29,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 系统彻底解耦了图像算法核心与前端展现宿主：
 - **纯计算算法核心 (`src/core/`)**：基于二维导向滤波、结构张量场与 Jobard-Lefer 流线积分的 5 阶段离散数学管线，保持 Node.js/Browser 同构；
 - **虚拟铜版物理仿真 (`src/core/plate/`)**：基于一维行优先平铺连续 TypedArray 内存网格，数值求解 2D 偏微分方程各向同性侧蚀扩散与干刻金属毛刺外翻；
-- **现代解耦前端 (`src/ui/`, `index.html`)**：轻量骨架入口（60 行），通过 ES 模块动态装配模板，零内联脚本。
+- **前端界面 (`src/ui/`, `index.html`)**：由 HTML 入口装配 ES 模块模板，五阶段制作过程按需展开。
 
 ---
 
@@ -40,9 +40,9 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 2. **偏微分方程化学酸蚀仿真**：
    在 1500x1100 或 3000x2200 物理网格上数值解算 4-邻域侧向咬蚀与纵向深化偏微分方程，支持防蚀漆阻断掩膜与干刻金属毛刺酸溶衰减。
 3. **算法核心与自动化测试**：
-   主要算子与物理仿真可在 Node.js 环境测试；图像画布与推理请求仍包含浏览器或网络适配代码。当前 29 个测试文件的 140 项用例通过，测试通过率不代表代码覆盖率。
+   主要算子与物理仿真可在 Node.js 环境测试；图像画布与推理请求仍包含浏览器或网络适配代码。运行 `npm test` 可查看当前测试数量；测试通过率不代表代码覆盖率。
 4. **DAG 状态增量缓存与阶段边界取消**：
-   采用 32-bit DJB2 确定性哈希监听参数变化，修改排线参数时仅需重新计算 Stage 4~5，前置阶段毫秒级复用；基于 `AbortController` 瞬时抢占中止陈旧任务。
+   采用 32-bit DJB2 确定性哈希监听参数变化，修改排线参数时可复用前置阶段；`AbortController` 在阶段边界中止陈旧任务，正在执行的同步阶段无法立即打断。
 
 ---
 
@@ -50,7 +50,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 
 ```text
 .
-├─ index.html                               # 轻量骨架入口 (60 行，动态装配模板)
+├─ index.html                               # 简明 HTML 入口，运行时装配界面模板
 ├─ package.json                             # 项目配置 (npm test / npm start)
 ├─ src/
 │  ├─ main.js                               # 前端主入口 (Native ES Modules)
@@ -72,7 +72,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 │  ├─ services/                             # Layer 2: 微服务网关 [查看文档](src/services/README.md)
 │  │  └─ client/                            # 前端微服务通信与容灾降级网关 (WebAI & Remote)
 │  └─ ui/                                   # Layer 3 & 4: 前端界面总装 [查看文档](src/ui/README.md)
-│     ├─ i18n/                              # 中英双语国际化词条字典
+│     ├─ i18n/                              # 中、英、越三语国际化词条字典
 │     ├─ templates/                         # HTML UI 装配微模板
 │     ├─ controllers/                       # 业务控制器 [查看文档](src/ui/controllers/README.md)
 │     ├─ components/                        # 原子组件与放大镜交互 [查看文档](src/ui/components/README.md)
@@ -81,7 +81,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 │  ├─ informative_drawings/                 # 灰度线描推理服务 [查看文档](services/informative_drawings/README.md)
 │  └─ lotus_geometry/                       # Lotus 深度与法线模型 [查看文档](services/lotus_geometry/README.md)
 ├─ styles/                                  # 莫兰迪古典浅色工作室设计系统 CSS (Fresh Atelier Light app.css)
-├─ tests/                                   # 29 个自动化测试文件 (当前 140 项测试通过)
+├─ tests/                                   # scripts/test-runner.cjs 自动发现 Node.js 测试文件
 ├─ docs/                                    # 规范工程技术规范与数据字典 [查看索引](docs/DOCUMENTATION_INDEX.md)
 └─ archive/                                 # 历史归档资产与探索性实验
 ```
@@ -98,32 +98,28 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 
 ## 5. 三级运行模式与环境配置 (3-Tier Execution Modes & Environments)
 
-系统原生支持三级渐进增强执行拓扑，UI 顶栏与状态区实时展示当前生效的后端：
+系统可使用三种处理路径。模型可用性显示在高级设置中；不启动模型服务时仍可使用基础几何处理：
 
 | 模式层级 | 运行环境 | 依赖与网络需求 | 核心能力与适用场景 |
 | :--- | :--- | :--- | :--- |
 | **1. 基础离线模式**<br>`Offline Mode (Geometric)` | 浏览器 + 本地 HTTP 服务（`npm start`） | 基础几何计算无需外网或第三方运行依赖 | 基于几何算子与铜版网格仿真；原生 ESM 入口需要经 HTTP 服务加载，不保证直接打开 `file://` 可运行 |
 | **2. 联网浏览器 WebAI 模式**<br>`Online Model (WebGPU/WASM)` | 现代化浏览器 | 首次需要联网；后续离线复用取决于浏览器缓存及模型是否完整缓存 | 基于 CDN 动态按需加载运行库与深度模型，在浏览器中尝试神经网络推理；加载失败时回退至纯几何解析 |
-| **3. 本机 Python 服务模式**<br>`Local AI (CUDA / MPS)` | 本地 Python 虚拟环境 | 本地启动 `http://127.0.0.1:7861`，可全离线 | 基于本地 PyTorch + CUDA/DirectML 硬件加速，执行完整的 Lotus 几何模型与高精度线描推理 |
+| **3. 本机 Python 服务模式** | 本地 Python 环境 | 可选服务地址 `http://127.0.0.1:7861` | 在本机执行可用的神经网络推理；是否加速取决于已安装的运行库与硬件。 |
 
 ### 5.1 快速启动前端工坊
 ```bash
 npm start
 ```
-浏览器访问 <http://127.0.0.1:4173/>（或通过 `?lang=en` 访问英文界面）。
+浏览器访问 <http://127.0.0.1:4173/>。可用顶栏语言选项卡切换，也可用 `?lang=zh`、`?lang=en`、`?lang=vi` 指定初始语言。
 
 ### 5.2 启动 Python AI 本地辅助服务（可选）
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
 ```
-服务成功拉起后，前端网关将自动探测并无缝升级至本机 CUDA 服务。
+服务在 `7861` 端口可用时，前端网关可选用它进行推理。是否使用硬件加速取决于本机环境。
 
 ### 5.3 跨平台桌面独立客户端 (Desktop Release)
-若需要脱离浏览器直接作为独立软件使用：
-- 前往 GitHub 仓库右侧 **Releases** 页面下载最新发布的安装包；
-- **Windows**: 下载 `Etchloom-Setup.exe` 或 `.msi`（体积仅 ~15 MB，开箱即用）；
-- **macOS**: 下载 `Etchloom.dmg`；
-- 桌面客户端原生支持离线纯几何模式与 WebGPU 本地加速，若后台开启了 Python 服务亦可自动连接。
+仓库包含 Tauri 桌面配置及 Windows/macOS 发布工作流。请在 [Releases](https://github.com/gongzhimin/Etchloom/releases) 查看实际可下载版本及文件名。本地运行 `npm run build` 可准备前端资源；构建桌面安装包还需相应平台的 Tauri 工具链。
 
 ---
 
@@ -132,7 +128,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
 ```bash
 npm test
 ```
-**本次运行结果**：28 个测试文件，123 项测试用例通过（约 5.2 秒）；结果随代码与运行环境变化。
+测试运行器自动发现所有 `tests/*.test.cjs` 文件并输出实时统计；用例数量与耗时会随代码和运行环境变化。
 详见 [docs/03_testing_qa/TEST_SPECIFICATION.md](docs/03_testing_qa/TEST_SPECIFICATION.md)。
 
 ---

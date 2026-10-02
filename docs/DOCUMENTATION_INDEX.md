@@ -1,7 +1,9 @@
 # Etchloom 全景工程技术文档索引 (Master Documentation Index)
 
 > **工程版本**：Etchloom Atelier Engine  
-> **更新时间**：2026-10-01
+> **更新时间**：2026-10-02
+
+当前文档与实现的核查记录见 [项目一致性核查（2026-10-02）](CONSISTENCY_AUDIT_2026-10-02.md)。README 使用 [英文](images/etchloom-two-stage-layout.svg) 和 [中文](images/etchloom-two-stage-layout-zh.svg) 界面示意图；[旧版截图](images/legacy/README.md)仅供历史对照。
 
 ---
 
@@ -27,7 +29,7 @@ docs/
 │   └── SPEC_ARCHITECTURE_DOC_STANDARD.md # 架构设计文档书写工程规范 (4大核心维度)
 ├── 03_testing_qa/                       # 自动化测试与质量保证
 │   ├── TEST_SPECIFICATION.md            # 4级测试金字塔与执行规范
-│   ├── TEST_MATRIX_AND_FIXTURES.md      # 20个测试套件矩阵与基准样本
+│   ├── TEST_MATRIX_AND_FIXTURES.md      # 当前测试套件矩阵与基准样本
 │   └── PERCEPTUAL_DIFF_TOLERANCE.md     # 数值确定性容差与规划基准
 ├── 04_ui_design_system/                 # 界面设计系统
 │   ├── TWO_STAGE_PROGRESSIVE_UI_SPEC.md # 双阶段渐进披露 UI/UX 详细设计规范
@@ -59,6 +61,6 @@ docs/
 | `src/ui/components/` | 独立 UI 组件（网格与放大镜） | [src/ui/components/README.md](../src/ui/components/README.md) |
 | `src/ui/store/` | 前端应用状态中心 | [src/ui/store/README.md](../src/ui/store/README.md) |
 | `src/ui/templates/` | 模块化界面布局装配模板 | [src/ui/templates/README.md](../src/ui/templates/README.md) |
-| `src/ui/i18n/` | 国际化双语字典管理器 | [src/ui/i18n/README.md](../src/ui/i18n/README.md) |
+| `src/ui/i18n/` | 中、英、越三语字典管理器 | [src/ui/i18n/README.md](../src/ui/i18n/README.md) |
 | `services/informative_drawings/` | Python 线稿抽取推理微服务 | [services/informative_drawings/README.md](../services/informative_drawings/README.md) |
 | `services/lotus_geometry/` | Lotus 深度/法线模型推理管线 | [services/lotus_geometry/README.md](../services/lotus_geometry/README.md) |

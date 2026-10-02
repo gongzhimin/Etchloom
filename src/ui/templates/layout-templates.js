@@ -246,10 +246,6 @@ export const plateWorkspaceTemplate = `
           <span class="stepper-num">4</span>
           <span data-i18n="stepper.print">试印</span>
         </div>
-        <!-- Hidden backward-compatibility alias for test assertions -->
-        <div class="stepper-step u-hidden" data-step="4" id="stepInk">
-          <span data-i18n="stepper.ink">填墨</span>
-        </div>
       </div>
 
       <button id="backToMasterBtn" class="btn-link-atelier" data-i18n="m2.backToMaster">
@@ -294,8 +290,6 @@ export const plateWorkspaceTemplate = `
           </div>
 
           <div class="u-pt-3 u-border-t">
-            <label for="transferLineWidth"><span data-i18n="wizard.lineWidth">上版线宽</span> <output id="transferLineWidthVal">100%</output></label>
-            <input id="transferLineWidth" type="range" min="50" max="200" step="10" value="100">
             <button id="panel1ConfirmBtn" class="btn-sage-primary u-w-full" data-i18n="cta.confirmTransfer">上版，开始刻绘 →</button>
             <button id="openTransferWizardBtn" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="sec.3.wizardBtn">调整上版细节</button>
           </div>
@@ -370,7 +364,7 @@ export const plateWorkspaceTemplate = `
               <!-- Backward compatibility elements for tests -->
               <button id="etch" hidden></button>
               <button id="etchTopBtn" hidden></button>
-              <div id="plateAcidGauge" class="gauge-badge u-mt-2">腐蚀 0.0s · 深度 0.0μm</div>
+              <div id="plateAcidGauge" class="gauge-badge u-mt-2" hidden>腐蚀 0.0s · 深度 0.0μm</div>
               <span id="timerBadge" hidden>腐蚀累计 0.0 s</span>
               <span id="timer" hidden>腐蚀累计 0.0 s</span>
             </div>
@@ -471,7 +465,7 @@ export const plateWorkspaceTemplate = `
           <button id="plateFullscreenBtn" class="btn-plate-fullscreen" data-i18n-title="plate.fullscreenTitle" data-i18n="plate.fullscreen">⛶ 全屏特写</button>
         </div>
 
-        <!-- High-Resolution Plate Canvas Frame (Default 1500x1100 2K) -->
+        <!-- Plate canvas starts at 900 x 660; transfer can allocate a higher resolution. -->
         <div class="plate-canvas-frame" id="plateCanvasFrame">
           <div class="plate-canvas-actions">
             <button id="plateCanvasInspectBtn" class="card-btn btn-inspect-layer" data-i18n-title="card.clickInspect">⛶ <span data-i18n="card.inspect">全屏特写</span></button>
@@ -481,8 +475,8 @@ export const plateWorkspaceTemplate = `
 
         <!-- Studio Caption & Telemetry -->
         <div class="plate-caption">
-          <span id="caption" data-i18n="caption.plate">针尖划开保护层，等待酸液咬蚀</span>
-          <span id="status" class="telemetry-status-val" data-i18n="status.ready">运行就绪</span>
+          <span id="caption" class="plate-caption-text" data-i18n="caption.plate">针尖划开保护层，等待酸液咬蚀</span>
+          <span id="status" class="plate-caption-status telemetry-status-val" data-i18n="status.ready">运行就绪</span>
         </div>
       </main>
     </div>
@@ -500,7 +494,7 @@ export const telemetryFooterTemplate = `
       <span><span data-i18n="telemetry.cache">拓扑缓存命中</span>: <span id="telemetryCache" class="telemetry-status-val">0/5</span></span>
     </div>
     <div class="u-ml-auto">
-      <span class="telemetry-brand">Etchloom v2.1 Atelier</span>
+      <span class="telemetry-brand">Etchloom</span>
     </div>
   </footer>
 `;

@@ -3,7 +3,7 @@
 
 /**
  * Step Flow Grid Component (M1: 步骤流视口网格)
- * Manages the responsive grid of 7 pipeline stages (Step 0..6),
+ * Manages 7 pipeline stage cards (Step 0..6) in the collapsible filmstrip,
  * status badges (cached, computing, done), vector path drawing, and micro-interactions.
  */
 class StepFlowGrid {

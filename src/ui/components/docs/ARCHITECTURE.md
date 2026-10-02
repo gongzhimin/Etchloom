@@ -10,25 +10,25 @@
 放大镜采用符合现代 Web 交互标准的 Alt+悬停激活（或卡片快捷操作），具有以下物理约束：
 - **放大镜直径**：恒定 160 像素圆形视口（`border-radius: 50%`）；
 - **放大倍率**：4 倍光学级双线性插值采样放大（$M = 4$）；
-- **防遮挡动态偏移**：放大镜悬浮在鼠标右上方 $(+20	ext{px}, -100	ext{px})$，贴近屏幕右边缘时自动翻转至左侧。
+- **防遮挡动态偏移**：放大镜悬浮在鼠标右上方 $(+20\text{px}, -100\text{px})$，贴近屏幕右边缘时自动翻转至左侧。
 
 ### 坐标映射数学公式
-设鼠标在源卡片 Canvas 上的客户区坐标为 $(x_{	ext{client}}, y_{	ext{client}})$，卡片客户区矩形为 $	ext{Rect} = (x_0, y_0, W_{	ext{css}}, H_{	ext{css}})$，画布内部物理分辨率为 $W_{	ext{canvas}} 	imes H_{	ext{canvas}}$：
+设鼠标在源卡片 Canvas 上的客户区坐标为 $(x_{\text{client}}, y_{\text{client}})$，卡片客户区矩形为 $\text{Rect} = (x_0, y_0, W_{\text{css}}, H_{\text{css}})$，画布内部物理分辨率为 $W_{\text{canvas}} \times H_{\text{canvas}}$：
 
-$$u = rac{x_{	ext{client}} - x_0}{W_{	ext{css}}}, \quad v = rac{y_{	ext{client}} - y_0}{H_{	ext{css}}}$$
+$$u = \frac{x_{\text{client}} - x_0}{W_{\text{css}}}, \quad v = \frac{y_{\text{client}} - y_0}{H_{\text{css}}}$$
 
-$$x_{	ext{src}} = u \cdot W_{	ext{canvas}}, \quad y_{	ext{src}} = v \cdot H_{	ext{canvas}}$$
+$$x_{\text{src}} = u \cdot W_{\text{canvas}}, \quad y_{\text{src}} = v \cdot H_{\text{canvas}}$$
 
 放大镜画布视口绘制切片矩形：
-$$	ext{源切片宽} = rac{160}{M} = 40	ext{px}, \quad 	ext{源切片高} = rac{160}{M} = 40	ext{px}$$
+$$\text{源切片宽} = \frac{160}{M} = 40\text{px}, \quad \text{源切片高} = \frac{160}{M} = 40\text{px}$$
 
-$$	ext{ctx.drawImage}(	ext{sourceCanvas}, x_{	ext{src}} - 20, y_{	ext{src}} - 20, 40, 40, 0, 0, 160, 160)$$
+$$\text{ctx.drawImage}(\text{sourceCanvas}, x_{\text{src}} - 20, y_{\text{src}} - 20, 40, 40, 0, 0, 160, 160)$$
 
 ---
 
-## 2. 7 阶段步骤流网格架构 (`StepFlowGrid`)
+## 2. 7 阶段横向胶片栏架构 (`StepFlowGrid`)
 
-网格容器负责展示 7 张高保真生成卡片：
+默认折叠的制作过程容器展开后横向展示 7 张生成卡片：
 1. **原图 (Source Image)**
 2. **阶段 1：线描感知 (Informative Line Map)**
 3. **阶段 2：色调场 (Tone Field)**

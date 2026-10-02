@@ -319,6 +319,7 @@ stateDiagram-v2
 选中照片后，制作中卡片显示原图缩略预览和不确定进度条；进度条仅表示任务进行中，不显示未经测量的完成百分比。参数重绘时，已完成的母版仍可见，结果页另显示重绘状态与不确定进度条，最新一次任务结束后关闭。外框选项直接重绘第 06 阶段母稿并同步主预览。结果页滚动容器占满视口宽度，内容保持居中且最大宽度为 `1400px`，使纵向滚动条靠窗口右缘。
 
 输入图片在处理前等比缩至最多 1200 万像素、单边最多 4096 像素；第 06 阶段保持可上版的平面线稿，纸张材质、着墨与压痕只在铜版试印中出现。试印纸张切换立即重绘；粗纹纸偏暖且纹理和着墨变化更强，细纹纸偏浅且表面更平整。铜版画布周围使用暖色工作台背景。
+母版工作区使用低对比 CSS 纸纤维背景；铜版主工作区保持浅色背景，宽幅工作台画框使用 `docs/images/oak-workbench.png` 木纹图像与 55% 浅色蒙层。工作台外缘和铜板画布分别以边框和接触阴影表达边界。背景纹理不进入 Canvas 或导出文件。窄屏时工序条保持四列，上版方式卡片在侧栏内改为单列。
 
 酸液仿真的累计时间仍使用真实经过秒数；侧向扩散、刻深增长与毛刺消退统一使用 `0.4` 倍反应步长，达到同一刻深约需原来的 2.5 倍时间。该速度是交互模拟参数，不代表真实铜版腐蚀速率。
 
@@ -344,7 +345,7 @@ stateDiagram-v2
 | **12**| `transferTechnique` | Radio | `etching` | etching / drypoint | 雕刻工艺技法 | Engraving Technique | Kỹ thuật khắc chuyển bản | **表面主选单选卡** |
 | **13**| `transferRes` | Radio | 1500 | 900 / 1500 / 3000 | 物理规格 | Plate Resolution | Quy cách độ phân giải | 更多上版设置 ▾ |
 | **14**| `transferLayer` | Radio | `all` | all / contours / hatching | 转录图层 | Transfer Layers | Lớp vector chuyển bản | 更多上版设置 ▾ |
-| **14a**| `transferLineWidth` / `wizardLineWidth` | Range | 100% | 50% ~ 200% | 上版线宽 | Transfer Line Width | Độ rộng nét chuyển bản | 上版面板及细节弹窗同步 |
+| **14a**| `wizardLineWidth` | Range | 100% | 50% ~ 200% | 上版线宽 | Transfer Line Width | Độ rộng nét chuyển bản | 仅在上版细节弹窗调整；外层快捷上版采用 100% |
 | **15**| `wizardNeedlePressure` | Range | 65% | 10 ~ 100% | 针尖下压力 | Needle Pressure | Áp lực mũi kim | 更多上版设置 ▾ |
 | **16**| `tool` | ToolBtn | `needle` | needle/dry/stop/polish | 修绘工具 | Retouching Tools | Công cụ khắc sửa | 蚀刻针/刮磨器外层，进阶折叠 |
 | **17**| `size` | Range | 4 px | 1 ~ 50 px | 工具直径 | Tool Diameter | Đường kính mũi khắc | **表面常驻滑块** |
@@ -394,7 +395,7 @@ stateDiagram-v2
 为确保新方案平滑无损交付，实施阶段必须恪守以下技术契约：
 1. **DOM ID 与控制器解耦**：
    - 保证全量 25 项参数 DOM ID 与 [layout-templates.js](../../src/ui/templates/layout-templates.js) 保持稳定；
-   - 现有的 125 项自动化测试套件必须持续保持 100% 绿色通过。
+   - 运行 `npm test` 时，现有自动化测试与应用入口装配测试必须全部通过；具体用例数量以测试运行结果为准。
 2. **当前测试套件**：
    - `tests/two-stage-ui.test.cjs`：覆盖初始选择入口、模板翻译键、四步状态及再次上版保护。
    - `tests/app-entry-mount.test.cjs`：验证应用入口装配。

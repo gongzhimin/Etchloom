@@ -497,7 +497,10 @@ function initEventBindings() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Etchloom-scheme.json';
+      const pad = n => String(n).padStart(2, '0');
+      const now = new Date();
+      const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      a.download = `Etchloom-scheme-${ts}.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     };
@@ -674,13 +677,6 @@ function initEventBindings() {
   }
 
   // Stage 1 Panel: Confirm Transfer
-  const transferLineWidth = $('transferLineWidth');
-  if (transferLineWidth) {
-    transferLineWidth.oninput = () => {
-      const output = $('transferLineWidthVal');
-      if (output) output.textContent = `${transferLineWidth.value}%`;
-    };
-  }
   const performStage1Transfer = () => {
     const { masterPaths, contours } = pipelineController.getMasterData();
     const paths = (masterPaths && masterPaths.length) ? masterPaths : (contours || []);
@@ -701,7 +697,7 @@ function initEventBindings() {
       selectedRes: 1500,
       selectedTechnique,
       needlePressure: 0.65,
-      lineWidthScale: Number(transferLineWidth?.value || 100) / 100,
+      lineWidthScale: 1,
       layerLabel: i18nManager ? i18nManager.t('wizard.layerAll') : '全部母版'
     });
   };

@@ -1,13 +1,13 @@
 # Reusable UI Components (`src/ui/components/`)
 
 > **模块路径**：`src/ui/components/`  
-> **技术定位**：Layer 4 展现层独立原子组件库，承载步骤流卡片网格与局部物理像素微距放大镜。
+> **技术定位**：Layer 4 展现层组件库，承载七阶段横向胶片卡片与局部像素放大镜。
 
 ---
 
 ## 1. 核心职责与工程目标 (Responsibilities & Objectives)
 
-1. **步骤流自适应网格 (`StepFlowGrid`)**：呈现 7 阶段步骤卡片（Step 0 原图到 Step 6 凹版印样），提供真实毫秒耗时 Badge、局部预览画布挂载与全屏特写回调；
+1. **步骤流胶片栏 (`StepFlowGrid`)**：在默认折叠的制作过程区域呈现 7 张卡片（Step 0 原图到 Step 6 上版母稿），提供实测耗时、局部预览画布与全屏特写回调；
    计算完成态在卡片上仅显示 `✓`；对应语言的状态文字保留在徽章的 `aria-label` 中。
 2. **局部物理像素放大镜 (`LoupeMagnifier`)**：按住 `Alt` 键在铜版或步骤流画布上悬停时触发，以 4 倍放大率实时呈现 160px 圆形物理像素微刻痕。
 
@@ -17,7 +17,7 @@
 
 | 源码文件名 | 核心类 / 导出对象 | 功能定位 |
 | :--- | :--- | :--- |
-| `step-flow-grid.js` | `StepFlowGrid` | 7 步骤流程网格控制器，管理阶段状态、耗时与预览挂载 |
+| `step-flow-grid.js` | `StepFlowGrid` | 7 张胶片卡片的控制器，管理阶段状态、耗时与预览挂载 |
 | `loupe.js` | `LoupeMagnifier` | 基于 Alt 键悬停的 160px 圆形 4 倍物理像素微距放大镜 |
 
 ---

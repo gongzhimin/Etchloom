@@ -19,6 +19,9 @@
 | `--bg-card-header` | `#fbfaf8` | 卡片与抽屉标题栏背景 | 步骤卡片头部、抽屉头部、模态框头部 |
 | `--bg-input` | `#f4f1ec` | 表单控件与胶囊背景 | 滑块轨道、下拉选择框、未激活胶囊标签底色 |
 | `--bg-hover` | `#ece8e1` | 交互轻微悬停底色 | 按钮悬停、侧边栏选项悬停、列表项悬停高亮 |
+| `--atelier-linen-base` | `#ece5da` | 母版台面底色 | `#masterWorkspace` 的静态纸纤维层底色 |
+| `--atelier-paper-face` | `#fffdf8` | 母版纸面底色 | 初始入口纸面与母版主预览纸张外缘 |
+| `--atelier-board-base` | `#d4c5ae` | 铜版工作台底色 | 木纹图片加载前的回退底色 |
 
 ### 1.2 边框体系 (Borders)
 
@@ -139,11 +142,11 @@ const spacing = ThemeBridge.getThemeToken('--space-4', '16px');
 
 | 布局区域 | 结构与尺寸参数 | 说明 |
 | :--- | :--- | :--- |
-| 顶栏 (`header.app-header`) | 高度固定 `var(--header-height)` (`60px`) | 包含 Logo、母版/铜版双模式 Tab 与功能操作区 |
-| 侧边栏 (`aside.app-sidebar`) | 宽度固定 `var(--sidebar-width)` (`320px`) | 包含 4 个工序抽屉，通过模式隔离类自动展示/隐藏对应阶段 |
-| 主工作区 2列4行 网格 | 2 等分弹性列网格 (`repeat(2, minmax(0, 1fr))`) | **第 1~3 行** (步骤 00~05 各跨 1 列 = 50%)；<br>**第 4 行** (步骤 06 纯棉印样跨越全部 2 列 = 100%)；工作区通过 `overflow-y: auto` 垂直自然滚动 |
+| 顶栏 (`header.app-header`) | 桌面基准最小高度 `var(--header-height)` (`60px`) | 包含 Logo、母版/铜版双阶段导航、三语选项卡与功能操作区；窄屏允许增高换行 |
+| 铜版侧栏 (`.plate-sidebar`) | 桌面基准宽度 `var(--sidebar-width)` (`320px`) | 显示当前工序控件；窄屏移至主工作区上方 |
+| 制作过程胶片栏 (`.filmstrip-scroll`) | 默认折叠，展开后横向滚动 | 七张阶段卡片宽度 `clamp(160px, 19vw, 260px)`，按原图比例显示；不再以 2 列 4 行常驻主工作区 |
 | 卡片悬浮工具条 (`.card-actions`) | 绝对定位 (`top: var(--space-2); right: var(--space-2)`) | 悬停淡入半透明毛玻璃胶囊 (`[⛶ 特写]`, `[⬇ 导出]`)，不侵占卡身视觉净空 |
 | 抽屉式运行日志 (`.activity-log-wrap`) | 折叠高度 `var(--footer-height)` / 展开 `96px` | 底部微型抽屉，常态折叠释放垂直空间，点击随时滑出检视 |
 | 底部遥测栏 (`footer.telemetry-footer`) | 高度固定 `var(--footer-height)` (`32px`) | 包含一键唤起日志抽屉按键、状态、任务名、耗时、矢量线段与拓扑缓存命中率 |
-| 虚拟铜版顶栏 (`.plate-top-bar`) | 弹性行布局 | 包含铜版/刻深/印样视图切换、物理网格分辨率选择、`[⛶ 全屏特写]` 按钮与酸液腐蚀控制台 |
+| 虚拟铜版顶栏 (`.plate-top-bar`) | 弹性行布局 | 包含铜版/刻深/印样视图切换、当前精度只读值与全屏特写按钮；酸蚀控件位于工序侧栏 |
 

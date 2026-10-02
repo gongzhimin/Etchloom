@@ -139,3 +139,101 @@ test('Plate Studio initialization: starts uncarved (blank plate, stage 1), needl
   assert.strictEqual(depth[testIdx], 0, 'Etching needle before acid biting must NOT create groove depth');
 });
 
+test('Plate Studio acid etching: groove depth genuinely increases with etch time and reflects in gauge', async (t) => {
+  const { etch, updateAcidGauge, dab, W, H, depth, exposed } = await import('../src/ui/controllers/plate-studio-controller.js');
+
+  const mockTime = { textContent: '' };
+  const mockDepth = { textContent: '' };
+  const mockGauge = { textContent: '' };
+  const mockProgressBar = { style: { width: '' } };
+
+  const prevDoc = global.document;
+  global.document = {
+    getElementById: (id) => {
+      if (id === 'etchTimeVal') return mockTime;
+      if (id === 'etchDepthVal') return mockDepth;
+      if (id === 'plateAcidGauge') return mockGauge;
+      if (id === 'etchProgressBar') return mockProgressBar;
+      return null;
+    }
+  };
+
+  try {
+    // Draw needle lines across x = 200..300
+    for (let x = 200; x < 300; x++) {
+      dab(x, 250, 1.0);
+    }
+
+    // Before etching: groove depth must be 0.0 μm
+    updateAcidGauge();
+    assert.strictEqual(mockDepth.textContent, '0.0 μm', 'Depth before etching must be 0.0 μm');
+
+    // Advance acid etching by simulating several seconds of biting
+    for (let s = 0; s < 40; s++) {
+      etch(0.1);
+    }
+    updateAcidGauge();
+    const depthAfterEtch = parseFloat(mockDepth.textContent);
+    assert.ok(depthAfterEtch > 0.5, `Groove depth must increase after acid biting, got: ${mockDepth.textContent}`);
+  } finally {
+    global.document = prevDoc;
+  }
+});
+
+test('Export Filenames: all downloads include structured timestamps (YYYYMMDD-HHmmss) without duplicate collisions', async (t) => {
+  const { getPlateTimestamp } = await import('../src/ui/controllers/plate-studio-controller.js');
+  const ts = getPlateTimestamp();
+  assert.match(ts, /^\d{8}-\d{6}$/, 'Timestamp must match YYYYMMDD-HHmmss format');
+
+  const { PipelineController } = await import('../src/ui/controllers/pipeline-controller.js');
+  const downloadedFiles = [];
+
+  const prevURL = global.URL;
+  const prevDoc = global.document;
+  const prevExporter = global.Exporter;
+
+  global.Exporter = require('../src/orchestration/export/exporter.js');
+  global.URL = {
+    createObjectURL: () => 'blob:mock',
+    revokeObjectURL: () => {}
+  };
+
+  global.document = {
+    getElementById: () => null,
+    createElement: (tag) => {
+      if (tag === 'a') {
+        return {
+          click: () => {},
+          set download(val) {
+            downloadedFiles.push(val);
+          }
+        };
+      }
+      return { getContext: () => null };
+    }
+  };
+
+  try {
+    const pc = new PipelineController();
+    pc.lastMasterPaths = [{ points: [[0, 0], [10, 10]], width: 1 }];
+    pc.lastContours = [{ points: [[0, 0], [10, 10]], width: 1 }];
+    pc.lastHatching = [{ points: [[0, 0], [10, 10]], width: 1 }];
+    pc.currentLoadedImage = { width: 900, height: 660, rawImg: {} };
+
+    // Trigger step 3, 4, 5, 6 vector exports
+    pc.downloadStepExport(3);
+    pc.downloadStepExport(4);
+    pc.downloadStepExport(5);
+    pc.downloadStepExport(6);
+
+    assert.equal(downloadedFiles.length, 4, 'Should have downloaded 4 step export files');
+    for (const filename of downloadedFiles) {
+      assert.match(filename, /^Etchloom-step\d+-[a-z]+-\d{8}-\d{6}\.(svg|png)$/, `Filename ${filename} must have Etchloom prefix, stage, timestamp and extension`);
+    }
+  } finally {
+    global.URL = prevURL;
+    global.document = prevDoc;
+    global.Exporter = prevExporter;
+  }
+});
+

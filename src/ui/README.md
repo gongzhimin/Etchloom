@@ -7,9 +7,9 @@
 
 ## 1. 核心职责与工程目标 (Responsibilities & Objectives)
 
-1. **结构彻底解耦**：将庞大界面模板从 `index.html` 剥离至 `templates/layout-templates.js`，`index.html` 保持在 60 行极简骨架；
-2. **纯原生 ESM 架构**：以 `src/main.js` 为唯一顶层装配入口，所有业务控制器严格采用 `import/export` 模块化通信；
-3. **单向响应式数据流**：通过 `store/app-store.js` 驱动视图更新，杜绝跨控制器直接操作 DOM；
+1. **结构解耦**：将界面模板从 `index.html` 剥离至 `templates/layout-templates.js`，入口只负责加载与挂载；
+2. **原生 ESM 装配**：以 `src/main.js` 为顶层入口；UI 控制器使用 ESM，部分底层组件通过 UMD 全局对象接入；
+3. **状态与 DOM 更新**：`store/app-store.js` 保存部分应用状态；入口与控制器仍直接更新相关 DOM 节点，尚未形成完全由 Store 驱动的单向视图层；
 4. **国际化与无障碍**：`i18n/` 模块扫描 DOM 翻译属性；顶栏使用中文、英文和越南语三个语言选项卡，并同步页面 `lang`、选中态与焦点顺序。双阶段入口与工序操作使用原生按钮。
 
 首次进入显示照片选择和示例入口；母版就绪后才显示预览、参数及铜版入口。七阶段胶片栏默认折叠。
@@ -18,7 +18,8 @@
 入口卡片随视口缩放；母版预览、阶段卡片和铜版画布按源图比例适配可用空间。
 选中照片后，制作页显示原图缩略预览；参数重绘使用不确定进度条提示任务状态。外框切换同步更新阶段印样与母版主预览，结果页滚动条位于视口右缘。
 制作过程的七张卡片将底部说明保存为翻译键与实际数据；切换语言会重新生成已经完成的卡片说明。
-第 06 阶段以冷白底和定位标记呈现可上版母稿；纸张、压印与油墨效果仅出现在铜版试印流程。铜版工作区使用暖色工作台背景，两种试印纸张的色调和纹理有可见差异。
+第 06 阶段以冷白底和定位标记呈现可上版母稿；纸张、压印与油墨效果仅出现在铜版试印流程。铜板周围使用浅木纹工作台；试印提供四种纸张预设。
+母版工作区以静态浅色纤维纹理为台面，纸面通过边框与接触阴影区分；铜版主工作区保持浅色，宽幅画框使用 `docs/images/oak-workbench.png` 木纹和浅色蒙层，工作台与铜板各有独立边框及阴影。材质背景不进入 Canvas、SVG 与导出文件。
 
 ---
 
@@ -48,7 +49,7 @@ src/ui/
 ## 3. 自动化测试与验证 (Testing & Verification)
 
 - [`tests/ui.test.cjs`](../../tests/ui.test.cjs)（I18n 语言字典与 AppStore 单向数据流）
-- [`tests/ui-button-clicks.test.cjs`](../../tests/ui-button-clicks.test.cjs)（12 项：全量 UI 按钮点击与组件生命周期）
+- [`tests/ui-button-clicks.test.cjs`](../../tests/ui-button-clicks.test.cjs)（顶栏、工序、上版、模态框与铜版操作的按钮事件）
 - [`tests/two-stage-ui.test.cjs`](../../tests/two-stage-ui.test.cjs)（入口选择、模板翻译键与铜版工序状态）
 
 ---
@@ -63,7 +64,7 @@ src/ui/
 
 试印提供 `rough`、`smooth`、`linen`、`rosaspina` 四种表面预设。后两者参考真实凹版纸的材质与纹理；实现通过底色、确定性空间纹理和着墨变化进行视觉区分，未对实体纸做物理标定。纸张选择会触发试印重绘，说明文案随 zh-CN、en-US、vi-VN 切换。`tests/virtual-plate-engine.test.cjs` 检查四种纸面的像素差异。
 
-蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。上版面板与上版细节弹窗的线宽控件同步，`lineWidthScale` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。
+蚀刻工作台顶部的精度为只读值，由上版流程选择精度后更新；手工刻绘的 `size` 滑块直接改变刻针足迹。快捷上版固定使用 100% 线宽；上版细节弹窗中的 `wizardLineWidth` 以 50%–200% 缩放转录笔画，和手工工具直径相互独立。
 
 关于页由 `aboutModalOverlay` 独立对话框承载，不再通过图像灯箱的纯文本说明字段显示 HTML。内容为两步工作流、操作提示及保存导出；使用 `data-i18n` 在 zh-CN、en-US、vi-VN 间同步切换。`tests/two-stage-ui.test.cjs` 核对翻译键和结构，`tests/ui-button-clicks.test.cjs` 核对对话框语义。
 

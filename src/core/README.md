@@ -96,7 +96,7 @@ interface PipelineOutputs {
 ## 5. 自动化测试与验证 (Testing & Verification)
 
 针对本模块的测试文件包括：
-- [`tests/pipeline-runner.test.cjs`](../../tests/pipeline-runner.test.cjs)（3 项：全量执行、增量执行、任务抢占中断）
+- [`tests/pipeline-runner.test.cjs`](../../tests/pipeline-runner.test.cjs)（全量执行、增量执行、任务抢占中断）
 - [`tests/five-stage-pipeline.test.cjs`](../../tests/five-stage-pipeline.test.cjs)（3 项：5阶段产物完整性、PhotoPro 产物、分层目录与门面等价性验证）
 - [`tests/photo.test.cjs`](../../tests/photo.test.cjs)（7 项：对比度、留白、超高清 1800x1320）
 - [`tests/refinement.test.cjs`](../../tests/refinement.test.cjs)（14 项：色调阶跃单调性、PlateCodec 无损编解码）

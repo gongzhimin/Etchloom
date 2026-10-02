@@ -9,9 +9,9 @@
 
 ## 1. 核心职责与工程目标 (Responsibilities & Objectives)
 
-1. **解耦 index.html 骨架**：将庞大的 HTML DOM 结构（超过 600 行 HTML 标记）从 `index.html` 剥离，使 `index.html` 保持在 60 行以内极简结构；
-2. **纯原生 DOM 装配**：利用纯原生 JavaScript 模板字符串与安全 DOM 节点解析（`Range.createContextualFragment`），实现零模板引擎依赖；
-3. **国际化属性预埋**：所有静态文案严格预埋 `data-i18n` 属性，挂载后立即可被 `I18nManager` 扫描并双语渲染。
+1. **解耦 index.html 骨架**：将界面 DOM 模板从 `index.html` 剥离，由入口加载并挂载 `layout-templates.js`；
+2. **纯原生 DOM 装配**：使用 JavaScript 模板字符串并赋值给挂载容器的 `innerHTML`，无需外部模板引擎；模板内容由仓库源码维护，不接收用户输入；
+3. **国际化属性预埋**：可翻译的静态文案使用 `data-i18n` 属性，挂载后由 `I18nManager` 按中、英、越三语渲染。
 
 ---
 
