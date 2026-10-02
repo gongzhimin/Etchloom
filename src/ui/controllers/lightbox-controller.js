@@ -88,25 +88,60 @@ export class LightboxController {
         this.updateTransform();
       };
 
+      const activePointers = new Map();
+      let initialPinchDist = 0;
+      let initialPinchScale = 1.0;
+
       this.viewportWrap.onpointerdown = (e) => {
-        if (e.button !== 0) return;
-        this.isDragging = true;
-        this.startX = e.clientX - this.translateX;
-        this.startY = e.clientY - this.translateY;
-        this.viewportWrap.classList.add('is-dragging');
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         this.viewportWrap.setPointerCapture?.(e.pointerId);
+
+        if (activePointers.size === 1) {
+          this.isDragging = true;
+          this.startX = e.clientX - this.translateX;
+          this.startY = e.clientY - this.translateY;
+          this.viewportWrap.classList.add('is-dragging');
+        } else if (activePointers.size === 2) {
+          this.isDragging = false;
+          const [p1, p2] = Array.from(activePointers.values());
+          initialPinchDist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+          initialPinchScale = this.scale;
+        }
       };
 
       this.viewportWrap.onpointermove = (e) => {
-        if (!this.isDragging) return;
-        this.translateX = e.clientX - this.startX;
-        this.translateY = e.clientY - this.startY;
-        this.updateTransform();
+        if (!activePointers.has(e.pointerId)) return;
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (activePointers.size === 2) {
+          const [p1, p2] = Array.from(activePointers.values());
+          const currentDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+          if (initialPinchDist > 0) {
+            const factor = currentDist / initialPinchDist;
+            const newScale = Math.max(0.5, Math.min(5.0, initialPinchScale * factor));
+            this.scale = Number(newScale.toFixed(2));
+            this.updateTransform();
+          }
+        } else if (this.isDragging && activePointers.size === 1) {
+          this.translateX = e.clientX - this.startX;
+          this.translateY = e.clientY - this.startY;
+          this.updateTransform();
+        }
       };
 
-      this.viewportWrap.onpointerup = this.viewportWrap.onpointercancel = () => {
-        this.isDragging = false;
-        this.viewportWrap.classList.remove('is-dragging');
+      this.viewportWrap.onpointerup = this.viewportWrap.onpointercancel = (e) => {
+        activePointers.delete(e.pointerId);
+        if (activePointers.size === 0) {
+          this.isDragging = false;
+          this.viewportWrap.classList.remove('is-dragging');
+          initialPinchDist = 0;
+        } else if (activePointers.size === 1) {
+          const remaining = Array.from(activePointers.values())[0];
+          this.isDragging = true;
+          this.startX = remaining.x - this.translateX;
+          this.startY = remaining.y - this.translateY;
+        }
       };
 
       this.viewportWrap.ondblclick = (e) => {
@@ -187,10 +222,11 @@ export class LightboxController {
     // Viewport dimensions
     const winW = (typeof window !== 'undefined' ? window.innerWidth : 1920) || 1920;
     const winH = (typeof window !== 'undefined' ? window.innerHeight : 1080) || 1080;
-    const wrapW = this.viewportWrap?.clientWidth || winW;
-    const wrapH = this.viewportWrap?.clientHeight || winH;
-    const availW = Math.max(300, wrapW - 24);
-    const availH = Math.max(300, wrapH - 54);
+    const isMobile = winW <= 760;
+    const wrapW = (this.viewportWrap?.clientWidth && this.viewportWrap.clientWidth > 0) ? this.viewportWrap.clientWidth : winW;
+    const wrapH = (this.viewportWrap?.clientHeight && this.viewportWrap.clientHeight > 0) ? this.viewportWrap.clientHeight : winH;
+    const availW = Math.max(200, wrapW - (isMobile ? 16 : 32));
+    const availH = Math.max(200, wrapH - (isMobile ? 70 : 64));
 
     // 1. Vector SVG Mode Check
     const svgContent = options.vectorSvg || (typeof source === 'string' && source.includes('<svg') ? source : null);

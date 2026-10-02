@@ -572,12 +572,15 @@ body.mode-plate aside.app-sidebar #drawer2 {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .step-num {
   font-family: var(--font-mono);
   color: var(--accent-gold);
   font-weight: 700;
   font-size: 11px;
+  flex-shrink: 0;
 }
 .card-title,
 .step-title {
@@ -585,12 +588,17 @@ body.mode-plate aside.app-sidebar #drawer2 {
   font-weight: 600;
   letter-spacing: 0.3px;
   font-size: 12px;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .card-badges {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
+  flex-shrink: 0;
 }
 .badge-time {
   font-family: var(--font-mono);
@@ -1116,15 +1124,18 @@ footer.telemetry-footer {
 /* --------------------------------------------------------------------------
    True Fullscreen Immersive Lightbox (100vw x 100vh Edge-to-Edge)
    -------------------------------------------------------------------------- */
+#modalOverlay,
 .fullscreen-viewport-overlay,
 #modalOverlay.fullscreen-viewport-overlay {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
+  width: 100dvw !important;
   height: 100vh !important;
-  background: rgba(12, 13, 14, 0.94) !important;
+  height: 100dvh !important;
+  background: rgba(12, 13, 14, 0.96) !important;
   backdrop-filter: blur(12px) !important;
-  z-index: 99999 !important;
+  z-index: 999999 !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -1133,10 +1144,11 @@ footer.telemetry-footer {
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;
+  touch-action: none;
 }
 
-.fullscreen-viewport-overlay[hidden],
-#modalOverlay[hidden] {
+#modalOverlay[hidden],
+.fullscreen-viewport-overlay[hidden] {
   display: none !important;
 }
 
@@ -1233,8 +1245,8 @@ footer.telemetry-footer {
 .modal-viewport-wrap {
   position: absolute;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1242,6 +1254,7 @@ footer.telemetry-footer {
   cursor: grab;
   user-select: none;
   background: transparent;
+  touch-action: none;
 }
 
 .fullscreen-canvas-viewport.is-dragging,
@@ -1985,9 +1998,9 @@ body[data-master-screen="computing"] footer.telemetry-footer {
 
 .filmstrip-scroll .step-card,
 .filmstrip-scroll .etchloom-step-card {
-  min-width: 160px !important;
-  width: clamp(160px, 19vw, 260px) !important;
-  max-width: 260px !important;
+  min-width: 220px !important;
+  width: clamp(220px, 60vw, 280px) !important;
+  max-width: 300px !important;
   flex-shrink: 0 !important;
   grid-column: auto !important;
   margin: 0 !important;
@@ -2546,115 +2559,159 @@ body[data-master-screen="computing"] footer.telemetry-footer {
 }
 
 @media (max-width: 760px) {
-  /* Compact Single-Row Mobile Header (48px) */
+  /* Structured 2-Row Mobile Header (Notch-Safe, Anti-wrapping) */
   header.app-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
-    padding: 0 10px;
-    gap: 6px;
-    box-sizing: border-box;
-    overflow: hidden;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+      "brand actions"
+      "stepper stepper" !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: unset !important;
+    padding: max(8px, env(safe-area-inset-top)) 12px 8px 12px !important;
+    gap: 8px 10px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
   }
   .brand-group {
+    grid-area: brand;
     flex: 0 0 auto;
-    gap: 6px;
+    display: flex;
+    gap: 8px;
     align-items: center;
   }
   .brand-logo {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
   .brand-title {
-    font-size: 14px;
+    font-size: 15px;
     letter-spacing: 0.5px;
   }
   .brand-subtitle {
     display: none;
   }
-  .master-stepper {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    margin: 0;
-  }
-  .step-connector {
-    display: none;
-  }
-  .step-pill {
-    min-width: 0;
-    padding: 3px 7px;
-    font-size: 11px;
-    gap: 3px;
-    border-radius: 12px;
-    white-space: nowrap;
-  }
-  .step-pill-num {
-    width: 15px;
-    height: 15px;
-    font-size: 10px;
-    line-height: 15px;
-  }
   .header-actions {
+    grid-area: actions;
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 3px;
-    margin-left: 0;
+    gap: 4px;
+    margin-left: auto;
   }
   .header-actions .btn-secondary {
-    display: none; /* Preserved in DOM, hidden in 48px mobile bar */
+    display: none; /* Preserved in DOM, hidden in mobile bar */
   }
   .language-tabs {
     width: auto;
     display: inline-flex;
-    padding: 1px;
-    gap: 1px;
-    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+    border-radius: 8px;
   }
   .language-tab {
-    padding: 2px 5px;
-    font-size: 10px;
-    min-height: 22px;
+    padding: 3px 7px;
+    font-size: 11px;
+    min-height: 24px;
     min-width: 0;
+  }
+  .master-stepper {
+    grid-area: stepper;
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+  .step-connector {
+    display: none !important;
+  }
+  .step-pill {
+    min-width: 0;
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    gap: 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  .step-pill-num {
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+    line-height: 16px;
   }
 
   /* Master Workspace Layout & Hero Breathing Room */
   #masterWorkspace.master-workspace-wrap {
     padding: 8px !important;
-    height: calc(100% - 48px);
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
   }
+  #plateWorkspace {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
   .master-entry { min-height: 100%; padding: 12px; }
   .master-top-banner {
-    padding: 6px 10px;
+    padding: 8px 10px;
     margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .master-banner-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .master-banner-title-row {
+    gap: 6px;
     flex-wrap: nowrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
+    min-width: 0;
   }
-  .master-banner-info { min-width: 0; }
-  .master-banner-title-row { gap: 6px; flex-wrap: nowrap; }
-  .master-title-serif { font-size: 13px; white-space: nowrap; }
-  #masterStrokesBadge { font-size: 10px; padding: 1px 5px; white-space: nowrap; }
+  .master-title-serif {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #masterStrokesBadge {
+    font-size: 10px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
   .master-banner-actions {
-    width: auto;
-    flex-wrap: nowrap;
-    gap: 4px;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 6px;
+    width: 100%;
   }
   .master-banner-actions button {
-    padding: 5px 8px;
-    font-size: 11px;
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 12px;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: none;
   }
   .master-hero-viewport {
@@ -2754,6 +2811,48 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   .btn-atelier-secondary,
   .plate-sidebar button {
     min-height: 36px;
+  }
+
+  /* Lightbox Mobile Floating Header & Fullscreen Controls */
+  .fullscreen-floating-header {
+    top: max(8px, env(safe-area-inset-top));
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    padding: 4px 8px;
+    gap: 6px;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+  .fullscreen-header-info {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+  .fullscreen-title {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fullscreen-meta {
+    display: none;
+  }
+  #lightboxNativeFs,
+  #lightboxFit {
+    display: none;
+  }
+  .fullscreen-toolbar {
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .fullscreen-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .fullscreen-zoom-badge {
+    min-width: 36px;
+    padding: 2px 4px;
+    font-size: 10px;
   }
 }
 
