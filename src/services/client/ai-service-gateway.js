@@ -56,9 +56,19 @@ export class AIServiceGateway {
     } catch (_) {}
 
     // Mode 2: Client-side local neural models (WebGPU or WASM)
-    // Runs 100% offline via bundled Informative Drawings and MiDaS ONNX models.
+    // Runs via bundled Informative Drawings and MiDaS ONNX models when runtime is present.
     const clientCaps = await this.webClient.probeCapabilities();
-    if (clientCaps.ready) {
+    let ortReady = clientCaps.ortReady;
+    if (clientCaps.ready && !ortReady && typeof window !== 'undefined') {
+      try {
+        const ort = await this.webClient._loadOrt();
+        ortReady = !!ort;
+      } catch (_) {
+        ortReady = false;
+      }
+    }
+
+    if (clientCaps.ready && ortReady) {
       this.activeBackend = 'browser-webai';
       const dev = clientCaps.webgpu ? 'WebGPU' : 'WASM';
       return {
@@ -231,7 +241,12 @@ export class AIServiceGateway {
 
         lineMap = wLine;
         depthMap = wDepth;
-        backendUsed = this.webClient.device;
+        if (lineMap || depthMap) {
+          backendUsed = this.webClient.device;
+        } else {
+          this.activeBackend = 'offline-analytical';
+          backendUsed = 'offline-analytical';
+        }
       } catch (_) {}
     }
 

@@ -3,7 +3,7 @@
 > **测试框架**：Node.js 原生测试模块 (`node:test`, `node:assert/strict`)  
 > **运行环境**：Node.js v20.0+（当前运行于 Node.js v24）  
 > **测试执行命令**：`npm test`  
-> **最近一次本地运行（2026-10-02）**：30 个测试文件，145 项测试用例通过；当前数量以 `npm test` 输出为准。
+> **最近一次本地运行（2026-10-02）**：32 个测试文件，151 项测试用例通过；当前数量以 `npm test` 输出为准。
 
 ---
 
@@ -15,8 +15,8 @@
                 ▲
                / \
               /   \
-             / Tier \      Tier 4: UI 交互、主题网桥与 DOM 装配测试 (43 项)
-            /   4    \     [tests/ui-button-clicks.test.cjs, tests/two-stage-ui.test.cjs, tests/theme-bridge.test.cjs...]
+             / Tier \      Tier 4: UI 交互、移动端自适应、主题网桥与 DOM 装配测试 (49 项)
+            /   4    \     [tests/ui-button-clicks.test.cjs, tests/two-stage-ui.test.cjs, tests/mobile-*.test.cjs...]
            /───────────\
           /   Tier 3    \    Tier 3: 异步调度、DAG 缓存与管线集成测试 (16 项)
          /───────────────\   [tests/pipeline-runner.test.cjs, tests/orchestrator.test.cjs, tests/stage-cache.test.cjs...]

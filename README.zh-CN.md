@@ -103,7 +103,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 | 模式层级 | 运行环境 | 依赖与网络需求 | 核心能力与适用场景 |
 | :--- | :--- | :--- | :--- |
 | **1. 基础离线模式**<br>`Offline Mode (Geometric)` | 浏览器 + 本地 HTTP 服务（`npm start`） | 基础几何计算无需外网或第三方运行依赖 | 基于几何算子与铜版网格仿真；原生 ESM 入口需要经 HTTP 服务加载，不保证直接打开 `file://` 可运行 |
-| **2. 本地 WebAI 模式**<br>`Local Model (WebGPU/WASM)` | 现代化浏览器 / 独立客户端 | 零外网依赖，双神经网络模型内置于本地 | 基于本地内置的 Informative Drawings 与 MiDaS v2.1 Small ONNX 模型，利用 WebGPU 显卡硬件加速（或多核 WASM）进行秒级本地离线推理 |
+| **2. 本地 WebAI 模式**<br>`Local Model (WebGPU/WASM)` | 现代化浏览器 / 独立客户端 | 权重内置于本地（首次需加载或缓存 ONNX Runtime 运行库） | 基于内置的 Informative Drawings 与 MiDaS v2.1 Small ONNX 模型，利用 WebGPU 显卡硬件加速（或 WASM 回退）进行端侧推理；离线或不可用时自动退避至基础几何模式 |
 | **3. 本机 Python 服务模式** | 本地 Python 环境 | 可选服务地址 `http://127.0.0.1:7861` | 在本机执行可用的神经网络推理；是否加速取决于已安装的运行库与硬件。 |
 
 ### 5.1 快速启动前端工坊

@@ -36,9 +36,9 @@ export class WebAIClient {
    * Probe client-side neural execution capabilities (WebGPU vs WASM).
    * @returns {Promise<{ ready: boolean, device: string, webgpu: boolean }>}
    */
-  async probeCapabilities() {
+  async probeCapabilities(options = {}) {
     if (typeof window === 'undefined') {
-      return { ready: false, device: 'none', webgpu: false };
+      return { ready: false, device: 'none', webgpu: false, ortReady: false };
     }
 
     let hasWebGPU = false;
@@ -50,15 +50,17 @@ export class WebAIClient {
     }
 
     this.device = hasWebGPU ? 'webgpu' : 'wasm';
+    const ortReady = !!window.ort || (options.loadRuntime ? !!(await this._loadOrt()) : false);
     return {
       ready: true,
       device: this.device,
-      webgpu: hasWebGPU
+      webgpu: hasWebGPU,
+      ortReady
     };
   }
 
   /**
-   * Dynamically loads ONNX Runtime Web library.
+   * Dynamically loads ONNX Runtime Web library (tries local models/ first, then CDN).
    * @private
    */
   async _loadOrt() {
@@ -71,30 +73,45 @@ export class WebAIClient {
     const setupOrtEnv = (ortInstance) => {
       if (ortInstance?.env?.wasm) {
         ortInstance.env.wasm.simd = true;
+        if (!ortInstance.env.wasm.wasmPaths) {
+          ortInstance.env.wasm.wasmPaths = this.modelsBasePath;
+        }
       }
       return ortInstance;
     };
 
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.webgpu.min.js';
-      script.async = true;
-      script.onload = () => {
+      // 1. Try local bundled runtime first
+      const localScript = document.createElement('script');
+      localScript.src = this.modelsBasePath + 'ort.min.js';
+      localScript.async = true;
+      localScript.onload = () => {
         this.ort = setupOrtEnv(window.ort || null);
         resolve(this.ort);
       };
-      script.onerror = () => {
-        // Fallback to standard WASM distribution
-        const fbScript = document.createElement('script');
-        fbScript.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js';
-        fbScript.onload = () => {
+      localScript.onerror = () => {
+        // 2. Fallback to WebGPU distribution via CDN
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.webgpu.min.js';
+        script.async = true;
+        script.onload = () => {
           this.ort = setupOrtEnv(window.ort || null);
           resolve(this.ort);
         };
-        fbScript.onerror = () => resolve(null);
-        document.head.appendChild(fbScript);
+        script.onerror = () => {
+          // 3. Fallback to standard WASM distribution via CDN
+          const fbScript = document.createElement('script');
+          fbScript.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js';
+          fbScript.onload = () => {
+            this.ort = setupOrtEnv(window.ort || null);
+            resolve(this.ort);
+          };
+          fbScript.onerror = () => resolve(null);
+          document.head.appendChild(fbScript);
+        };
+        document.head.appendChild(script);
       };
-      document.head.appendChild(script);
+      document.head.appendChild(localScript);
     });
   }
 

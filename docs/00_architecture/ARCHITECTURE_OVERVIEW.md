@@ -28,10 +28,10 @@
                                      │ 调用编排
 +───────────────────────────────────────────────────────────────────────────+
 | Layer 2: 任务编排与基础设施层 (Orchestration & Infrastructure)             |
-| - src/orchestration/task-scheduler.js (防抖、微任务与 AbortController 抢占)|
-| - src/orchestration/stage-cache.js (32-bit DJB2 哈希与 DAG 增量失效)       |
-| - src/orchestration/exporter.js (SVG 分层、CNC G-Code、PNG pHYs 导出)      |
-| - src/orchestration/telemetry-sink.js (阶段耗时与性能指标统计)             |
+| - src/orchestration/scheduler/task-scheduler.js (防抖、微任务与 AbortController 抢占)|
+| - src/orchestration/cache/stage-cache.js (32-bit DJB2 哈希与 DAG 增量失效)       |
+| - src/orchestration/export/exporter.js (SVG 分层、CNC G-Code、PNG pHYs 导出)      |
+| - src/orchestration/telemetry/telemetry-sink.js (阶段耗时与性能指标统计)             |
 | - src/services/client/ai-service-gateway.js (HTTP /health, /infer, /depth 探活降级)|
 +───────────────────────────────────────────────────────────────────────────+
                                      │ 纯数据驱动

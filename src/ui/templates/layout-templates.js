@@ -680,14 +680,6 @@ export const modalsTemplate = `
             <h4 data-i18n="about.stage2Title">蚀刻铜版</h4>
             <p data-i18n="about.stage2Body">将母版上版，亲手刻绘、腐蚀，并在不同纸张上试印。</p>
           </section>
-        </div>
-        <section class="about-community" aria-labelledby="aboutCommunityTitle">
-          <h4 id="aboutCommunityTitle" data-i18n="about.communityTitle">项目与反馈</h4>
-          <div class="about-community-links">
-            <a href="https://github.com/gongzhimin/Etchloom/releases" target="_blank" rel="noopener noreferrer" data-i18n="about.repositoryLink">下载 ↗</a>
-            <a href="https://github.com/gongzhimin/Etchloom/issues" target="_blank" rel="noopener noreferrer" data-i18n="about.issuesLink">反馈 ↗</a>
-          </div>
-        </section>
         <div class="about-details">
           <section>
             <h4 data-i18n="about.guideTitle">操作提示</h4>
@@ -702,7 +694,13 @@ export const modalsTemplate = `
             <p data-i18n="about.outputBody">可导出母版 SVG、下载试印 PNG，并保存铜版进度。</p>
           </section>
         </div>
-        <p class="about-meta-text" data-i18n="about.meta">开源许可：MIT</p>
+        <footer class="about-footer">
+          <span class="about-meta-text" data-i18n="about.meta">开源许可：MIT</span>
+          <span class="about-footer-sep" aria-hidden="true">·</span>
+          <a class="about-footer-link" href="https://github.com/gongzhimin/Etchloom/releases" target="_blank" rel="noopener noreferrer" data-i18n="about.repositoryLink">下载最新</a>
+          <span class="about-footer-sep" aria-hidden="true">·</span>
+          <a class="about-footer-link" href="https://github.com/gongzhimin/Etchloom/issues" target="_blank" rel="noopener noreferrer" data-i18n="about.issuesLink">反馈</a>
+        </footer>
       </div>
     </div>
   </div>

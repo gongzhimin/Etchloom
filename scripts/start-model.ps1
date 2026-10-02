@@ -5,8 +5,7 @@ if ($env:ETCHLOOM_MODEL_PYTHON) { $candidates += $env:ETCHLOOM_MODEL_PYTHON }
 $candidates += (Join-Path $projectRoot '.venv-model\Scripts\python.exe')
 if ($env:CONDA_PREFIX) { $candidates += (Join-Path $env:CONDA_PREFIX 'python.exe') }
 
-# Known good environments
-$candidates += 'C:\Users\Jimin\miniconda3\envs\midi_gen\python.exe'
+
 
 $conda = Get-Command conda -ErrorAction SilentlyContinue
 if ($conda) {

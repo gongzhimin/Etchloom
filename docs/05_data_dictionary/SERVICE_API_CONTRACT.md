@@ -10,7 +10,7 @@
 
 网关遵循严格的分级自适应探测与降级策略：
 1. **模式 1：`remote-python`（本机 Python 服务）**：通过 HTTP 访问本地 CUDA/PyTorch 服务，并行调用 `/infer` 与 `/depth`；
-2. **模式 2：`browser-webai`（浏览器内置模型）**：基于 `WebAIClient`，使用 ONNX Runtime Web（优先 WebGPU，次选 WASM CPU 多线程）在浏览器内存中运行 `models/informative-drawings.onnx` 与 `depth-anything-v2-small`；
+2. **模式 2：`browser-webai`（浏览器内置模型）**：基于 `WebAIClient`，使用 ONNX Runtime Web（优先 WebGPU，次选 WASM CPU 多线程）在端侧内存中运行 `models/informative-drawings.onnx` 与 `models/midas-small.onnx`（MiDaS v2.1 Small）；
 3. **模式 3：`offline-analytical`（纯离线几何分析）**：100% 离线纯 JavaScript 几何分析退避算法，基于高斯差分 (DoG) 边缘与启发式几何流场。
 
 ---

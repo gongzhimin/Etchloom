@@ -2,7 +2,7 @@
 
 > **当前测试运行器**：Node.js 内置测试框架 (`node:test` + `node:assert/strict`)  
 > **执行命令**：`npm test` (等效于 `node scripts/test-runner.cjs`)  
-> **最近一次本地运行（2026-10-02）**：30 个测试文件，145 项测试用例通过；当前数量以 `npm test` 输出为准。
+> **最近一次本地运行（2026-10-02）**：32 个测试文件，151 项测试用例通过；当前数量以 `npm test` 输出为准。
 
 ---
 
@@ -40,6 +40,8 @@
 | 28 | `tests/two-stage-ui.test.cjs` | 双阶段渐进披露与四态酸液状态机 | 9 | 顶栏双阶段切换；4阶段工序；4态酸蚀状态机；上版拦截 |
 | 29 | `tests/desktop-packaging.test.cjs` | 桌面端打包与 Tauri 资源完整性 | 2 | 生产打包轻量完整；Tauri 与应用图标资源就绪 |
 | 30 | `tests/ui-surfaces.test.cjs` | 双阶段台面与木纹资源一致性 | 3 | 母版与铜版底色；局部木纹、浅色蒙层、台面及铜板边界；说明与状态间距 |
+| 31 | `tests/mobile-layout-lightbox.test.cjs` | 移动端紧凑布局、防文本竖折与双指捏合缩放灯箱 | 3 | 胶卷卡片最小宽度防字符竖排；灯箱 dvh 视口与双指缩放手势；主图视口自适应比例 |
+| 32 | `tests/mobile-touch-sheet.test.cjs` | 移动端触摸防误触、底部抽屉与多指下针防护 | 3 | touch-action 防误触；BottomSheet 拖拽展开与折叠；双指触摸时禁止下针划线 |
 
 ---
 
