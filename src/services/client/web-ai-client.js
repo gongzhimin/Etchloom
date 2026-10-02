@@ -68,12 +68,19 @@ export class WebAIClient {
       return this.ort;
     }
 
+    const setupOrtEnv = (ortInstance) => {
+      if (ortInstance?.env?.wasm) {
+        ortInstance.env.wasm.simd = true;
+      }
+      return ortInstance;
+    };
+
     return new Promise((resolve) => {
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.webgpu.min.js';
       script.async = true;
       script.onload = () => {
-        this.ort = window.ort || null;
+        this.ort = setupOrtEnv(window.ort || null);
         resolve(this.ort);
       };
       script.onerror = () => {
@@ -81,7 +88,7 @@ export class WebAIClient {
         const fbScript = document.createElement('script');
         fbScript.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js';
         fbScript.onload = () => {
-          this.ort = window.ort || null;
+          this.ort = setupOrtEnv(window.ort || null);
           resolve(this.ort);
         };
         fbScript.onerror = () => resolve(null);

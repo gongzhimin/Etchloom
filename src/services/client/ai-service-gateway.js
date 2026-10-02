@@ -216,10 +216,18 @@ export class AIServiceGateway {
           });
         }
 
-        const [wLine, wDepth] = await Promise.all([
-          this.webClient.predictLineDrawing(imageElement, curW, curH),
-          this.webClient.predictDepth(imageElement, curW, curH)
-        ]);
+        const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 760 || /Android|iPhone|iPad/i.test(navigator.userAgent));
+        let wLine, wDepth;
+        if (isMobile) {
+          // Serial execution on mobile to prevent CPU thread thrashing and memory spike
+          wLine = await this.webClient.predictLineDrawing(imageElement, curW, curH);
+          wDepth = await this.webClient.predictDepth(imageElement, curW, curH);
+        } else {
+          [wLine, wDepth] = await Promise.all([
+            this.webClient.predictLineDrawing(imageElement, curW, curH),
+            this.webClient.predictDepth(imageElement, curW, curH)
+          ]);
+        }
 
         lineMap = wLine;
         depthMap = wDepth;
