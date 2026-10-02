@@ -469,8 +469,17 @@ function initEventBindings() {
     };
   }
   if ($('loadDemoBtn')) {
-    $('loadDemoBtn').onclick = () => {
+    $('loadDemoBtn').onclick = async () => {
       setMasterScreen('computing');
+      try {
+        const resp = await fetch('docs/images/demo-still-life.jpg');
+        if (resp.ok) {
+          const blob = await resp.blob();
+          blob.name = 'demo-still-life.jpg';
+          await pipelineController.handleImageFile(blob);
+          return;
+        }
+      } catch (_) {}
       requestAnimationFrame(() => pipelineController.initBrowserDemo());
     };
   }
@@ -535,10 +544,14 @@ function initEventBindings() {
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !aboutOverlay.hidden) closeAbout();
       if (event.key === 'Tab' && !aboutOverlay.hidden) {
-        const focusable = [...aboutOverlay.querySelectorAll('button, a[href]')];
+        const focusable = [...aboutOverlay.querySelectorAll('button:not([disabled]), a[href]:not([disabled])')].filter(el => !el.hidden);
+        if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
+        if (!aboutOverlay.contains(document.activeElement)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
           last?.focus();
         } else if (!event.shiftKey && document.activeElement === last) {

@@ -242,6 +242,7 @@ export class PipelineController {
     const isCurrent = () => !(signal?.aborted) && sourceVersion === this.sourceVersion;
 
     let neuralLineUsed = false;
+    let engineTag = '神经网络';
     this.updateTelemetry({ status: '管线计算中...', task: 'PIPELINE_RUNNING' });
 
     const tStart = (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -275,6 +276,7 @@ export class PipelineController {
           if (lineMap) {
             this.currentLoadedImage.lineMap = lineMap;
             neuralLineUsed = true;
+            engineTag = health?.modeLabel || '神经网络';
             this.log('模型', `✓ Informative Drawings 神经网络线描完成 (${curW} × ${curH})`, 'done');
           }
           if (depthMap) {
@@ -321,7 +323,7 @@ export class PipelineController {
               this.lastStage1LineMap = artifact;
               this.stepGrid.updateStepPreview(1, artifact);
               this.stepGrid.setStepStatus(1, 'DONE', { key: neuralLineUsed ? 'card.aiLine' : 'card.lineReady' }, stageElapsed);
-              this.log('管线', `阶段 1 完成: 线描感知抽取 (${neuralLineUsed ? 'CUDA 神经网络' : '几何退避'})`, 'done');
+              this.log('管线', `阶段 1 完成: 线描感知抽取 (${neuralLineUsed ? engineTag : '几何退避'})`, 'done');
             } else if (stage === 2 && artifact) {
               this.lastStage2Artifact = artifact;
               this.stepGrid.updateStepPreview(2, artifact);

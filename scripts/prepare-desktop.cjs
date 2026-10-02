@@ -72,8 +72,11 @@ function prepareDesktop() {
   if (fs.existsSync(imagesSrc)) {
     const imagesDest = path.join(DIST_DIR, 'docs', 'images');
     fs.mkdirSync(imagesDest, { recursive: true });
-    for (const name of ['etchloom-logo.svg', 'oak-workbench.png']) {
-      fs.copyFileSync(path.join(imagesSrc, name), path.join(imagesDest, name));
+    for (const name of ['etchloom-logo.svg', 'oak-workbench.png', 'demo-still-life.jpg']) {
+      const srcFile = path.join(imagesSrc, name);
+      if (fs.existsSync(srcFile)) {
+        fs.copyFileSync(srcFile, path.join(imagesDest, name));
+      }
     }
   }
 
