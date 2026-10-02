@@ -200,6 +200,8 @@ export class WebAIClient {
     ctx.drawImage(sourceImg, 0, 0, scaledW, scaledH);
 
     const imgData = ctx.getImageData(0, 0, padW, padH).data;
+    canvas.width = 0;
+    canvas.height = 0;
     const n = padW * padH;
     const floatData = new Float32Array(n * 3);
 
@@ -277,6 +279,10 @@ export class WebAIClient {
       for (let i = 0; i < outFloat.length; i++) {
         outFloat[i] = (finalData[i * 4] * 0.299 + finalData[i * 4 + 1] * 0.587 + finalData[i * 4 + 2] * 0.114) / 255.0;
       }
+      tmpCanvas.width = 0;
+      tmpCanvas.height = 0;
+      finalCanvas.width = 0;
+      finalCanvas.height = 0;
       return outFloat;
     } catch (e) {
       this.log('WebAI', '线描模型执行异常: ' + (e ? e.message : '未知错误'), 'error');
@@ -369,6 +375,12 @@ export class WebAIClient {
           for (let i = 0; i < floats.length; i++) {
             floats[i] = finalData[i * 4] / 255.0;
           }
+          tempCanvas.width = 0;
+          tempCanvas.height = 0;
+          dCanvas.width = 0;
+          dCanvas.height = 0;
+          resampleCanvas.width = 0;
+          resampleCanvas.height = 0;
           return { width: targetW, height: targetH, data: floats };
         }
       } catch (err) {
@@ -394,6 +406,8 @@ export class WebAIClient {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(sourceImage, 0, 0, targetW, targetH);
     const imgData = ctx.getImageData(0, 0, targetW, targetH).data;
+    canvas.width = 0;
+    canvas.height = 0;
 
     const data = new Float32Array(targetW * targetH);
     for (let y = 0; y < targetH; y++) {
@@ -408,5 +422,28 @@ export class WebAIClient {
     }
 
     return { width: targetW, height: targetH, data };
+  }
+
+  /**
+   * Proactively release cached ONNX inference sessions to free memory on mobile or low-spec devices.
+   */
+  releaseSessions() {
+    if (this.lineSession) {
+      try {
+        if (typeof this.lineSession.release === 'function') {
+          this.lineSession.release();
+        }
+      } catch (_) {}
+      this.lineSession = null;
+    }
+    if (this.depthSession) {
+      try {
+        if (typeof this.depthSession.release === 'function') {
+          this.depthSession.release();
+        }
+      } catch (_) {}
+      this.depthSession = null;
+    }
+    this.log('WebAI', '已释放本地神经模型会话显存与内存', 'info');
   }
 }

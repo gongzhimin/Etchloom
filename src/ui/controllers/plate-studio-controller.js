@@ -98,9 +98,14 @@ export function allocatePlate(width, height = null) {
   next = new Float32Array(N);
   resetGrain();
   dirty = true;
+  cachedRenderImageData = null;
   const resolutionValue = $('plateResolutionValue');
   if (resolutionValue) resolutionValue.textContent = `${W} × ${H}`;
 }
+
+let cachedRenderImageData = null;
+let cachedRenderW = 0;
+let cachedRenderH = 0;
 
 const DEFAULT_PARAM_VALS = { acid: 45, grain: 45, ink: 88, pressure: 70, tone: 3, size: 4 };
 export const val = id => {
@@ -267,10 +272,13 @@ export function point(e) {
   const canvas = getCanvas();
   if (!canvas || !canvas.getBoundingClientRect) return { x: 0, y: 0, p: 1 };
   let r = canvas.getBoundingClientRect();
+  const rawP = typeof e.pressure === 'number' ? e.pressure : 0;
+  const isPen = e.pointerType === 'pen';
+  const p = (isPen && rawP > 0) ? Math.max(0.15, Math.min(1.0, rawP)) : (rawP > 0 && rawP < 1.0) ? Math.max(0.15, rawP) : 1;
   return {
     x: (e.clientX - r.left) * W / (r.width || W),
     y: (e.clientY - r.top) * H / (r.height || H),
-    p: e.pointerType === 'pen' ? Math.max(0.15, e.pressure) : 1
+    p
   };
 }
 
@@ -295,7 +303,12 @@ export function etch(dt) {
 
 export function render(target = getCtx(), mode = view) {
   if (!target || !target.createImageData) return;
-  let im = target.createImageData(W, H);
+  if (!cachedRenderImageData || cachedRenderW !== W || cachedRenderH !== H) {
+    cachedRenderImageData = target.createImageData(W, H);
+    cachedRenderW = W;
+    cachedRenderH = H;
+  }
+  let im = cachedRenderImageData;
   let a = im.data;
   let ink = val('ink');
   let pressure = val('pressure');

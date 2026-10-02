@@ -42,3 +42,16 @@ test('workbench caption separates status from description', () => {
   assert.match(rule, /flex-wrap: wrap/);
   assert.match(rule, /row-gap: 4px/);
 });
+
+test('master hero viewport and result elements are strictly hidden when not ready', () => {
+  assert.match(css, /\.master-hero-viewport\[hidden\][\s\S]*?display:\s*none\s*!important/);
+  assert.match(css, /body:not\(\[data-master-screen="ready"\]\)[\s\S]*?display:\s*none\s*!important/);
+  // Ensure mobile media query does not forcefully override hidden with display: flex !important
+  const mobileViewportIdx = css.indexOf('@media (max-width: 760px)');
+  assert.ok(mobileViewportIdx > 0);
+  const mobileSection = css.slice(mobileViewportIdx);
+  const mobileHeroMatch = mobileSection.match(/\.master-hero-viewport\s*\{([^}]+)\}/);
+  assert.ok(mobileHeroMatch, 'Mobile master-hero-viewport rule found');
+  assert.doesNotMatch(mobileHeroMatch[1], /display:\s*flex\s*!important/, 'Mobile master-hero-viewport must not use display: flex !important');
+});
+

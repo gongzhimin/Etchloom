@@ -102,6 +102,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
 }
 
 #app,
@@ -114,7 +116,16 @@ body {
   overflow: hidden;
 }
 
-[hidden] { display: none !important; }
+[hidden],
+[data-master-result][hidden],
+.master-hero-viewport[hidden] {
+  display: none !important;
+}
+
+body:not([data-master-screen="ready"]) [data-master-result],
+body:not([data-master-screen="ready"]) .master-hero-viewport {
+  display: none !important;
+}
 
 button:disabled {
   opacity: 0.48;
@@ -125,12 +136,12 @@ button:disabled {
    Header Bar (60px)
    -------------------------------------------------------------------------- */
 header.app-header {
-  height: 60px;
+  height: calc(60px + env(safe-area-inset-top, 0px));
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: env(safe-area-inset-top, 0px) max(24px, env(safe-area-inset-right, 0px)) 0 max(24px, env(safe-area-inset-left, 0px));
   gap: 18px;
   flex: none;
   z-index: 100;
@@ -1044,11 +1055,11 @@ body.mode-plate aside.app-sidebar #drawer2 {
    -------------------------------------------------------------------------- */
 footer.telemetry-footer {
   display: none;
-  height: 32px;
+  height: calc(32px + env(safe-area-inset-bottom, 0px));
   background: var(--bg-surface);
   border-top: 1px solid var(--border-subtle);
   align-items: center;
-  padding: 0 24px;
+  padding: 0 max(24px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(24px, env(safe-area-inset-left, 0px));
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-secondary);
@@ -2193,6 +2204,9 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   background-size: auto, cover;
   background-position: center;
   touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .plate-canvas-frame canvas {
@@ -2724,11 +2738,15 @@ body[data-master-screen="computing"] footer.telemetry-footer {
     padding: 4px !important;
     touch-action: none;
     overflow: hidden;
-    display: flex !important;
+    display: flex;
     align-items: center !important;
     justify-content: center !important;
     position: relative;
     box-sizing: border-box;
+  }
+  .master-hero-viewport[hidden],
+  [data-master-result][hidden] {
+    display: none !important;
   }
   .master-hero-frame {
     width: 100% !important;

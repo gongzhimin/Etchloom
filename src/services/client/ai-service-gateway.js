@@ -252,4 +252,13 @@ export class AIServiceGateway {
 
     return { lineMap, depthMap, backend: backendUsed };
   }
+
+  /**
+   * Free client-side model session memory when entering memory-intensive stages (e.g. Copperplate engraving).
+   */
+  releaseMemory() {
+    if (this.webClient && typeof this.webClient.releaseSessions === 'function') {
+      this.webClient.releaseSessions();
+    }
+  }
 }

@@ -58,3 +58,21 @@ test('Desktop Packaging: Tauri configuration and icon assets are present and val
     assert.ok(fs.statSync(iconPath).size > 0, `Icon ${icon} must not be empty`);
   }
 });
+
+test('Mobile Packaging: prepare-desktop --android omits WebGPU JSEP to optimize APK size while keeping full-precision models', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const distDir = path.join(rootDir, 'dist');
+
+  prepareDesktop({ android: true });
+
+  assert.ok(fs.existsSync(distDir), 'dist/ directory must exist');
+  assert.ok(fs.existsSync(path.join(distDir, 'models', 'informative-drawings.onnx')), 'informative-drawings.onnx must exist');
+  assert.ok(fs.existsSync(path.join(distDir, 'models', 'midas-small.onnx')), 'midas-small.onnx must exist');
+  assert.ok(fs.existsSync(path.join(distDir, 'models', 'ort.min.js')), 'ort.min.js must exist');
+  assert.ok(fs.existsSync(path.join(distDir, 'models', 'ort-wasm-simd-threaded.wasm')), 'ort-wasm-simd-threaded.wasm must exist');
+  assert.strictEqual(fs.existsSync(path.join(distDir, 'models', 'ort-wasm-simd-threaded.jsep.wasm')), false, 'jsep.wasm must not be included in android apk');
+
+  // Restore desktop bundle for subsequent steps
+  prepareDesktop();
+});
+

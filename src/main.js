@@ -169,6 +169,9 @@ export function switchWorkflow(mode) {
     showGenBtn?.classList.remove('active');
     if (masterWs) masterWs.hidden = true;
     if (plateWs) plateWs.hidden = false;
+    if (typeof pipelineController !== 'undefined' && pipelineController && typeof pipelineController.releaseMemory === 'function') {
+      pipelineController.releaseMemory();
+    }
   } else {
     showGenBtn?.classList.add('active');
     showPlateBtn?.classList.remove('active');

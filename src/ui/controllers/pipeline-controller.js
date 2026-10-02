@@ -35,6 +35,12 @@ export class PipelineController {
     this.stageCache = CacheClass ? new CacheClass() : null;
   }
 
+  releaseMemory() {
+    if (this.aiGateway && typeof this.aiGateway.releaseMemory === 'function') {
+      this.aiGateway.releaseMemory();
+    }
+  }
+
   getRecipeParams() {
     if (typeof this.getParams === 'function') {
       const p = this.getParams() || {};

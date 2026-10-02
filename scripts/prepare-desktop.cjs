@@ -4,7 +4,7 @@ const path = require('path');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DIST_DIR = path.resolve(ROOT_DIR, 'dist');
 
-function copyRecursive(src, dest) {
+function copyRecursive(src, dest, filterFn = null) {
   const stats = fs.statSync(src);
   if (stats.isDirectory()) {
     if (!fs.existsSync(dest)) {
@@ -16,9 +16,15 @@ function copyRecursive(src, dest) {
       if (entry === '.git' || entry === 'node_modules' || entry === '__pycache__' || entry.endsWith('.pyc') || entry === 'docs' || entry.endsWith('.md')) {
         continue;
       }
-      copyRecursive(path.join(src, entry), path.join(dest, entry));
+      if (filterFn && !filterFn(entry, path.join(src, entry))) {
+        continue;
+      }
+      copyRecursive(path.join(src, entry), path.join(dest, entry), filterFn);
     }
   } else {
+    if (filterFn && !filterFn(path.basename(src), src)) {
+      return;
+    }
     const parentDir = path.dirname(dest);
     if (!fs.existsSync(parentDir)) {
       fs.mkdirSync(parentDir, { recursive: true });
@@ -48,8 +54,10 @@ function calculateDirSize(dir) {
   return { totalBytes, fileCount };
 }
 
-function prepareDesktop() {
-  console.log('[Tauri Packager] Preparing clean desktop distribution package in dist/...');
+function prepareDesktop(options = {}) {
+  const isAndroid = options.android || process.argv.includes('--android') || process.env.BUILD_TARGET === 'android';
+  const targetLabel = isAndroid ? 'Android APK' : 'Desktop';
+  console.log(`[Tauri Packager] Preparing clean ${targetLabel} distribution package in dist/...`);
 
   if (fs.existsSync(DIST_DIR)) {
     fs.rmSync(DIST_DIR, { recursive: true, force: true });
@@ -84,7 +92,11 @@ function prepareDesktop() {
   const modelsSrc = path.join(ROOT_DIR, 'models');
   if (fs.existsSync(modelsSrc)) {
     const modelsDest = path.join(DIST_DIR, 'models');
-    copyRecursive(modelsSrc, modelsDest);
+    // On Android mobile, omit JSEP WebGPU wasm (20MB+) since Android WebView runs on WASM SIMD/CPU
+    const modelFilter = isAndroid
+      ? (entry) => !entry.includes('.jsep.')
+      : null;
+    copyRecursive(modelsSrc, modelsDest, modelFilter);
   }
 
   const { totalBytes, fileCount } = calculateDirSize(DIST_DIR);
