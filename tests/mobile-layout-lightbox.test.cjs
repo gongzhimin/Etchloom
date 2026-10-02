@@ -23,6 +23,11 @@ test('Mobile Visual Layout: styles/app.css anti-wrapping and responsive rules', 
 
   // 5. Fullscreen lightbox overlay has fixed viewport with dvh and touch-action none
   assert.match(css, /#modalOverlay[\s\S]*?position:\s*fixed !important;[\s\S]*?height:\s*100dvh !important;[\s\S]*?touch-action:\s*none;/);
+
+  // 6. Mobile Master Hero stage expands adaptively with clamp dvh and contained frame
+  assert.match(css, /\.master-hero-viewport\s*\{[\s\S]*?height:\s*clamp\(340px,\s*58dvh,\s*560px\)\s*!important;[\s\S]*?overflow:\s*hidden;/);
+  assert.match(css, /\.master-hero-frame\s*\{[\s\S]*?max-height:\s*100%\s*!important;[\s\S]*?display:\s*flex\s*!important;/);
+  assert.match(css, /\.master-hero-canvas\s*\{[\s\S]*?aspect-ratio:\s*var\(--source-aspect-ratio,\s*1400\s*\/\s*1027\);/);
 });
 
 test('LightboxController: Mobile viewport sizing and multi-touch pinch gesture', () => {
@@ -104,3 +109,57 @@ test('LightboxController: Mobile viewport sizing and multi-touch pinch gesture',
     global.window = origWin;
   }
 });
+
+test('Master Hero Stage: Mobile responsiveness and dynamic aspect-ratio adaptation', async () => {
+  const { PipelineController } = await import('file:///' + path.join(__dirname, '../src/ui/controllers/pipeline-controller.js').replace(/\\/g, '/'));
+
+  const origDoc = global.document;
+  const mockProperties = {};
+  const mockHeroViewport = {
+    style: {
+      setProperty: (k, v) => { mockProperties[k] = v; }
+    }
+  };
+  const mockHeroCanvas = {
+    style: {},
+    width: 0,
+    height: 0,
+    getContext: () => ({ clearRect: () => {}, drawImage: () => {} })
+  };
+  const mockHeroResMeta = { textContent: '' };
+  const mockHeroBadge = { textContent: '' };
+
+  global.document = {
+    getElementById: (id) => {
+      if (id === 'masterHeroCanvas') return mockHeroCanvas;
+      if (id === 'masterHeroViewport') return mockHeroViewport;
+      if (id === 'heroResolutionMeta') return mockHeroResMeta;
+      if (id === 'masterStrokesBadge') return mockHeroBadge;
+      return null;
+    }
+  };
+
+  try {
+    const controller = new PipelineController({ log: () => {} });
+    controller.stepGrid = {
+      stepStates: {
+        6: {
+          canvas: { width: 800, height: 1200 } // Vertical / portrait cat artwork
+        }
+      }
+    };
+
+    // Trigger syncHeroMasterPreview with portrait dimensions
+    controller.syncHeroMasterPreview(['path1', 'path2'], 800, 1200);
+
+    // Verify canvas style aspect ratio and viewport CSS property adapt to 800 / 1200
+    assert.equal(mockHeroCanvas.style.aspectRatio, '800 / 1200');
+    assert.equal(mockProperties['--source-aspect-ratio'], '800 / 1200');
+    assert.equal(mockHeroResMeta.textContent, '800 × 1200 px');
+    assert.equal(mockHeroCanvas.width, 800);
+    assert.equal(mockHeroCanvas.height, 1200);
+  } finally {
+    global.document = origDoc;
+  }
+});
+

@@ -1883,6 +1883,7 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   max-width: 100%;
   max-height: calc(100dvh - 300px);
   object-fit: contain;
+  aspect-ratio: var(--source-aspect-ratio, 1400 / 1027);
   border-radius: var(--radius-xs);
   display: block;
   background: var(--render-paper-ground, #faf7f0);
@@ -2714,24 +2715,70 @@ body[data-master-screen="computing"] footer.telemetry-footer {
     justify-content: center;
     flex: none;
   }
+  /* Master Hero Preview (Mobile Full Adaptive Stage) */
   .master-hero-viewport {
-    flex: 1 1 auto;
-    min-height: 260px;
-    height: auto;
-    padding: 6px;
+    flex: 1 1 0% !important;
+    min-height: 330px !important;
+    height: clamp(340px, 58dvh, 560px) !important;
+    max-height: 62dvh !important;
+    padding: 4px !important;
     touch-action: none;
+    overflow: hidden;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .master-hero-frame {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    padding: 6px !important;
+    gap: 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 0 #fff, 0 2px 6px rgba(65, 48, 30, 0.08) !important;
   }
   .master-hero-canvas {
-    max-height: calc(65dvh - 50px);
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    max-height: calc(100% - 20px) !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    aspect-ratio: var(--source-aspect-ratio, 1400 / 1027);
     touch-action: none;
+    display: block;
+  }
+  .master-hero-footer-row {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    font-size: 10px;
+    line-height: 14px;
+    box-sizing: border-box;
   }
   .floating-action-capsule {
-    left: 8px;
-    bottom: 8px;
-    padding: 2px 6px;
+    left: auto !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    padding: 3px 8px !important;
+    border-radius: 14px;
+    font-size: 10px;
+    z-index: 10;
   }
   .floating-action-capsule button {
-    font-size: 11px;
+    font-size: 10px;
     padding: 2px 4px;
   }
   .param-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

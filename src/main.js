@@ -272,6 +272,13 @@ const pipelineController = new PipelineController({
     setPlateAspectRatio(origW, origH);
     const targetH = Math.max(1, Math.round(W * origH / origW));
     allocatePlate(W, targetH);
+    if (origW && origH) {
+      const aspectStr = `${origW} / ${origH}`;
+      const heroCanvas = $('masterHeroCanvas');
+      const heroViewport = $('masterHeroViewport');
+      if (heroCanvas) heroCanvas.style.aspectRatio = aspectStr;
+      if (heroViewport) heroViewport.style.setProperty('--source-aspect-ratio', aspectStr);
+    }
   }
 });
 

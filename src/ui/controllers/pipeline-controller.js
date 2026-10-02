@@ -746,6 +746,10 @@ export class PipelineController {
     }
     this.currentLoadedImage = { width: w, height: h, pixels, rawImg: demoCanvas };
 
+    if (typeof this.onAspectRatioChange === 'function') {
+      this.onAspectRatioChange(w, h);
+    }
+
     if (this.stepGrid) {
       if (typeof this.stepGrid.setAspectRatio === 'function') {
         this.stepGrid.setAspectRatio(w, h);
@@ -914,10 +918,23 @@ export class PipelineController {
     if (srcCanvas) {
       heroCanvas.width = srcCanvas.width;
       heroCanvas.height = srcCanvas.height;
+      const aspectStr = `${srcCanvas.width} / ${srcCanvas.height}`;
+      heroCanvas.style.aspectRatio = aspectStr;
+      const heroViewport = document.getElementById('masterHeroViewport');
+      if (heroViewport) {
+        heroViewport.style.setProperty('--source-aspect-ratio', aspectStr);
+      }
       const ctx = heroCanvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
         ctx.drawImage(srcCanvas, 0, 0);
+      }
+    } else if (w && h) {
+      const aspectStr = `${w} / ${h}`;
+      heroCanvas.style.aspectRatio = aspectStr;
+      const heroViewport = document.getElementById('masterHeroViewport');
+      if (heroViewport) {
+        heroViewport.style.setProperty('--source-aspect-ratio', aspectStr);
       }
     }
     if (paths?.length && typeof this.onMasterReady === 'function') {
