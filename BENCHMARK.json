@@ -14,7 +14,7 @@
     "darkMasses": 0,
     "brightGaps": 11
   },
-  "elapsedMs": 835,
-  "processPeakRSSMiB": 309.1,
+  "elapsedMs": 864,
+  "processPeakRSSMiB": 310.7,
   "note": "Node process peak RSS; not browser memory. Browser UI reports a working-set estimate."
 }

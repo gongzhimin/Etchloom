@@ -16,10 +16,12 @@ graph TD
 
     PC --> Grid[StepFlowGrid 7阶段横向胶片栏]
     PC --> Loupe[LoupeMagnifier 悬停放大镜]
-    PC --> Orch[Orchestrator 调度中枢]
+    PC --> Sched[TaskScheduler 抢占防抖队列]
+    PC --> Cache[StageCache DAG增量缓存]
+    PC --> Runner[PipelineRunner 5阶段管线执行器]
+    PC --> Gateway[AIServiceGateway 三模态AI探测网关]
 
     PSC --> Engine[VirtualPlateEngine 铜版物理仿真]
-    PSC --> Store[AppStore 全局状态]
 
     TWC --> Engine
     TWC --> PC
@@ -38,14 +40,16 @@ sequenceDiagram
     autonumber
     actor User as 用户交互
     participant PC as PipelineController
-    participant Orch as Orchestrator
+    participant Sched as TaskScheduler & StageCache
+    participant Runner as PipelineRunner
     participant Grid as StepFlowGrid
     participant TW as TransferWizardController
     participant PS as PlateStudioController
 
     User->>PC: 点击 "导入图稿" / 调整参数滑块
-    PC->>Orch: runPipeline(recipe)
-    Orch-->>Grid: 实时推送 5 阶段 ImageData
+    PC->>Sched: 140ms 防抖排队与 DAG 5 阶段哈希比对
+    Sched->>Runner: 增量阶段计算 (PipelineRunner.runStage1..5)
+    Runner-->>Grid: 实时推送各阶段产物与说明
     Grid-->>User: 渲染步骤流卡片
 
     User->>TW: 点击 "转入虚拟铜版 (Transfer to Plate)"
@@ -62,11 +66,12 @@ sequenceDiagram
 ### 3.1 `PipelineController`
 - **生命周期**：管理照片输入、阶段进度指示条、各阶段真实耗时计时器（采用 `performance.now()` 精确记录实际毫秒数，杜绝模拟假耗时）；
 - **界面通知**：母版预览同步完成时通过 `onMasterReady` 回调通知入口切换到就绪页面；主动载入的示例不填入固定伪造耗时。
-- **联动**：与 `LoupeMagnifier`、`StepFlowGrid` 及 `Orchestrator` 单向数据流绑定。
+- **联动**：与 `LoupeMagnifier`、`StepFlowGrid`、`TaskScheduler`、`StageCache` 及 `PipelineRunner` 单向数据流绑定。
 
 ### 3.2 `PlateStudioController`
 - **生命周期**：展示当前铜版精度（精度更改由上版向导负责）、4 种物理制版工具划线交互、化学酸蚀控制台与无头纯位图压印；
-- **撤销栈**：维护完整的历史快照数组 `history[]`，支持多步撤销与重做。
+- **撤销栈**：维护历史快照数组 `history[]`（容量上限 12 步或 128MB 显存），支持多步撤销 `undo()`（当前未实现独立 redo 重做栈）；
+- **内存优化**：在 `render()` 中复用 `cachedRenderImageData` 离屏 ImageData 缓冲，消除每帧 6.6MB~26.4MB 的 GC 垃圾回收波动。
 
 ### 3.3 `TransferWizardController`
 - **生命周期**：图稿上版模态框控制，提供轮廓线条与排线线条分层过滤勾选，按选定物理深度写入 `VirtualPlateEngine`。

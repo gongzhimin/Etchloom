@@ -26,7 +26,7 @@ function exportSVG(masterPaths, options = {}) {
 
   if (Array.isArray(masterPaths)) {
     for (const p of masterPaths) {
-      if (p.role === 'contour') {
+      if (p.role === 'contour' || p.type === 'contour') {
         contours.push(p);
       } else {
         hatchings.push(p);

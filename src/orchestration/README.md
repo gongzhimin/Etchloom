@@ -56,17 +56,35 @@ src/orchestration/
 ## 4. 对外公共接口契约 (Public API Contract)
 
 ```typescript
-interface OrchestratorOptions {
-  debounceMs?: number;
-  onStageComplete?: (stageId: string, output: any) => void;
-  onError?: (err: Error) => void;
+interface OrchestratorConfig {
+  debounceMs?: number;      // 调度防抖延迟，默认 60ms
+  plateWidth?: number;      // 虚拟版初始宽度，默认 900
+}
+
+interface ExportPayloadResult {
+  filename: string;
+  mimeType: string;
+  data: string;
+  byteSize: number;
 }
 
 class Orchestrator {
-  constructor(options?: OrchestratorOptions);
-  runPipeline(recipe: MasterRecipe): Promise<PipelineOutputs>;
-  cancel(): void;
-  exportMaster(format: 'svg' | 'gcode' | 'png', options?: any): Promise<Blob | string>;
+  constructor(config?: OrchestratorConfig);
+  
+  /** 订阅生命周期事件（PIPELINE_STARTED, STAGE_PROGRESS, STAGE_COMPLETED, PIPELINE_COMPLETED 等） */
+  subscribe(listener: (event: Record<string, any>) => void): () => void;
+  
+  /** 计算 5 阶段级联 DJB2 哈希指纹 */
+  computeStageHashes(recipeState: any): Record<1 | 2 | 3 | 4 | 5, string>;
+  
+  /** 调度增量管线重算，内置防抖、抢占取消与 DAG 增量缓存 */
+  scheduleRecipe(recipeState: any, options?: Record<string, any>): Promise<any>;
+  
+  /** 将母版矢量笔画写入内置 VirtualPlateEngine 仿真版面 */
+  transferToPlate(paths?: any[], tool?: 'needle' | 'dry', size?: number): void;
+  
+  /** 导出 SVG、G-Code 或配方 JSON 工业母版文件 */
+  exportAsset(format: 'SVG' | 'GCODE' | 'RECIPE_JSON', options?: Record<string, any>): ExportPayloadResult;
 }
 ```
 

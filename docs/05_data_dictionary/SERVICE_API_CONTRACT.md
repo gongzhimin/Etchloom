@@ -27,10 +27,7 @@
     "device": "cuda",
     "maxSide": 2048,
     "lotusReady": true,
-    "services": {
-      "informativeDrawings": true,
-      "lotusGeometry": true
-    }
+    "services": ["informative_drawings", "lotus_depth"]
   }
   ```
 

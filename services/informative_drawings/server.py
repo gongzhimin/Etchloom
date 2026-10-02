@@ -165,11 +165,17 @@ class LotusGeometryModel:
 
 def handler(drawing_model: DrawingModel, lotus_model: LotusGeometryModel):
     class Handler(BaseHTTPRequestHandler):
-        server_version = "EtchloomModelV2/1.0"
+        ALLOWED_ORIGINS = (
+            "http://127.0.0.1:4173",
+            "http://localhost:4173",
+            "https://tauri.localhost",
+            "http://tauri.localhost",
+            "tauri://localhost",
+        )
 
         def cors(self):
             origin = self.headers.get("Origin")
-            if origin in ("http://127.0.0.1:4173", "http://localhost:4173"):
+            if origin in self.ALLOWED_ORIGINS:
                 self.send_header("Access-Control-Allow-Origin", origin)
                 self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -199,7 +205,8 @@ def handler(drawing_model: DrawingModel, lotus_model: LotusGeometryModel):
             self.wfile.write(body)
 
         def do_POST(self):
-            if self.headers.get("Origin") not in (None, "http://127.0.0.1:4173", "http://localhost:4173"):
+            origin = self.headers.get("Origin")
+            if origin is not None and origin not in self.ALLOWED_ORIGINS:
                 self.send_error(403, "Origin not allowed")
                 return
             if self.path not in ("/infer", "/depth"):

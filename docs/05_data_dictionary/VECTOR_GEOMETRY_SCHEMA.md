@@ -31,13 +31,18 @@ type StrokeRole =
 
 ---
 
-## 2. 导出器分层规则 (Exporter Layer Mapping)
+## 2. 导出器分层与切片规则 (Exporter Layer Mapping & G-Code Slicing)
 
-在 [src/orchestration/export/exporter.js](../../src/orchestration/export/exporter.js) 中，根据 `role` 进行图层分配：
+在 [src/orchestration/export/exporter.js](../../src/orchestration/export/exporter.js) 中，SVG 导出依据 `role` / `type` 进行图层隔离：
 
-| 语义角色 (`role`) | 导出的 SVG 图层 ID | G-Code 切片建议 | 说明 |
-| :--- | :--- | :--- | :--- |
-| 'contour' | `<g id="contours">` | 先行雕刻，切入深度较深 (0.8~1.0) | 物体边界与主结构轮廓 |
-| 'hatch' | `<g id="hatchings">` | 顺形细刻，切入深度中等 (0.4~0.6) | 表面几何曲率流向排线 |
-| 'cross' | `<g id="hatchings">` | 浅刻，切入深度较浅 (0.2~0.4) | 仅在重阴影区出现 |
-| 'maze' | `<g id="texture">` | 均匀刻深 | 特殊艺术风格迷宫连续线 |
+| 语义角色 (`role` / `type`) | 导出的 SVG 图层 ID | 说明 |
+| :--- | :--- | :--- |
+| `'contour'` | `<g id="contours">` | 主结构轮廓与物体边界骨干线 |
+| `'hatch'` / `'cross'` / `'maze'` 等 | `<g id="hatchings">` | 内部所有表面纹理排线、细密交叉线及自适应流纹 |
+
+### G-Code 走刀切片参数
+G-Code 导出采用统一雕刻安全配置（参数由 `exportGCode(paths, options)` 传入）：
+- **走刀空程高度** (`travelHeight` / `gcodeZTravel`)：默认为 `2.0mm`，快速抬刀 (`G00 Z...`)；
+- **下刀雕刻深度** (`engraveDepth` / `gcodeZEngrave`)：全局统一深度 `zCut`（默认 `0.0mm`，由工艺配置指定，`G01 Z...`）；
+- **切削进给速度** (`feedRate` / `gcodeSpeed`)：默认 `1200 mm/min`；
+- **物理尺度缩放** (`scale`)：将坐标映射到机器目标物理尺寸。
