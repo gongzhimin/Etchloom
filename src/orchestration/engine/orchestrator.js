@@ -65,11 +65,37 @@ class Orchestrator {
    */
   computeStageHashes(recipeState) {
     const p = recipeState.params || recipeState;
-    const s1Params = { sourceImage: recipeState.sourceImage, lineThreshold: p.lineThreshold, lineNoiseSuppression: p.lineNoiseSuppression };
-    const s2Params = { toneContrast: p.toneContrast, toneBrightness: p.toneBrightness, flowSmoothing: p.flowSmoothing };
-    const s3Params = { contourDetail: p.contourDetail, contourSimplify: p.contourSimplify };
-    const s4Params = { density: p.density, angle: p.angle, crossHatch: p.crossHatch, waviness: p.waviness };
-    const s5Params = { needleWidth: p.needleWidth, inkGain: p.inkGain };
+    const s1Params = {
+      sourceImage: recipeState.sourceImage,
+      lotus3D: p.lotus3D ?? true,
+      lineThreshold: p.lineThreshold ?? p.exposure ?? 50,
+      sourceVersion: recipeState.sourceVersion || 0
+    };
+    const s2Params = {
+      exposure: p.exposure ?? p.lineThreshold ?? 50,
+      blackPoint: p.blackPoint ?? 0,
+      whitePoint: p.whitePoint ?? 100,
+      toneContrast: p.toneContrast,
+      toneBrightness: p.toneBrightness
+    };
+    const s3Params = {
+      contourDetail: p.contourDetail ?? 75,
+      aerialStrength: p.aerialStrength ?? 60,
+      needleWidth: p.needleWidth ?? 0.8,
+      contourSimplify: p.contourSimplify
+    };
+    const s4Params = {
+      density: p.density ?? 80,
+      cross: p.cross ?? p.crossHatch ?? 65,
+      curvatureGate: p.curvatureGate ?? 70,
+      angle: p.angle,
+      waviness: p.waviness
+    };
+    const s5Params = {
+      frameStyle: p.frameStyle || 'double',
+      needleWidth: p.needleWidth,
+      inkGain: p.inkGain
+    };
 
     const h1 = this.stageCache.computeStageHash(1, s1Params, '');
     const h2 = this.stageCache.computeStageHash(2, s2Params, h1);

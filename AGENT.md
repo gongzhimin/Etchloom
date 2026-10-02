@@ -8,7 +8,7 @@
 ## 1. 核心工程纪律 (Engineering Principles)
 
 ### 1.1 实事求是与零虚构 (Factual Accuracy & Zero Fabrication)
-- **严禁虚构测试文件与测试用例**：文档中提及的每一个 .test.cjs 文件必须在硬盘上物理存在；严禁虚构不存在的目录（如 	ests/fixtures/）或假夹具文件。
+- **严禁虚构测试文件与测试用例**：文档中提及的每一个 .test.cjs 文件必须在硬盘上物理存在；严禁虚构不存在的目录（如 `tests/fixtures/`）或假夹具文件。
 - **严禁伪造代码范例**：规范文档中给出的任何“标杆实现代码”或“防御断言范例”，必须 1:1 摘录自仓库现有生产源码。严禁把“理想规范”伪装成“当前实现”。
 - **严禁伪造外部依赖与工具链**：项目中未使用 Chrome DevTools Protocol (CDP)、FastAPI、MurmurHash、pixelmatch 或 SSIM 时，严禁在文档中宣称具备该能力。
 - **严禁虚标性能与耗时**：UI 呈现或文档记录的阶段耗时必须由 performance.now() 实时测量，严禁写入伪造的固定常数（如 24.5ms, 38.2ms）。
@@ -54,7 +54,7 @@ graph TD
 
 ### Step 1: 范围界定与需求拆解 (Scope & Intent)
 1. 明确本次任务属于：**缺陷修复**、**工程重构**、**文档建设** 还是 **功能演进**。
-2. 在规划阶段，必须清点所有涉及的文件列表，明确区分生产代码（src/）、测试用例（	ests/）、文档（docs/）与归档资产（rchive/）。
+2. 在规划阶段，必须清点所有涉及的文件列表，明确区分生产代码（src/）、测试用例（tests/）、文档（docs/）与归档资产（archive/）。
 
 ### Step 2: 逆向现实核查与规范先行 (Reverse Reality Check & Spec First)
 在动任何代码或写任何文档之前，必须先审查已有设计文档与代码现状：
@@ -83,9 +83,8 @@ graph TD
 2. **子模块文档更新**：若涉及子模块内部变动，同步更新该子模块根目录下的 README.md 及 docs/ 目录中的 ARCHITECTURE.md 与 TESTING.md。
 
 ### Step 6: 拓扑整洁度审查 (Orphan & Sanitation Audit)
-1. 检查是否存在无引用的孤儿文件（未被 import、
-equire、<script> 引入的 .js 文件，或未被索引的散落 .md 文件）。
-2. 若属于历史废弃文件，移入 rchive/ 并记录归档原因；若属于临时垃圾文件，彻底删除。
+1. 检查是否存在无引用的孤儿文件（未被 import、require、<script> 引入的 .js 文件，或未被索引的散落 .md 文件）。
+2. 若属于历史废弃文件，移入 archive/ 并记录归档原因；若属于临时垃圾文件，彻底删除。
 3. 确认 .gitignore 包含临时文件与大型实验资产。
 
 ---

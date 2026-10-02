@@ -4,12 +4,6 @@
 
 ---
 
-# UI 原子组件与视口控件规范 (COMPONENT_SPECIFICATIONS.md)
-
-> **基准实现**：[src/ui/components/](../../src/ui/components), [src/ui/templates/layout-templates.js](../../src/ui/templates/layout-templates.js), [styles/app.css](../../styles/app.css)
-
----
-
 ## 1. 核心前端组件库与解耦规范
 
 ### 1.1 步骤流 2列4行 自然舒展网格 (StepFlowGrid 2x4 Studio Grid)

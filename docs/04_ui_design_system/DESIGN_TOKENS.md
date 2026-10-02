@@ -5,13 +5,6 @@
 
 ---
 
-# UI 设计系统 Design Tokens 规范 (DESIGN_TOKENS.md)
-
-> **基准文件**：[styles/app.css](../../styles/app.css)  
-> **文档原则**：100% 对应源码 `:root` 声明，杜绝臆造。
-
----
-
 ## 1. 颜色体系 (Airy Linen & Pale Sage Atelier Palette)
 
 系统采用浅色工坊配色，以亚麻暖白 (`#faf8f5`) 与白色为基底，主操作色为鼠尾草绿 (`#536957`)，陶土色为 `#9c755f`，分割线为 `#eae5dc`，正文文字为 `#2a2b2a`。
@@ -39,6 +32,7 @@
 | CSS 变量名 | 真实色值 (Hex) | 语义说明 | 实际应用场景 |
 | :--- | :--- | :--- | :--- |
 | `--accent-gold` | `#536957` | 深鼠尾草绿核心主色 | 主操作按键、激活 Tab、选中高亮、铜版工艺指示 |
+| `--accent-gold-rgb` | `83, 105, 87` | 鼠尾草绿十进制 RGB 分量 | 支持透明度混合 `rgba(var(--accent-gold-rgb), a)` |
 | `--accent-gold-hover` | `#425545` | 鼠尾草绿深色悬停态 | 鼠标悬停主按键与铜版工具按键底色 |
 | `--accent-teal` | `#536957` | 鼠尾草绿算法协同色 | 算法管线阶段完成态徽章、高保真几何验证指示 |
 | `--accent-teal-hover` | `#425545` | 辅助操作悬停色 | 辅助按键悬停 |
@@ -74,8 +68,6 @@
 | `--font-serif` | `Georgia, 'Songti SC', 'Source Han Serif SC', serif` | 品牌标题 (Etchloom)、工坊阶段标题、古典印刷工艺标语 |
 | `--font-sans` | `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif` | 通用 UI 界面、按键、标签、输入控件 |
 | `--font-mono` | `'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace` | 坐标读数、日志时间戳、毫秒耗时统计、刻深微米数据 |
-
----
 
 ---
 

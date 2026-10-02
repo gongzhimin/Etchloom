@@ -54,10 +54,10 @@ $$D(xx, yy) \leftarrow D(xx, yy) \cdot \max(0, 1 - f_{pol} \cdot 0.32)$$
    $$B(xx, yy) \leftarrow \min(1.0, B(xx, yy) + f_{burr} \cdot (0.5 + 0.5 \cdot \text{halo}))$$
 
 #### 工具 D：蚀刻划针 (`tool = 'needle'`)
-当 $f > 0$ 时，刮开防蚀底漆暴露金属铜面，仅留极微量导引划痕：
+当 $f > 0$ 时，刮开防蚀底漆暴露金属铜面，刻槽深度保持为 0，等待酸槽咬蚀产生真实物理凹深：
 $$M(xx, yy) \leftarrow 0$$
 $$E(xx, yy) \leftarrow \max(E(xx, yy), f)$$
-$$D(xx, yy) \leftarrow \min(1.0, D(xx, yy) + f \cdot 0.0008)$$
+$$D(xx, yy) \leftarrow D(xx, yy) \quad (\text{刻槽深度严格保持为 } 0.0\,\mu\text{m}，等待酸液腐蚀)$$
 $$B(xx, yy) \leftarrow 0$$
 
 ---

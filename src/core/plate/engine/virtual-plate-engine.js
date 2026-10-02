@@ -111,11 +111,10 @@ class VirtualPlateEngine {
             this.burrField[i] = Math.min(1, this.burrField[i] + fBurr * (0.5 + 0.5 * halo));
           }
         } else {
-          // Etching needle (ground opening)
+          // Etching needle (ground opening) - exposes bare copper through ground, depth remains 0 until acid bite
           if (f > 0) {
             this.blockedField[i] = 0;
             this.exposedField[i] = Math.max(this.exposedField[i], f);
-            this.depthField[i] = Math.min(1, this.depthField[i] + f * 0.0008);
             this.burrField[i] = 0;
           }
         }

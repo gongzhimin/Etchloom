@@ -253,6 +253,8 @@ class StepFlowGrid {
 
     const state = this.stepStates[stepIndex];
     state.status = status;
+    state.badgeEl?.removeAttribute?.('aria-label');
+    state.badgeEl?.removeAttribute?.('role');
     if (status === 'COMPUTING' && !meta) {
       state.metaSpec = { key: 'card.computing' };
     } else if (meta) {
@@ -288,7 +290,9 @@ class StepFlowGrid {
     } else if (status === 'DONE') {
       card.classList.add('status-done');
       if (state.badgeEl) {
-        state.badgeEl.textContent = this.i18n ? this.i18n.t('card.done') : '✓ 完成';
+        state.badgeEl.textContent = '✓';
+        state.badgeEl.setAttribute?.('role', 'img');
+        state.badgeEl.setAttribute?.('aria-label', this.i18n ? this.i18n.t('card.done') : '完成');
         state.badgeEl.className = 'card-badge badge-done';
       }
     } else if (status === 'ERROR') {
@@ -761,7 +765,10 @@ ${pathsXml}
       if (state && state.badgeEl) {
         if (state.status === 'COMPUTING') state.badgeEl.textContent = this.i18n.t('card.computing');
         else if (state.status === 'CACHED') state.badgeEl.textContent = this.i18n.t('card.cached');
-        else if (state.status === 'DONE') state.badgeEl.textContent = this.i18n.t('card.done');
+        else if (state.status === 'DONE') {
+          state.badgeEl.textContent = '✓';
+          state.badgeEl.setAttribute?.('aria-label', this.i18n.t('card.done'));
+        }
         else if (state.status === 'ERROR') state.badgeEl.textContent = this.i18n.t('card.error');
       }
       const vp = this.container.querySelector(`.step-${i} .card-viewport`);

@@ -10,17 +10,22 @@
 
 ```javascript
 /**
- * 执行 2D 铜版物理仿真化学腐蚀单步迭代 (偏微分方程扩散解算)
- * @param {Float32Array} depth - 连续刻痕深度网格
- * @param {Float32Array} exposed - 未涂覆防蚀漆的裸露铜面比率
- * @param {Uint8Array} blocked - 防蚀漆掩膜阻断网格
- * @param {number} width - 网格横向物理分辨率
- * @param {number} height - 网格纵向物理分辨率
- * @param {number} acidRate - 酸液咬蚀速率因子 [0.0, 1.0]
- * @param {number} dt - 离散时间步长
- * @returns {number} 本步迭代产生的平均腐蚀微米增量
+ * Simulates a single time-step of acid bite etching.
+ * 
+ * @param {Object} plate Virtual plate context containing continuous typed array fields
+ * @param {number} plate.width Plate width
+ * @param {number} plate.height Plate height
+ * @param {Float32Array} plate.depthField Groove depth field [0.0 ~ 1.0]
+ * @param {Float32Array} plate.exposedField Metal surface exposure [0.0 ~ 1.0]
+ * @param {Uint8Array} plate.blockedField Stop-out varnish mask [0 or 1]
+ * @param {Float32Array} plate.burrField Drypoint burr height [0.0 ~ 1.0]
+ * @param {Float32Array} plate.grainNoise Metallurgical grain noise [0.0 ~ 1.0]
+ * @param {Float32Array} [plate.nextExposedField] Pre-allocated scratch buffer for double buffering
+ * @param {number} dt Time step in seconds (e.g. 0.08 or 1.0)
+ * @param {number} [strength=0.45] Acid concentration factor [0.0 ~ 1.0]
+ * @param {number} [grain=0.45] Metallurgical grain roughness factor [0.0 ~ 1.0]
  */
-function stepAcidBitePDE(depth, exposed, blocked, width, height, acidRate, dt) {
+function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
   // ...
 }
 ```

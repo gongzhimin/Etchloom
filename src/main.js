@@ -551,6 +551,10 @@ function initEventBindings() {
     const slider = $(id);
     if (slider) {
       slider.addEventListener('input', () => {
+        const out = $(id + 'Val');
+        if (out) {
+          out.textContent = id === 'needleWidth' ? `${(slider.value / 10).toFixed(1)} mm` : `${slider.value}%`;
+        }
         pipelineController.scheduleParameterRun();
       });
     }

@@ -29,7 +29,7 @@ const DICTIONARY = {
     // Card Badges & Actions
     'card.cached': '● 缓存命中',
     'card.computing': '计算中...',
-    'card.done': '✓ 完成',
+    'card.done': '完成',
     'card.error': '异常',
     'card.loupe': '局部放大',
     'card.fullscreen': '全屏特写',
@@ -354,7 +354,7 @@ const DICTIONARY = {
     // Card Badges & Actions
     'card.cached': '● Cached',
     'card.computing': 'Computing...',
-    'card.done': '✓ Done',
+    'card.done': 'Done',
     'card.error': 'Error',
     'card.loupe': 'Loupe Magnifier',
     'card.fullscreen': 'Fullscreen',
@@ -679,7 +679,7 @@ const DICTIONARY = {
     // Card Badges & Actions
     'card.cached': '● Trúng bộ nhớ đệm',
     'card.computing': 'Đang tính toán...',
-    'card.done': '✓ Hoàn thành',
+    'card.done': 'Hoàn thành',
     'card.error': 'Lỗi',
     'card.loupe': 'Kính lúp phóng đại',
     'card.fullscreen': 'Toàn màn hình',

@@ -7,10 +7,11 @@
 
 ## 1. 核心职责与工程目标 (Responsibilities & Objectives)
 
-1. **服务探活与硬件探测 (`checkHealth`)**：检测本地 Python 推理服务是否存活、硬件后端（CUDA / CPU）及模型权重加载状态；
-2. **神经线描推理请求 (`requestInformativeDrawing`)**：将输入图像位图序列化为 PNG/Base64 并向 `/infer` 发起推理请求；
-3. **Lotus 3D 几何特征请求 (`requestLotusGeometry`)**：向 `/depth` 请求获取空间绝对深度图与法线张量图；
-4. **平滑降级与失败安全 (`Fail-Safe Fallback`)**：当 Python 服务未启动或遭遇超时报错时，毫秒级平滑降级至本地 JavaScript 纯几何算法（DoG 边缘与经验流场），界面绝不崩溃。
+1. **服务探活与模式探测 (`checkHealth`)**：分级自适应探测本地 Python 服务（CUDA/CPU）、浏览器端 WebAI 神经网络（WebGPU/WASM）及离线纯几何模式；
+2. **神经线描推理请求 (`requestLineDrawing`)**：将输入图像请求至 `/infer` 或浏览器端 Informative Drawings ONNX 模型；
+3. **空间几何深度估计 (`requestDepthMap`)**：向 `/depth` 请求 Lotus 空间绝对深度图或浏览器端 Depth Anything V2；
+4. **统一并发管线 (`requestParallelPipeline`)**：并发调度线描与深度图抽取，返回归一化 Float32Array 空间场；
+5. **主题色彩桥接 (`ThemeBridge`)**：统一 Canvas 2D/SVG 与 CSS `:root` 变量桥接，提供环境自适应主题色彩映射。
 
 ---
 
@@ -18,11 +19,14 @@
 
 ```
 src/services/
-├── client/                   # 客户端通信实现
-│   └── ai-service-gateway.js # AIServiceGateway 类 (HTTP 探活/推理/重试/降级)
+├── client/                   # 智能模型客户端通信实现
+│   ├── ai-service-gateway.js # AIServiceGateway 类 (HTTP 探活/推理/重试/降级)
+│   └── web-ai-client.js      # WebAIClient (WebGPU/WASM 浏览器端 ONNX 推理)
+├── theme/                    # 视觉与渲染主题服务
+│   └── theme-bridge.js       # ThemeBridge (Canvas/SVG 与 CSS Token 色彩桥接)
 ├── docs/                     # 通信契约与降级规范
 │   ├── ALGORITHM_SPEC.md     # 探活退避状态机与张量序列化规范
-│   ├── ARCHITECTURE.md       # 本地微服务进程间通信架构
+│   ├── ARCHITECTURE.md       # 微服务与端侧模型协同架构
 │   └── TESTING.md            # 服务降级与网络断言规范
 └── README.md                 # 网关模块总览
 ```
@@ -32,20 +36,25 @@ src/services/
 ## 3. 对外公共接口契约 (Public API Contract)
 
 ```typescript
-interface ServiceHealth {
-  status: 'ok' | 'unavailable';
-  device: 'cuda' | 'cpu';
-  models: {
-    informative_drawings: boolean;
-    lotus_geometry: boolean;
-  };
+interface ProbeResult {
+  ready: boolean;
+  mode: 'remote-python' | 'browser-webai' | 'offline-analytical';
+  modeLabel: string;
+  device: string;
+  requiresNetwork: boolean;
+  lotusReady?: boolean;
 }
 
 class AIServiceGateway {
-  constructor(baseUrl?: string);
-  checkHealth(): Promise<ServiceHealth>;
-  requestLineMap(imageData: ImageData): Promise<LineMapArtifact | null>;
-  requestDepthAndNormals(imageData: ImageData): Promise<{ depthMap: ImageData; normalMap: ImageData } | null>;
+  constructor(baseUrl?: string, options?: object);
+  checkHealth(timeoutMs?: number): Promise<ProbeResult>;
+  requestLineDrawing(imageBlob: Blob, timeoutMs?: number): Promise<Blob | null>;
+  requestDepthMap(imageBlob: Blob, timeoutMs?: number): Promise<Blob | null>;
+  requestParallelPipeline(imageSource: Blob | Canvas, curW: number, curH: number): Promise<{
+    lineMap: Float32Array | null;
+    depthMap: { width: number; height: number; data: Float32Array } | null;
+    backend: string;
+  }>;
 }
 ```
 
@@ -53,8 +62,9 @@ class AIServiceGateway {
 
 ## 4. 自动化测试与验证 (Testing & Verification)
 
+- [`tests/web-ai-client.test.cjs`](../../tests/web-ai-client.test.cjs)（验证浏览器模型探活与离线降级）
+- [`tests/theme-bridge.test.cjs`](../../tests/theme-bridge.test.cjs)（验证无头环境主题与设计 Token 桥接）
 - [`tests/pipeline-runner.test.cjs`](../../tests/pipeline-runner.test.cjs)（验证微服务缺失时的优雅退避）
-- [`tests/depth-contour-curvature.test.cjs`](../../tests/depth-contour-curvature.test.cjs)（验证深度图与几何流场解析）
 
 ---
 

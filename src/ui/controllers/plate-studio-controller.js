@@ -628,7 +628,7 @@ export function bindPlateStudioEvents(options = {}) {
 
   if ($('print')) $('print').onclick = () => {
     seed++;
-    setPlateStage(5);
+    setPlateStage(4);
     setView('print');
     const c = document.createElement('canvas');
     c.width = W;

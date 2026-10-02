@@ -13,8 +13,8 @@
 <p align="center">
   <img alt="Node 20+" src="https://img.shields.io/badge/Node.js-20%2B-596f50?style=flat-square">
   <img alt="Zero Runtime Dependencies" src="https://img.shields.io/badge/runtime_dependencies-0-c8b67e?style=flat-square">
-  <img alt="Tests Passing" src="https://img.shields.io/badge/tests-123%2F123%20PASS-16a34a?style=flat-square">
-  <img alt="Test Files" src="https://img.shields.io/badge/test_files-28-2f3932?style=flat-square">
+  <img alt="Tests Passing" src="https://img.shields.io/badge/tests-140%2F140%20PASS-16a34a?style=flat-square">
+  <img alt="Test Files" src="https://img.shields.io/badge/test_files-29-2f3932?style=flat-square">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f3932?style=flat-square"></a>
 </p>
 
@@ -40,7 +40,7 @@ The architecture strictly decouples algorithmic computational engines from host 
 2. **Partial Differential Equation (PDE) Chemical Acid Bite Simulation**:
    Numerically solves 4-neighborhood lateral acid bite and vertical depth deepening PDEs on 1500×1100 or 3000×2200 physical grids, with full support for stop-out varnish masking and drypoint metal burr acid erosion.
 3. **Zero-DOM Isomorphic Computation & 100% Test Coverage**:
-   Most computational operators and the plate simulation run in Node.js; canvas helpers and inference requests retain browser or network adapters. The current Node.js run covers 28 test files and passes 123 tests. Passing tests do not establish code coverage.
+   Most computational operators and the plate simulation run in Node.js; canvas helpers and inference requests retain browser or network adapters. The current Node.js run covers 29 test files and passes 140 tests. Passing tests do not establish code coverage.
 4. **DAG Incremental State Caching & Preemptive Task Scheduling**:
    Monitors parameter changes with deterministic 32-bit DJB2 hashing. Modifying hatching parameters recomputes Stages 4–5 when earlier stages are cached. `AbortController` cancels obsolete computations at stage boundaries; an active synchronous stage cannot be interrupted immediately.
 
@@ -81,7 +81,7 @@ The architecture strictly decouples algorithmic computational engines from host 
 │  ├─ informative_drawings/                 # Grayscale line extraction service [Documentation](services/informative_drawings/README.md)
 │  └─ lotus_geometry/                       # Lotus depth & surface normal service [Documentation](services/lotus_geometry/README.md)
 ├─ styles/                                  # Fresh Atelier Light design system CSS (app.css)
-├─ tests/                                   # 28 test files (123 tests in the current run)
+├─ tests/                                   # 29 test files (140 tests in the current run)
 ├─ docs/                                    # Technical specifications & data dictionaries [Documentation Index](docs/DOCUMENTATION_INDEX.md)
 └─ archive/                                 # Historical experimental prototypes & research notes
 ```

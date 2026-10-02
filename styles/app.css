@@ -15,8 +15,8 @@
   --border-strong: #d5cfc4;      /* Focused / emphasized warm border */
   
   --accent-gold: #536957;        /* Sage with readable white button text (historical alias kept) */
-  --accent-gold-rgb: 122, 140, 126; /* RGB components for custom opacity */
-  --accent-gold-glow: rgba(122, 140, 126, 0.25);
+  --accent-gold-rgb: 83, 105, 87; /* RGB components for custom opacity */
+  --accent-gold-glow: rgba(83, 105, 87, 0.25);
   --accent-gold-hover: #425545;  /* Deepened Sage */
   --accent-teal: #536957;        /* Harmonized Sage Teal */
   --accent-teal-hover: #425545;
@@ -619,6 +619,11 @@ body.mode-plate aside.app-sidebar #drawer2 {
   color: var(--accent-gold);
   background: #fdf8f3;
   border: 1px solid #fed7aa;
+  min-width: 22px;
+  padding: 3px 5px;
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
 }
 
 @keyframes pulse {

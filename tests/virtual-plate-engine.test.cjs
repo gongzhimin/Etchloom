@@ -35,7 +35,7 @@ test('VirtualPlateEngine: 4 plate-making tools have orthogonal physical behavior
   const needleDepth = engine.depthField[idx];
   const needleBurr = engine.burrField[idx];
   const needleExposed = engine.exposedField[idx];
-  assert.ok(needleDepth < 0.015, 'Needle should not bite deep copper directly');
+  assert.equal(needleDepth, 0, 'Needle should only expose ground, depth remains 0 before etching');
   assert.equal(needleBurr, 0, 'Needle does not throw up metal burr');
   assert.ok(needleExposed > 0.5, 'Needle exposes bare copper through ground');
 

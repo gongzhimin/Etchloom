@@ -39,6 +39,7 @@ $$	ext{ctx.drawImage}(	ext{sourceCanvas}, x_{	ext{src}} - 20, y_{	ext{src}} - 20
 
 每张卡片均内建独立的操作浮层：
 - **底部说明**：`setStepStatus` 接收 `{ key, args }` 并保存到 `stepStates[i].metaSpec`；`updateLocale` 用当前字典和实际尺寸、线条数量重新生成说明，已完成的卡片也随语言切换更新；
+- **完成徽章**：`DONE` 的可见内容固定为 `✓`，`aria-label` 使用当前语言的 `card.done`；切换语言时仅更新可访问名称，避免卡片宽度因翻译而变化。
 - **键盘特写**：聚焦画布后按 Enter 或空格打开灯箱；关闭时焦点返回原控件；
 - **点击图片**：直接触发大图特写；
 - **放大镜按钮**：唤起 160px 4x 悬停放大镜；

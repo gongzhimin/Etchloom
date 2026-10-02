@@ -13,8 +13,8 @@
 <p align="center">
   <img alt="Node 20+" src="https://img.shields.io/badge/Node.js-20%2B-596f50?style=flat-square">
   <img alt="零运行依赖" src="https://img.shields.io/badge/runtime_dependencies-0-c8b67e?style=flat-square">
-  <img alt="测试通过率" src="https://img.shields.io/badge/tests-123%2F123%20PASS-16a34a?style=flat-square">
-  <img alt="测试文件" src="https://img.shields.io/badge/test_files-28-2f3932?style=flat-square">
+  <img alt="测试通过率" src="https://img.shields.io/badge/tests-140%2F140%20PASS-16a34a?style=flat-square">
+  <img alt="测试文件" src="https://img.shields.io/badge/test_files-29-2f3932?style=flat-square">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2f3932?style=flat-square"></a>
 </p>
 
@@ -40,7 +40,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 2. **偏微分方程化学酸蚀仿真**：
    在 1500x1100 或 3000x2200 物理网格上数值解算 4-邻域侧向咬蚀与纵向深化偏微分方程，支持防蚀漆阻断掩膜与干刻金属毛刺酸溶衰减。
 3. **算法核心与自动化测试**：
-   主要算子与物理仿真可在 Node.js 环境测试；图像画布与推理请求仍包含浏览器或网络适配代码。当前 28 个测试文件的 123 项用例通过，测试通过率不代表代码覆盖率。
+   主要算子与物理仿真可在 Node.js 环境测试；图像画布与推理请求仍包含浏览器或网络适配代码。当前 29 个测试文件的 140 项用例通过，测试通过率不代表代码覆盖率。
 4. **DAG 状态增量缓存与阶段边界取消**：
    采用 32-bit DJB2 确定性哈希监听参数变化，修改排线参数时仅需重新计算 Stage 4~5，前置阶段毫秒级复用；基于 `AbortController` 瞬时抢占中止陈旧任务。
 
@@ -81,7 +81,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 │  ├─ informative_drawings/                 # 灰度线描推理服务 [查看文档](services/informative_drawings/README.md)
 │  └─ lotus_geometry/                       # Lotus 深度与法线模型 [查看文档](services/lotus_geometry/README.md)
 ├─ styles/                                  # 莫兰迪古典浅色工作室设计系统 CSS (Fresh Atelier Light app.css)
-├─ tests/                                   # 28 个自动化测试文件 (当前 123 项测试通过)
+├─ tests/                                   # 29 个自动化测试文件 (当前 140 项测试通过)
 ├─ docs/                                    # 规范工程技术规范与数据字典 [查看索引](docs/DOCUMENTATION_INDEX.md)
 └─ archive/                                 # 历史归档资产与探索性实验
 ```

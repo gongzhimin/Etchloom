@@ -15,14 +15,26 @@ test('StepFlowGrid recomposes completed card metadata when locale changes', () =
     querySelectorAll: () => []
   };
   grid.stepStates[3].metaEl = { textContent: '' };
-  grid.stepStates[3].badgeEl = { textContent: '', className: '' };
+  const badge = {
+    textContent: '', className: '',
+    setAttribute(name, value) { this[name] = value; },
+    removeAttribute(name) { delete this[name]; }
+  };
+  grid.stepStates[3].badgeEl = badge;
   grid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [42] });
+  assert.equal(badge.textContent, '✓');
+  assert.equal(badge.role, 'img');
+  assert.equal(badge['aria-label'], '完成');
   assert.equal(grid.stepStates[3].metaEl.textContent, '42 条轮廓');
   i18n.setLocale('en-US');
   grid.updateLocale(i18n);
+  assert.equal(badge.textContent, '✓');
+  assert.equal(badge['aria-label'], 'Done');
   assert.equal(grid.stepStates[3].metaEl.textContent, '42 contours');
   i18n.setLocale('vi-VN');
   grid.updateLocale(i18n);
+  assert.equal(badge.textContent, '✓');
+  assert.equal(badge['aria-label'], 'Hoàn thành');
   assert.equal(grid.stepStates[3].metaEl.textContent, '42 nét viền');
 });
 

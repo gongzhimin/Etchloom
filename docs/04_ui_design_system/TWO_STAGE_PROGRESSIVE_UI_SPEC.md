@@ -353,6 +353,7 @@ stateDiagram-v2
 
 “关于”使用独立对话框，章节依次为产品用途、制作母版、蚀刻铜版、操作提示、保存与导出、许可。内容只描述用户可操作的现有功能；中文、英文、越南文共用相同结构和翻译键。窄屏将两个阶段卡片改为单列，正文区域可滚动。关闭按钮、遮罩点击和 Esc 均可退出，并将焦点返回“关于”按钮。
 “项目与反馈”章节位于两步流程卡片之后，显示 GitHub 仓库地址，并分别链接到仓库和 Issues；文案邀请用户查看代码、下载说明并提交问题或建议，不预设仓库已有 Release 包。
+制作过程的七张卡片进入 `DONE` 后，状态徽章只显示 `✓`；完整状态文字通过当前语言的 `aria-label` 提供给辅助技术。`COMPUTING`、`CACHED`、`ERROR` 保留各自文本状态。
 | **18**| `irreversible` | Checkbox | `false` | true / false | 不可逆工坊模式 | Irreversible Mode | Chế độ bất khả nghịch | 进阶工具与模式 ▾ |
 | **19**| `acid` | Range | 45% | 1 ~ 100% | 酸液浓度 | Acid Strength | Nồng độ axit | 酸液微调 ▾ |
 | **20**| `grain` | Range | 45% | 0 ~ 100% | 金相颗粒噪点 | Grain Roughness | Hạt sần kim loại | 酸液微调 ▾ |
