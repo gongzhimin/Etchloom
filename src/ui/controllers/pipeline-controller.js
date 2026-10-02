@@ -602,7 +602,7 @@ export class PipelineController {
       if (!Runner) return;
 
       const previousOutputs = {
-        stage1: (this.stageCache && this.stageCache.get(1)) || (this.lastStage1LineMap ? { width: curW, height: curH, data: this.lastStage1LineMap.pixels || this.lastStage1LineMap } : null),
+        stage1: (this.stageCache && this.stageCache.get(1)) || (this.lastStage1LineMap ? { width: curW, height: curH, data: this.lastStage1LineMap.data || this.lastStage1LineMap.pixels || this.lastStage1LineMap } : null),
         stage2: (this.stageCache && this.stageCache.get(2)) || this.lastStage2Artifact || null,
         stage3: (this.stageCache && this.stageCache.get(3)) || (this.lastContours ? { vectorContours: this.lastContours, contourMask: this.lastContourMask } : null),
         stage4: (this.stageCache && this.stageCache.get(4)) || (this.lastHatching ? { hatchingPaths: this.lastHatching } : null),
@@ -610,7 +610,7 @@ export class PipelineController {
       };
 
       if (!previousOutputs.stage1 && this.lastStage1LineMap) {
-        previousOutputs.stage1 = { width: curW, height: curH, data: this.lastStage1LineMap.pixels || this.lastStage1LineMap };
+        previousOutputs.stage1 = { width: curW, height: curH, data: this.lastStage1LineMap.data || this.lastStage1LineMap.pixels || this.lastStage1LineMap };
       }
 
       const context = {

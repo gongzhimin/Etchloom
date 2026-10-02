@@ -19,7 +19,17 @@ export class WebAIClient {
    * @param {Function} [options.log] System activity logger
    */
   constructor(options = {}) {
-    this.modelsBasePath = (options.modelsBasePath || 'models/').replace(/\/+$/, '') + '/';
+    let basePath = options.modelsBasePath || 'models/';
+    if (typeof window !== 'undefined' && window.location) {
+      try {
+        basePath = new URL(basePath, window.location.href).href;
+      } catch (_) {
+        if (!basePath.startsWith('./') && !basePath.startsWith('/') && !basePath.startsWith('http')) {
+          basePath = './' + basePath;
+        }
+      }
+    }
+    this.modelsBasePath = basePath.replace(/\/+$/, '') + '/';
     this.maxInferenceSide = options.maxInferenceSide || 768;
     this.onProgress = options.onProgress || (() => {});
     this.log = options.log || ((cat, txt) => console.log(`[${cat}] ${txt}`));
