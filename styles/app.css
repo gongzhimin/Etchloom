@@ -147,6 +147,9 @@ header.app-header {
   z-index: 100;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
+body.platform-mac header.app-header {
+  padding-left: max(84px, env(safe-area-inset-left, 0px));
+}
 .brand-group {
   display: flex;
   align-items: center;

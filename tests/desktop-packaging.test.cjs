@@ -63,6 +63,12 @@ test('Desktop Packaging: Tauri configuration and icon assets are present and val
   assert.strictEqual(tauriConf.app?.windows?.[0]?.backgroundColor, '#faf7f2', 'Window background must be paper tone to prevent white flash');
   assert.ok(tauriConf.app?.windows?.[0]?.additionalBrowserArgs?.includes('WebGPU'), 'Browser args must enable WebGPU acceleration');
 
+  // macOS DMG & Native Titlebar Optimizations verification
+  assert.strictEqual(tauriConf.bundle?.macOS?.dmg?.windowSize?.width, 660, 'DMG window width must be 660');
+  assert.strictEqual(tauriConf.bundle?.macOS?.hardenedRuntime, true, 'macOS hardened runtime must be enabled for notarization');
+  assert.strictEqual(tauriConf.app?.windows?.[0]?.titleBarStyle, 'Overlay', 'macOS title bar style must be Overlay');
+  assert.strictEqual(tauriConf.app?.windows?.[0]?.trafficLightPosition?.x, 16, 'Traffic lights x position must be 16');
+
   const cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
   assert.ok(cargoToml.includes('[profile.release]'), 'Cargo.toml must have [profile.release] optimization');
   assert.ok(cargoToml.includes('panic = "abort"'), 'Cargo.toml must specify panic = "abort" for minimal binary size');

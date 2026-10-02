@@ -822,10 +822,33 @@ function initEventBindings() {
     onMasterParamChange: () => pipelineController.scheduleParameterRun(),
     openPlateFullscreen: openPlateLightbox
   });
+
+  // Desktop Native Keyboard Shortcuts (macOS Cmd & Windows/Linux Ctrl)
+  document.addEventListener('keydown', (e) => {
+    const isMod = e.metaKey || e.ctrlKey;
+    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    const isEditingText = tag === 'input' || tag === 'textarea';
+
+    if (isMod && e.key.toLowerCase() === 'z' && !isEditingText) {
+      e.preventDefault();
+      const undoBtn = $('undo');
+      if (undoBtn && !undoBtn.disabled) {
+        undoBtn.click();
+      }
+    } else if (isMod && e.key === ',' && !isEditingText) {
+      e.preventDefault();
+      const aboutTrigger = $('aboutTrigger');
+      if (aboutTrigger) aboutTrigger.click();
+    }
+  });
 }
 
 // 6. Application Bootstrap
 function bootstrap() {
+  const isMac = typeof navigator !== 'undefined' && (/Mac|Macintosh/i.test(navigator.userAgent || '') || navigator.platform?.startsWith('Mac'));
+  if (isMac && document.body) {
+    document.body.classList.add('platform-mac');
+  }
   switchWorkflow('master');
   setMasterScreen('intro');
   initEventBindings();

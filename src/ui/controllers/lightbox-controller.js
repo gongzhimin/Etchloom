@@ -82,8 +82,16 @@ export class LightboxController {
     if (this.viewportWrap) {
       this.viewportWrap.onwheel = (e) => {
         e.preventDefault();
-        const delta = e.deltaY < 0 ? 1.15 : 0.87;
-        const newScale = Math.max(0.8, Math.min(5.0, this.scale * delta));
+        let newScale;
+        if (e.ctrlKey) {
+          // Trackpad continuous pinch gesture on macOS / WebKit
+          const factor = Math.exp(-e.deltaY * 0.015);
+          newScale = Math.max(0.8, Math.min(5.0, this.scale * factor));
+        } else {
+          // Discrete mouse wheel
+          const delta = e.deltaY < 0 ? 1.15 : 0.87;
+          newScale = Math.max(0.8, Math.min(5.0, this.scale * delta));
+        }
         this.scale = Number(newScale.toFixed(2));
         this.updateTransform();
       };
@@ -170,12 +178,20 @@ export class LightboxController {
         if (e.key === 'Escape' && this.overlay && !this.overlay.hidden) {
           this.close();
         } else if (e.key === 'Tab' && this.overlay && !this.overlay.hidden) {
-          const controls = [...this.overlay.querySelectorAll('button:not([disabled])')].filter(el => !el.hidden);
+          const controls = [...this.overlay.querySelectorAll('button:not([disabled]), a[href]:not([disabled])')].filter(el => !el.hidden);
           if (!controls.length) return;
           const first = controls[0];
           const last = controls[controls.length - 1];
-          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (!this.overlay.contains(document.activeElement)) {
+            e.preventDefault();
+            (e.shiftKey ? last : first).focus();
+          } else if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       });
     }

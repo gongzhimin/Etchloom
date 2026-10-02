@@ -27,6 +27,9 @@
         "fullscreen": false,
         "backgroundColor": "#faf7f2",
         "dragDropEnabled": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 16, "y": 18 },
         "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --enable-features=WebGPU,Vulkan,UseSkiaRenderer --disable-background-timer-throttling"
       }
     ],
@@ -51,6 +54,15 @@
         "languages": ["SimpChinese", "English"],
         "displayLanguageSelector": false,
         "installMode": "currentUser"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "hardenedRuntime": true,
+      "dmg": {
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 180, "y": 170 },
+        "applicationFolderPosition": { "x": 480, "y": 170 }
       }
     }
   }
