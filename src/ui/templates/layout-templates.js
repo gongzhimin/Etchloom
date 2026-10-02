@@ -680,6 +680,7 @@ export const modalsTemplate = `
             <h4 data-i18n="about.stage2Title">蚀刻铜版</h4>
             <p data-i18n="about.stage2Body">将母版上版，亲手刻绘、腐蚀，并在不同纸张上试印。</p>
           </section>
+        </div>
         <div class="about-details">
           <section>
             <h4 data-i18n="about.guideTitle">操作提示</h4>
