@@ -29,7 +29,7 @@ jobs:
             if (!tag && context.ref && context.ref.startsWith('refs/tags/')) {
               tag = context.ref.replace('refs/tags/', '');
             }
-            tag = tag || 'v0.1.6';
+            tag = tag || 'v0.1.7';
             console.log('Resolving release for tag:', tag);
             try {
               const existing = await github.rest.repos.getReleaseByTag({
@@ -165,7 +165,7 @@ jobs:
         run: |
           TAG="${{ github.ref_name }}"
           if [ -z "$TAG" ] || [ "${{ github.ref_type }}" != "tag" ]; then
-            TAG="v0.1.6"
+            TAG="v0.1.7"
           fi
 
           APK_SRC=$(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" | head -n 1)

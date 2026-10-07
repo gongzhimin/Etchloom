@@ -69,6 +69,11 @@ test('Desktop Packaging: Tauri configuration and icon assets are present and val
   assert.strictEqual(tauriConf.app?.windows?.[0]?.titleBarStyle, 'Overlay', 'macOS title bar style must be Overlay');
   assert.strictEqual(tauriConf.app?.windows?.[0]?.trafficLightPosition?.x, 16, 'Traffic lights x position must be 16');
 
+  // Security & Isolation Headers (Tauri v2 schema compliance)
+  assert.strictEqual(tauriConf.app?.headers, undefined, 'headers must not be placed directly under app');
+  assert.strictEqual(tauriConf.app?.security?.headers?.['Cross-Origin-Opener-Policy'], 'same-origin');
+  assert.strictEqual(tauriConf.app?.security?.headers?.['Cross-Origin-Embedder-Policy'], 'require-corp');
+
   const cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
   assert.ok(cargoToml.includes('[profile.release]'), 'Cargo.toml must have [profile.release] optimization');
   assert.ok(cargoToml.includes('panic = "abort"'), 'Cargo.toml must specify panic = "abort" for minimal binary size');
