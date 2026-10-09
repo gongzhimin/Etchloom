@@ -1,7 +1,7 @@
 # 全局应用状态中心架构规范 (ARCHITECTURE.md)
 
 > **模块路径**：`src/ui/store/` (`app-store.js`)  
-> **上级体系规范**：[docs/00_architecture/ARCHITECTURE_OVERVIEW.md](../../../../docs/00_architecture/ARCHITECTURE_OVERVIEW.md)
+> **上级体系规范**：[docs/design/ARCHITECTURE.md](../../../../docs/design/ARCHITECTURE.md)
 
 ---
 

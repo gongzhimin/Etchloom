@@ -354,14 +354,19 @@ export const plateWorkspaceTemplate = `
                 <span class="u-text-secondary" data-i18n="etch.depthLabel">平均刻槽深度</span>
                 <span id="etchDepthVal" class="font-mono u-text-bold">0.0 μm</span>
               </div>
+              <div class="row u-mt-1">
+                <span class="u-text-secondary" data-i18n="etch.phaseLabel">腐蚀程度</span>
+                <span id="etchPhaseVal" class="font-mono u-text-bold" data-i18n="etch.phase.standby">待开始</span>
+              </div>
               <div class="acid-progress-track">
                 <div id="etchProgressBar" class="acid-progress-fill"></div>
               </div>
             </div>
 
-            <!-- Start / Pause State Button -->
+            <!-- Start / Pause / Reset State Buttons -->
             <div class="u-mb-3">
               <button id="etchBtn" class="btn-sage-primary u-w-full" data-i18n="cta.startEtch">开始腐蚀</button>
+              <button id="resetEtchBtn" class="btn-atelier-secondary u-w-full u-mt-2" data-i18n="cta.resetEtch" disabled>重新腐蚀</button>
               <!-- Backward compatibility elements for tests -->
               <button id="etch" hidden></button>
               <button id="etchTopBtn" hidden></button>

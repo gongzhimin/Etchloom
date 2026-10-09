@@ -15,7 +15,7 @@
 
 ## 2. 核心算法原理与步骤 (Algorithm Steps)
 
-详细神经网络架构与张量预处理步骤见 [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)。
+详细神经网络架构与张量预处理步骤见 [docs/ALGORITHM.md](docs/ALGORITHM.md)。
 
 ---
 
@@ -35,6 +35,6 @@ curl http://127.0.0.1:7861/health
 ## 4. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：服务端架构与线程模型
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：网络架构与张量归一化规范
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：线描微服务 HTTP API 接口设计与数据契约规范
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：网络架构与张量归一化规范
+- [docs/INTERFACES.md](docs/INTERFACES.md)：线描微服务 HTTP API 接口设计与数据契约规范
 - [docs/TESTING.md](docs/TESTING.md)：服务探活与推理测试说明

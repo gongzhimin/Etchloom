@@ -34,6 +34,26 @@ export let plateFrameStyle = 'double';
 export let mirrorPrint = false;
 export let sourceAspectRatio = null;
 export let etchState = 0; // 0: Standby (待开始), 1: Biting (腐蚀中), 2: Paused (已暂停)
+export let preEtchSnapshot = null;
+export let etchAcc = 0;
+
+/**
+ * 锁存铜版入酸前的纯净划线与刻绘基准状态
+ * @ref docs/design/INTERFACES.md#IF-PLATE-001
+ * @ref docs/decisions/DECISIONS.md#adr-005
+ */
+export function capturePreEtchSnapshot() {
+  preEtchSnapshot = {
+    width: W,
+    height: H,
+    depth: depth.slice(),
+    exposed: exposed.slice(),
+    blocked: blocked.slice(),
+    burr: burr.slice(),
+    elapsed: 0,
+    plateSources: (typeof structuredClone === 'function' ? structuredClone(plateSources) : JSON.parse(JSON.stringify(plateSources)))
+  };
+}
 
 export function setPlateFrameStyle(style) {
   plateFrameStyle = style || 'double';
@@ -74,6 +94,10 @@ resetGrain();
 
 export function allocatePlate(width, height = null) {
   if (![900, 1500, 3000].includes(width)) throw Error("版面尺寸无效");
+  running = false;
+  elapsed = 0;
+  etchState = 0;
+  etchAcc = 0;
   W = width;
   if (height && height > 0) {
     H = Math.round(height);
@@ -96,11 +120,30 @@ export function allocatePlate(width, height = null) {
   blocked = new Uint8Array(N);
   burr = new Float32Array(N);
   next = new Float32Array(N);
+  preEtchSnapshot = null;
   resetGrain();
   dirty = true;
   cachedRenderImageData = null;
   const resolutionValue = $('plateResolutionValue');
   if (resolutionValue) resolutionValue.textContent = `${W} × ${H}`;
+
+  const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+  const startText = i18n ? i18n.t('cta.startEtch') : '开始腐蚀';
+  if ($('etch')) $('etch').textContent = startText;
+  if ($('etchTopBtn')) $('etchTopBtn').textContent = startText;
+  if ($('etchBtn')) $('etchBtn').textContent = startText;
+  const badge = $('etchStateBadge');
+  if (badge && badge.classList) {
+    badge.classList.remove('status-biting', 'status-paused');
+    badge.classList.add('status-standby');
+    badge.textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+  }
+  if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = true;
+  if ($('resetEtchBtn')) $('resetEtchBtn').disabled = true;
+  const timeStr = `${i18n ? i18n.t('caption.timer') : '腐蚀累计'} 0.0 s`;
+  if ($('timer')) $('timer').textContent = timeStr;
+  if ($('timerBadge')) $('timerBadge').textContent = timeStr;
+  updateAcidGauge();
 }
 
 let cachedRenderImageData = null;
@@ -124,6 +167,7 @@ export function snapshot() {
     blocked: blocked.slice(),
     burr: burr.slice(),
     elapsed,
+    etchState,
     plateSources: (typeof structuredClone === 'function' ? structuredClone(plateSources) : JSON.parse(JSON.stringify(plateSources)))
   });
   while (
@@ -143,6 +187,7 @@ export function syncUndo() {
 export function stop() {
   const wasRunning = running;
   running = false;
+  etchAcc = 0;
   if (wasRunning || elapsed > 0) {
     etchState = 2; // Paused
   } else {
@@ -171,6 +216,7 @@ export function stop() {
 
   if ($('status')) $('status').textContent = i18n ? i18n.t('status.stopped') : '已停止 · 可以继续制版或试印';
   if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = etchState !== 2;
+  if ($('resetEtchBtn')) $('resetEtchBtn').disabled = (elapsed <= 0 && etchState === 0);
   syncUndo();
   if (wasRunning && typeof logMessage === 'function') {
     const cat = i18n ? i18n.t('console.plate') : '铜版';
@@ -178,16 +224,58 @@ export function stop() {
   }
 }
 
-export function resetEtchProgress() {
+/**
+ * 终止酸液腐蚀并恢复至入酸前基准版面，累计计时与刻槽深度归零
+ * @ref docs/design/INTERFACES.md#IF-PLATE-001
+ * @ref docs/design/WORKFLOW.md#2-铜版酸液物理腐蚀-4-态状态机
+ */
+export function resetEtch() {
   running = false;
+  etchAcc = 0;
+  if (preEtchSnapshot && preEtchSnapshot.width === W && preEtchSnapshot.height === H) {
+    depth.set(preEtchSnapshot.depth);
+    exposed.set(preEtchSnapshot.exposed);
+    blocked.set(preEtchSnapshot.blocked);
+    burr.set(preEtchSnapshot.burr);
+    if (preEtchSnapshot.plateSources) {
+      plateSources = typeof structuredClone === 'function'
+        ? structuredClone(preEtchSnapshot.plateSources)
+        : JSON.parse(JSON.stringify(preEtchSnapshot.plateSources));
+    }
+  } else {
+    depth.fill(0);
+  }
   elapsed = 0;
-  etchState = 0;
+  etchState = 0; // Standby
   const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
-  if ($('etchBtn')) $('etchBtn').textContent = i18n ? i18n.t('cta.startEtch') : '放入酸槽，开始腐蚀';
+  const startText = i18n ? i18n.t('cta.startEtch') : '开始腐蚀';
+  if ($('etch')) $('etch').textContent = startText;
+  if ($('etchTopBtn')) $('etchTopBtn').textContent = startText;
+  if ($('etchBtn')) $('etchBtn').textContent = startText;
+
+  const badge = $('etchStateBadge');
+  if (badge && badge.classList) {
+    badge.classList.remove('status-biting', 'status-paused');
+    badge.classList.add('status-standby');
+    badge.textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+  }
+
   if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = true;
-  if ($('etchStateBadge')) $('etchStateBadge').textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+  if ($('resetEtchBtn')) $('resetEtchBtn').disabled = true;
+  if ($('status')) $('status').textContent = i18n ? i18n.t('status.etchReset') : '腐蚀已重置';
+
   updateAcidGauge();
   dirty = true;
+  syncUndo();
+
+  if (typeof logMessage === 'function') {
+    const cat = i18n ? i18n.t('console.plate') : '铜版';
+    logMessage(cat, i18n ? i18n.t('status.etchReset') : '腐蚀已重置', 'info');
+  }
+}
+
+export function resetEtchProgress() {
+  resetEtch();
 }
 
 export function setView(v) {
@@ -512,10 +600,14 @@ export function toggleEtch() {
     stop();
     return;
   }
+  if (elapsed === 0 || !preEtchSnapshot) {
+    capturePreEtchSnapshot();
+  }
   snapshot();
   running = true;
   etchState = 1;
   if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = true;
+  if ($('resetEtchBtn')) $('resetEtchBtn').disabled = false;
   const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
   const stopText = i18n ? i18n.t('sec.3.stopAcid') : '停止腐蚀';
   const pauseText = i18n ? i18n.t('cta.pauseEtch') : '取出铜版，暂停腐蚀';
@@ -563,6 +655,40 @@ export function updateAcidGauge() {
   if (depthVal) {
     depthVal.textContent = `${avgMicrons} μm`;
   }
+  const phaseVal = $('etchPhaseVal');
+  if (phaseVal) {
+    let phaseKey = 'etch.phase.standby';
+    let isWarning = false;
+    if (elapsed > 0 || etchState > 0) {
+      if (elapsed < 3.5) {
+        phaseKey = 'etch.phase.light';
+      } else if (elapsed < 8.0) {
+        phaseKey = 'etch.phase.medium';
+      } else if (elapsed < 14.0) {
+        phaseKey = 'etch.phase.deep';
+      } else {
+        phaseKey = 'etch.phase.heavy';
+        isWarning = true;
+      }
+    }
+    phaseVal.textContent = i18n ? i18n.t(phaseKey) : (
+      elapsed === 0 ? '待开始' :
+      elapsed < 3.5 ? '纤细 · 轻蚀' :
+      elapsed < 8.0 ? '适中 · 标准' :
+      elapsed < 14.0 ? '浓重 · 深蚀' : '极深 · 防过蚀'
+    );
+    if (phaseVal.classList) {
+      if (isWarning) {
+        phaseVal.classList.add('phase-warning');
+      } else {
+        phaseVal.classList.remove('phase-warning');
+      }
+    }
+  }
+  const resetBtn = $('resetEtchBtn');
+  if (resetBtn) {
+    resetBtn.disabled = (elapsed <= 0 && etchState === 0);
+  }
   const progressBar = $('etchProgressBar');
   if (progressBar && progressBar.style) {
     const pct = Math.min(100, Math.round(Number(avgMicrons) / 25.0 * 100));
@@ -576,6 +702,9 @@ export function setPlateStage(stageNum) {
   if (stageNum > 4) stageNum = 4;
   if (stageNum < 1) stageNum = 1;
   currentPlateStage = stageNum;
+  if (stageNum === 3 && (elapsed === 0 || !preEtchSnapshot)) {
+    capturePreEtchSnapshot();
+  }
   if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
   const steps = document.querySelectorAll('#plateStepper .stepper-step');
   if (steps && steps.forEach) {
@@ -650,6 +779,9 @@ export function bindPlateStudioEvents(options = {}) {
       if (activePointers.size === 0) {
         drawing = false;
         last = null;
+        if (currentPlateStage === 2) {
+          preEtchSnapshot = null;
+        }
       }
     };
     canvas.onpointerup = canvas.onpointercancel = finishPointer;
@@ -816,14 +948,51 @@ export function bindPlateStudioEvents(options = {}) {
   if ($('etch')) $('etch').onclick = toggleEtch;
   if ($('etchTopBtn')) $('etchTopBtn').onclick = toggleEtch;
   if ($('etchBtn')) $('etchBtn').onclick = toggleEtch;
+  if ($('resetEtchBtn')) $('resetEtchBtn').onclick = resetEtch;
 
   if ($('undo')) $('undo').onclick = () => {
     const s = history.pop();
     if (!s) return;
     if (s.width !== W || (s.height && s.height !== H)) allocatePlate(s.width, s.height);
-    ({ depth, exposed, blocked, elapsed, plateSources } = s);
+    depth = s.depth.slice();
+    exposed = s.exposed.slice();
+    blocked = s.blocked.slice();
     burr = s.burr ? s.burr.slice() : new Float32Array(N);
+    elapsed = s.elapsed ?? 0;
+    etchState = s.etchState ?? (elapsed > 0 ? 2 : 0);
+    plateSources = s.plateSources ? (typeof structuredClone === 'function' ? structuredClone(s.plateSources) : JSON.parse(JSON.stringify(s.plateSources))) : [];
+    preEtchSnapshot = null;
+    etchAcc = 0;
+
+    const i18n = (typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager : null;
+    const resumeText = i18n ? i18n.t('cta.resumeEtch') : '继续腐蚀';
+    const startText = i18n ? i18n.t('cta.startEtch') : '开始腐蚀';
+    const btnText = etchState === 2 ? resumeText : startText;
+    if ($('etch')) $('etch').textContent = btnText;
+    if ($('etchTopBtn')) $('etchTopBtn').textContent = btnText;
+    if ($('etchBtn')) $('etchBtn').textContent = btnText;
+
+    const badge = $('etchStateBadge');
+    if (badge && badge.classList) {
+      badge.classList.remove('status-biting', 'status-standby', 'status-paused');
+      if (etchState === 2) {
+        badge.classList.add('status-paused');
+        badge.textContent = i18n ? i18n.t('etch.state.paused') : '已暂停';
+      } else {
+        badge.classList.add('status-standby');
+        badge.textContent = i18n ? i18n.t('etch.state.standby') : '待开始';
+      }
+    }
+
+    if ($('panel3ProofNavBtn')) $('panel3ProofNavBtn').disabled = etchState !== 2;
+    if ($('resetEtchBtn')) $('resetEtchBtn').disabled = (elapsed <= 0 && etchState === 0);
+
+    const timeStr = `${i18n ? i18n.t('caption.timer') : '腐蚀累计'} ${elapsed.toFixed(1)} s`;
+    if ($('timer')) $('timer').textContent = timeStr;
+    if ($('timerBadge')) $('timerBadge').textContent = timeStr;
+
     dirty = true;
+    updateAcidGauge();
     syncUndo();
   };
 
@@ -835,6 +1004,7 @@ export function bindPlateStudioEvents(options = {}) {
     blocked.fill(0);
     burr.fill(0);
     elapsed = 0;
+    preEtchSnapshot = null;
     plateSources = [];
     etchState = 0;
     const badge = $('etchStateBadge');
@@ -862,6 +1032,7 @@ export function bindPlateStudioEvents(options = {}) {
     blocked.fill(0);
     burr.fill(0);
     elapsed = 0;
+    preEtchSnapshot = null;
     plateSources = [];
     etchState = 0;
     const badge = $('etchStateBadge');
@@ -971,17 +1142,22 @@ export function bindPlateStudioEvents(options = {}) {
   }
 
   // Animation frame loop
-  let previous = 0, acc = 0;
+  let previous = 0;
   function frame(t) {
     let dt = Math.min(0.1, (t - previous) / 1000);
     previous = t;
     if (running) {
-      acc += dt;
-      if (acc >= 0.08) {
-        etch(acc);
-        acc = 0;
+      etchAcc += dt;
+      if (etchAcc >= 0.08) {
+        etch(etchAcc);
+        etchAcc = 0;
       }
-      if ($('status')) $('status').textContent = '酸液作用中 · 随时停止以保留细线';
+      if ($('status')) {
+        const i18n = (typeof window !== 'undefined' && window.i18nManager) || globalThis.i18nManager;
+        $('status').textContent = i18n && typeof i18n.t === 'function'
+          ? i18n.t('status.etching')
+          : '酸液作用中 · 随时停止以保留细线';
+      }
     }
     if (dirty) {
       render();
@@ -1006,7 +1182,7 @@ export function bindPlateStudioEvents(options = {}) {
 export function hasPlateModifications() {
   if (elapsed > 0) return true;
   for (let i = 0; i < N; i++) {
-    if (depth[i] > 0 || burr[i] > 0 || exposed[i] > 0) return true;
+    if (depth[i] > 0 || burr[i] > 0 || exposed[i] > 0 || blocked[i] > 0) return true;
   }
   return false;
 }

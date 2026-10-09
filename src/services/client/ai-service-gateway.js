@@ -254,6 +254,29 @@ export class AIServiceGateway {
   }
 
   /**
+   * Unified Single-Entry Facade for AI Inference.
+   * Encapsulates all backend probing, parallel execution, and fallbacks behind a single contract.
+   * @param {'line'|'depth'|'parallel'|'both'} task 
+   * @param {Blob|HTMLImageElement|HTMLCanvasElement} source 
+   * @param {Object} [options={}]
+   * @returns {Promise<any>}
+   */
+  async infer(task, source, options = {}) {
+    if (task === 'line') {
+      return this.inferLineDrawing(source, options);
+    }
+    if (task === 'depth') {
+      return this.inferDepthMap(source, options);
+    }
+    if (task === 'parallel' || task === 'both') {
+      const w = options.width || 900;
+      const h = options.height || 660;
+      return this.requestParallelPipeline(source, w, h);
+    }
+    throw new Error(`[AIServiceGateway] 不支持的推理任务类型: ${task}`);
+  }
+
+  /**
    * Free client-side model session memory when entering memory-intensive stages (e.g. Copperplate engraving).
    */
   releaseMemory() {

@@ -1,7 +1,7 @@
 # 5 阶段算法管线内部架构与状态时序规范 (ARCHITECTURE.md)
 
 > **模块定位**：`src/core/`  
-> **上级体系规范**：[docs/00_architecture/ARCHITECTURE_OVERVIEW.md](../../../docs/00_architecture/ARCHITECTURE_OVERVIEW.md)
+> **上级体系规范**：[docs/design/ARCHITECTURE.md](../../../docs/design/ARCHITECTURE.md)
 
 ---
 

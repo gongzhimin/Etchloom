@@ -1,7 +1,7 @@
 # Lotus 3D 空间几何推理架构设计规范 (ARCHITECTURE.md)
 
 > **模块路径**：`services/lotus_geometry/`  
-> **上级体系规范**：[docs/00_architecture/ARCHITECTURE_OVERVIEW.md](../../../docs/00_architecture/ARCHITECTURE_OVERVIEW.md)
+> **上级体系规范**：[docs/design/ARCHITECTURE.md](../../../docs/design/ARCHITECTURE.md)
 
 ---
 

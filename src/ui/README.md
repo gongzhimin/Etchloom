@@ -57,7 +57,7 @@ src/ui/
 ## 4. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：解耦前端界面总装架构与数据流转
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：前端界面总装与状态契约接口设计规范
+- [docs/INTERFACES.md](docs/INTERFACES.md)：前端界面总装与状态契约接口设计规范
 - [docs/TESTING.md](docs/TESTING.md)：无头 Mock DOM 测试规范与点击事件断言解析
 
 ## 试印纸张更新

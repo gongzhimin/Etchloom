@@ -82,7 +82,7 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 │  └─ lotus_geometry/                       # Lotus 深度与法线模型 [查看文档](services/lotus_geometry/README.md)
 ├─ styles/                                  # 莫兰迪古典浅色工作室设计系统 CSS (Fresh Atelier Light app.css)
 ├─ tests/                                   # scripts/test-runner.cjs 自动发现 Node.js 测试文件
-├─ docs/                                    # 规范工程技术规范与数据字典 [查看索引](docs/DOCUMENTATION_INDEX.md)
+├─ docs/                                    # 规范工程技术规范与工程标准 [查看索引](docs/README.md)
 └─ archive/                                 # 历史归档资产与探索性实验
 ```
 
@@ -129,11 +129,11 @@ powershell -ExecutionPolicy Bypass -File scripts/start-model.ps1
 npm test
 ```
 测试运行器自动发现所有 `tests/*.test.cjs` 文件并输出实时统计；用例数量与耗时会随代码和运行环境变化。
-详见 [docs/03_testing_qa/TEST_SPECIFICATION.md](docs/03_testing_qa/TEST_SPECIFICATION.md)。
+详见 [docs/verification/TESTING.md](docs/verification/TESTING.md)。
 
 ---
 
 ## 7. 开源许可证与贡献指南 (License & Contributing)
 
 - **开源协议**：本项目基于 [MIT 许可证](LICENSE) 开源；
-- **贡献规范**：请审阅 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [docs/DOCUMENTATION_SPECIFICATION.md](docs/DOCUMENTATION_SPECIFICATION.md)。
+- **贡献规范**：请审阅 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [docs/README.md](docs/README.md)。

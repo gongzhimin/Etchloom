@@ -58,7 +58,7 @@ graph TD
 
 ### Step 2: 逆向现实核查与规范先行 (Reverse Reality Check & Spec First)
 在动任何代码或写任何文档之前，必须先审查已有设计文档与代码现状：
-1. **查阅现有规范与架构文档**：修改前必须阅读 `docs/00_architecture/ARCHITECTURE_OVERVIEW.md` 及对应子模块的 `ARCHITECTURE.md`，明确模块是 UMD 还是 ESM，杜绝凭空想象。
+1. **查阅现有规范与架构文档**：修改前必须阅读 `docs/design/ARCHITECTURE.md` 及对应子模块的 `ARCHITECTURE.md`，明确模块是 UMD 还是 ESM，杜绝凭空想象。
 2. **核对字段名与类型契约**：通过全局搜索确认参数键名（如到底是 role 还是 type，到底是 crossHatch 还是 cross）。
 3. **核对运行时环境约束**：
    - 核心纯算法（`src/core/`）必须保持 UMD / Isomorphic 规范，严禁直接依赖浏览器 DOM（window, document）。

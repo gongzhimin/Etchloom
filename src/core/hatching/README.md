@@ -65,7 +65,7 @@ src/core/hatching/
 
 ## 3. 核心算法原理与数学建模 (Mathematical Principles)
 
-详见 [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：
+详见 [docs/ALGORITHM.md](docs/ALGORITHM.md)：
 - **自注意力抑制场**：$I(x, y) = \min(1.0, (\frac{\bar{\text{ink}}}{\text{satThresh}})^{1.2})$
 - **表面曲率张量**：$\kappa = \|\nabla N_x\| + \|\nabla N_y\|$
 - **曼哈顿正交投影**：$\theta_{\text{snap}} = \arg\min_{\phi \in \{0, \frac{\pi}{2}, \pi, \frac{3\pi}{2}\}} |\theta - \phi|$
@@ -93,6 +93,6 @@ node --test tests/hatching-modular.test.cjs tests/hatch-attention.test.cjs tests
 ## 5. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：15 模块拓扑关系与依赖调用链
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：详细微分几何公式推导与离散实现步骤
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：流场、规则与曲线算子强类型接口设计与契约规范
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：详细微分几何公式推导与离散实现步骤
+- [docs/INTERFACES.md](docs/INTERFACES.md)：流场、规则与曲线算子强类型接口设计与契约规范
 - [docs/TESTING.md](docs/TESTING.md)：排线测试矩阵与测试用例说明

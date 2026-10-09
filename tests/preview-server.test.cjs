@@ -12,7 +12,7 @@ test('preview serves app assets and denies repository archives and documentation
     assert.equal((await fetch(`${base}/src/main.js`)).status, 200);
     assert.equal((await fetch(`${base}/archive/legacy_v1/README.md`)).status, 404);
     assert.equal((await fetch(`${base}/BENCHMARK.json`)).status, 404);
-    assert.equal((await fetch(`${base}/docs/DOCUMENTATION_INDEX.md`)).status, 404);
+    assert.equal((await fetch(`${base}/docs/README.md`)).status, 404);
   } finally {
     await new Promise(resolve => server.close(resolve));
   }

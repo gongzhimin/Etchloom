@@ -82,7 +82,7 @@ The architecture strictly decouples algorithmic computational engines from host 
 │  └─ lotus_geometry/                       # Lotus depth & surface normal service [Documentation](services/lotus_geometry/README.md)
 ├─ styles/                                  # Fresh Atelier Light design system CSS (app.css)
 ├─ tests/                                   # Node.js test suites discovered by scripts/test-runner.cjs
-├─ docs/                                    # Technical specifications & data dictionaries [Documentation Index](docs/DOCUMENTATION_INDEX.md)
+├─ docs/                                    # Technical specifications & engineering standards [Documentation Index](docs/README.md)
 └─ archive/                                 # Historical experimental prototypes & research notes
 ```
 
@@ -132,11 +132,11 @@ The repository contains a Tauri desktop configuration and a Windows/macOS releas
 npm test
 ```
 The test runner discovers all `tests/*.test.cjs` files and prints the current totals. Test counts and duration change as the project evolves.
-Refer to [docs/03_testing_qa/TEST_SPECIFICATION.md](docs/03_testing_qa/TEST_SPECIFICATION.md) for testing methodologies and coverage requirements.
+Refer to [docs/verification/TESTING.md](docs/verification/TESTING.md) for testing methodologies and coverage requirements.
 
 ---
 
 ## 7. License & Contributing
 
 - **License**: Released under the [MIT License](LICENSE);
-- **Contribution Standards**: Please review [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DOCUMENTATION_SPECIFICATION.md](docs/DOCUMENTATION_SPECIFICATION.md).
+- **Contribution Standards**: Please review [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/README.md](docs/README.md).

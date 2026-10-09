@@ -81,6 +81,8 @@ test('App Entrypoint: src/main.js module graph parses and mounts with zero synta
   createEl('etch');
   createEl('etchTopBtn');
   createEl('etchBtn');
+  createEl('resetEtchBtn');
+  createEl('etchPhaseVal');
   createEl('status');
   createEl('caption');
   createEl('paper', 'select');

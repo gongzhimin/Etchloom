@@ -290,10 +290,14 @@
         const p = out[pIdx];
         if (!p.points || p.points.length === 0) continue;
         const mid = p.points[Math.floor(p.points.length / 2)];
-        const mx = Math.max(0, Math.min(w - 1, Math.round(mid[0])));
-        const my = Math.max(0, Math.min(h - 1, Math.round(mid[1])));
-        const z = depthData[my * w + mx];
-        p.width *= Math.max(0.65, 1.0 - z * 0.35);
+        const midX = mid[0] ?? mid.x ?? 0;
+        const midY = mid[1] ?? mid.y ?? 0;
+        const mx = Math.max(0, Math.min(w - 1, Math.round(midX)));
+        const my = Math.max(0, Math.min(h - 1, Math.round(midY)));
+        const z = depthData[my * w + mx] ?? 0;
+        if (Number.isFinite(p.width) && Number.isFinite(z)) {
+          p.width *= Math.max(0.65, 1.0 - z * 0.35);
+        }
       }
     }
     out.effectiveToneField = effectiveToneField;

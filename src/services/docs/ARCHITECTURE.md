@@ -1,7 +1,7 @@
 # 微服务网关架构与进程间通信拓扑 (ARCHITECTURE.md)
 
 > **模块路径**：`src/services/`  
-> **上级体系规范**：[docs/00_architecture/ARCHITECTURE_OVERVIEW.md](../../../docs/00_architecture/ARCHITECTURE_OVERVIEW.md)
+> **上级体系规范**：[docs/design/ARCHITECTURE.md](../../../docs/design/ARCHITECTURE.md)
 
 ---
 

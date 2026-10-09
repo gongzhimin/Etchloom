@@ -67,6 +67,9 @@ class VirtualPlateEngine {
    * @param {number} [size=4] Tool diameter in baseline pixels
    */
   applyToolDab(x, y, force = 1.0, tool = 'needle', size = 4) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(force) || !Number.isFinite(size)) {
+      return;
+    }
     const W = this.width;
     const H = this.height;
     const r = Number(size) * W / 900 / 2;
@@ -190,6 +193,9 @@ class VirtualPlateEngine {
    * @param {number} [grain=0.45] Grain roughness
    */
   etch(dt, strength = 0.45, grain = 0.45) {
+    if (!Number.isFinite(dt) || dt <= 0 || !Number.isFinite(strength) || !Number.isFinite(grain)) {
+      return;
+    }
     simulateAcidBite(this, dt, strength, grain);
     this.elapsedAcidTime += dt;
   }

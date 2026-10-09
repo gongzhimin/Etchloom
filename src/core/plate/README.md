@@ -26,7 +26,7 @@ src/core/plate/
 ├── renderer/                 # 凹版压印物理转印渲染器
 │   └── press-renderer.js     # renderPlate (凹槽填墨/表面擦净/物理转印)
 ├── docs/                     # 物理数学推导与数值仿真规范
-│   ├── ALGORITHM_SPEC.md     # 2D PDE 扩散方程与 4 工具物理模型推导
+│   ├── ALGORITHM.md     # 2D PDE 扩散方程与 4 工具物理模型推导
 │   ├── ARCHITECTURE.md       # TypedArray 物理生命周期与数据拓扑
 │   └── TESTING.md            # 物理不变量、酸液守恒与单测断言解析
 └── README.md                 # 铜版物理仿真总览
@@ -42,7 +42,7 @@ src/core/plate/
 
 ## 3. 核心算法原理与数学建模摘要 (Mathematical Principles)
 
-详见 [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：
+详见 [docs/ALGORITHM.md](docs/ALGORITHM.md)：
 - **2D 偏微分方程各向同性侧蚀扩散**：
   $$E^{t+\Delta t} = \min\left(1.0, E^t + \max(0, E_{\text{edge}} - E^t) \cdot \Delta t \cdot S \cdot (0.14 + 0.55 G \eta)\right)$$
 - **纵向咬蚀加深非线性方程**：
@@ -67,9 +67,9 @@ node --test tests/virtual-plate-engine.test.cjs tests/plate.test.cjs
 
 ## 5. 子文档导航 (Sub-documentation Index)
 
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：2D PDE 侧蚀偏微分方程数值解算推导
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：2D PDE 侧蚀偏微分方程数值解算推导
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：一维连续 TypedArray 物理生命周期设计
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：虚拟铜版引擎与偏微分物理仿真接口设计规范
+- [docs/INTERFACES.md](docs/INTERFACES.md)：虚拟铜版引擎与偏微分物理仿真接口设计规范
 - [docs/TESTING.md](docs/TESTING.md)：物理守恒定律与单测断言解析
 
 ## 试印纸张更新

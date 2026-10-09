@@ -23,6 +23,9 @@
  * @param {number} grain Metallurgical grain roughness factor [0.0 ~ 1.0] (default: 0.45)
  */
 function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
+  if (!plate || !Number.isFinite(dt) || dt <= 0 || !Number.isFinite(strength) || !Number.isFinite(grain)) {
+    return;
+  }
   const {
     width: W,
     height: H,

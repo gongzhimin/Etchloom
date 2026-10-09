@@ -1,6 +1,6 @@
 /* ==========================================================================
    Etchloom v2 — Atelier Fresh Light Aesthetic System
-   Design Spec: docs/04_ui_design_system/DESIGN_TOKENS.md
+   Design Spec: docs/standards/UI_RULES.md
    ========================================================================== */
 
 :root {
@@ -2324,6 +2324,25 @@ body[data-master-screen="computing"] footer.telemetry-footer {
   border-radius: var(--radius-md);
   padding: var(--space-4);
   margin-bottom: var(--space-4);
+}
+
+.acid-metrics-box .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0;
+}
+
+.acid-metrics-box .row.u-mt-1 {
+  margin-top: var(--space-1);
+}
+
+.acid-metrics-box .row > *:last-child {
+  text-align: right;
+}
+
+.acid-metrics-box .phase-warning {
+  color: var(--copper-glow);
 }
 
 .acid-progress-track {

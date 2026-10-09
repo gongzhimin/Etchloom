@@ -477,6 +477,56 @@ test('UI Button Click: Unified Acid Console Toggle & Gauge Display', () => {
   assert.equal(etchBtn.textContent, '开始腐蚀');
 });
 
+test('UI Button Click: Reset Etch Button and Bite Phase Indicator', () => {
+  const etchBtn = createMockElement('button', { id: 'etchBtn', textContent: '开始腐蚀' });
+  const resetBtn = createMockElement('button', { id: 'resetEtchBtn', textContent: '重新腐蚀', disabled: true });
+  const phaseVal = createMockElement('span', { id: 'etchPhaseVal', textContent: '待开始' });
+  let elapsed = 0.0;
+  let etchState = 0;
+
+  function updatePhase() {
+    resetBtn.disabled = elapsed <= 0 && etchState === 0;
+    if (elapsed === 0) {
+      phaseVal.textContent = '待开始';
+    } else if (elapsed < 3.5) {
+      phaseVal.textContent = '纤细 · 轻蚀';
+    } else if (elapsed < 8.0) {
+      phaseVal.textContent = '适中 · 标准';
+    } else if (elapsed < 14.0) {
+      phaseVal.textContent = '浓重 · 深蚀';
+    } else {
+      phaseVal.textContent = '极深 · 防过蚀';
+    }
+  }
+
+  // Initial state: reset is disabled, phase is standby
+  assert.equal(resetBtn.disabled, true);
+  assert.equal(phaseVal.textContent, '待开始');
+
+  // Start etching
+  etchState = 1;
+  elapsed = 15.2; // simulate over-etching
+  etchBtn.textContent = '暂停腐蚀';
+  updatePhase();
+  assert.equal(resetBtn.disabled, false);
+  assert.equal(phaseVal.textContent, '极深 · 防过蚀');
+
+  // Click Reset Etch
+  resetBtn.onclick = () => {
+    etchState = 0;
+    elapsed = 0.0;
+    etchBtn.textContent = '开始腐蚀';
+    updatePhase();
+  };
+  resetBtn.click();
+
+  assert.equal(resetBtn.disabled, true);
+  assert.equal(phaseVal.textContent, '待开始');
+  assert.equal(etchBtn.textContent, '开始腐蚀');
+  assert.equal(elapsed, 0.0);
+  assert.equal(etchState, 0);
+});
+
 test('Universal Exporter: Browser compatibility without Node.js Buffer global', () => {
   const Exporter = require('../src/orchestration/export/exporter.js');
   const mockPaths = [{ points: [[0, 0], [100, 100]], width: 1.0 }];

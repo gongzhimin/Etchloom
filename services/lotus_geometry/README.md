@@ -15,7 +15,7 @@
 
 ## 2. 核心算法原理与微分推导 (Algorithm Steps)
 
-表面法线与等高切线数学推导详见 [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)。
+表面法线与等高切线数学推导详见 [docs/ALGORITHM.md](docs/ALGORITHM.md)。
 
 ---
 
@@ -34,6 +34,6 @@ node --test tests/depth-contour-curvature.test.cjs
 ## 4. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：LotusGPipeline 架构设计
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：微分几何法线推导数学模型
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：Lotus 3D 几何特征微服务接口设计与契约规范
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：微分几何法线推导数学模型
+- [docs/INTERFACES.md](docs/INTERFACES.md)：Lotus 3D 几何特征微服务接口设计与契约规范
 - [docs/TESTING.md](docs/TESTING.md)：几何测试套件矩阵

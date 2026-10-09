@@ -25,7 +25,7 @@ src/services/
 ├── theme/                    # 视觉与渲染主题服务
 │   └── theme-bridge.js       # ThemeBridge (Canvas/SVG 与 CSS Token 色彩桥接)
 ├── docs/                     # 通信契约与降级规范
-│   ├── ALGORITHM_SPEC.md     # 探活退避状态机与张量序列化规范
+│   ├── ALGORITHM.md     # 探活退避状态机与张量序列化规范
 │   ├── ARCHITECTURE.md       # 微服务与端侧模型协同架构
 │   └── TESTING.md            # 服务降级与网络断言规范
 └── README.md                 # 网关模块总览
@@ -71,6 +71,6 @@ class AIServiceGateway {
 ## 5. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：三态熔断器时序与拓扑设计
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：指数退避探活公式与数学建模
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：AI 辅助微服务网关接口设计规范
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：指数退避探活公式与数学建模
+- [docs/INTERFACES.md](docs/INTERFACES.md)：AI 辅助微服务网关接口设计规范
 - [docs/TESTING.md](docs/TESTING.md)：熔断降级测试规范与断言解析

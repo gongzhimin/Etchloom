@@ -1,7 +1,7 @@
 # 前端业务控制器架构与事件状态机规范 (ARCHITECTURE.md)
 
 > **模块路径**：`src/ui/controllers/`  
-> **上级体系规范**：[docs/00_architecture/ARCHITECTURE_OVERVIEW.md](../../../../docs/00_architecture/ARCHITECTURE_OVERVIEW.md)
+> **上级体系规范**：[docs/design/ARCHITECTURE.md](../../../../docs/design/ARCHITECTURE.md)
 
 ---
 
@@ -70,6 +70,8 @@ sequenceDiagram
 
 ### 3.2 `PlateStudioController`
 - **生命周期**：展示当前铜版精度（精度更改由上版向导负责）、4 种物理制版工具划线交互、化学酸蚀控制台与无头纯位图压印；
+- **反悔重置机制**：首次入酸自动调用 `capturePreEtchSnapshot()` 锁存未腐蚀基准；提供 `resetEtch()` 瞬间抹除刻槽深度、复原入酸前线宽、累计计时归零；
+- **酸蚀仪表盘**：`updateAcidGauge()` 实时推算有效刻槽深度微米数，并驱动极简五档腐蚀程度提示（`待开始`、`纤细 · 轻蚀`、`适中 · 标准`、`浓重 · 深蚀`、`极深 · 防过蚀`）；
 - **撤销栈**：维护历史快照数组 `history[]`（容量上限 12 步或 128MB 显存），支持多步撤销 `undo()`（当前未实现独立 redo 重做栈）；
 - **内存优化**：在 `render()` 中复用 `cachedRenderImageData` 离屏 ImageData 缓冲，消除每帧 6.6MB~26.4MB 的 GC 垃圾回收波动。
 

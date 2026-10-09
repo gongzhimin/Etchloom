@@ -144,6 +144,8 @@ test('Two-Stage UI: Complete Tri-lingual coverage and zero Emoji enforcement', (
     'cta.startEtch',
     'cta.pauseEtch',
     'cta.resumeEtch',
+    'cta.resetEtch',
+    'etch.phaseLabel',
     'etch.state.standby',
     'etch.state.biting',
     'etch.state.paused',
@@ -274,13 +276,11 @@ test('Two-Stage UI: Discrete 4-State Acid Biting Machine (Standby -> Biting -> P
   plateMod.stop();
   assert.strictEqual(plateMod.etchState, 2);
 
-  // 6. Reset to Standby
-  plateMod.stop();
-  plateMod.depth.fill(0);
-  plateMod.exposed.fill(0);
-  plateMod.blocked.fill(0);
-  plateMod.burr.fill(0);
-  assert.strictEqual(plateMod.running, false);
+  // 6. Reset to Standby via resetEtch()
+  plateMod.resetEtch();
+  assert.strictEqual(plateMod.etchState, 0, 'resetEtch must return state to Standby (0)');
+  assert.strictEqual(plateMod.elapsed, 0, 'resetEtch must reset elapsed time to 0');
+  assert.strictEqual(plateMod.running, false, 'Acid engine must not be running after reset');
 });
 
 test('Two-Stage UI: Guarded Retransfer detects copperplate modifications and triggers safety intercept', async () => {

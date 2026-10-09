@@ -1,7 +1,7 @@
 # 虚拟铜版仿真引擎内部架构与数据流设计 (ARCHITECTURE.md)
 
 > **模块定位**：`src/core/plate/`  
-> **上级体系规范**：[docs/00_architecture/ARCHITECTURE_OVERVIEW.md](../../../../docs/00_architecture/ARCHITECTURE_OVERVIEW.md)
+> **上级体系规范**：[docs/design/ARCHITECTURE.md](../../../../docs/design/ARCHITECTURE.md)
 
 ---
 
@@ -67,14 +67,14 @@ sequenceDiagram
     Note over VPE: 1. 压入 Undo 快照<br/>2. 计算包围盒与欧氏距离核<br/>3. 并行更新 exposed 与 burr 连续内存
     User->>Ctrl: 点击 [开始腐蚀]
     loop 动画定时器每帧 (dt = 0.08s)
-        Ctrl->>VPE: stepAcid(dt, strength, grain)
+        Ctrl->>VPE: etch(dt, strength, grain)
         VPE->>Acid: simulateAcidBite(plate, dt, strength, grain)
         Note over Acid: 数值解算 4-邻域侧向咬蚀与纵向深化 PDE
         Acid-->>VPE: 返回单步平均刻深增量
         VPE-->>Ctrl: 触发刻深读数与仪表盘刷新
     end
     User->>Ctrl: 点击 [取一张印样]
-    Ctrl->>VPE: renderPressPrint(options)
+    Ctrl->>VPE: render('print', options)
     VPE->>Press: 纯数学解算纸张纤维凹痕与毛细渗墨
     Press-->>Ctrl: 返回离散 RGBA 像素矩阵并上屏
 ```

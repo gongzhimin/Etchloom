@@ -67,7 +67,7 @@ graph LR
 
 ## 3. 核心算法原理与数学建模 (Mathematical Principles)
 
-5 阶段算法数学原理完整推导详见 [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：
+5 阶段算法数学原理完整推导详见 [docs/ALGORITHM.md](docs/ALGORITHM.md)：
 - **导向滤波色调分解**：$a = \frac{\text{cov}(I, p)}{\text{var}(I) + \epsilon}, \quad b = \bar{p} - a \cdot \bar{I}$
 - **高频微细节保持**：$D_{\text{detail}} = T_{\text{raw}} - T_{\text{base}}$
 - **空气透视线宽衰减**：$w(z) = w_0 \cdot \max(1 - \alpha, 1 - \alpha \cdot \frac{z - 0.35}{0.65})$
@@ -112,6 +112,6 @@ node --test tests/pipeline-runner.test.cjs tests/five-stage-pipeline.test.cjs te
 ## 6. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：内部调用拓扑与数据流转设计
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：5 阶段算子详尽数学模型与实现步骤
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：管线算子强类型接口设计与契约规范
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：5 阶段算子详尽数学模型与实现步骤
+- [docs/INTERFACES.md](docs/INTERFACES.md)：管线算子强类型接口设计与契约规范
 - [docs/TESTING.md](docs/TESTING.md)：测试套件矩阵与断言点

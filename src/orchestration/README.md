@@ -44,7 +44,7 @@ src/orchestration/
 
 ## 3. 核心算法原理与数学建模摘要 (Mathematical Principles)
 
-详见 [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：
+详见 [docs/ALGORITHM.md](docs/ALGORITHM.md)：
 - **32-bit DJB2 确定性状态哈希方程**：
   $$h_0 = 5381, \quad h_{i+1} = ((h_i \ll 5) + h_i + \text{ord}(str[i])) \mid 0$$
 - **DAG 最小失效链剪枝判定**：
@@ -108,6 +108,6 @@ node --test tests/stage-cache.test.cjs tests/task-scheduler.test.cjs tests/expor
 ## 6. 子文档导航 (Sub-documentation Index)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：内部调度流转、时序图与缓存拓扑
-- [docs/ALGORITHM_SPEC.md](docs/ALGORITHM_SPEC.md)：DJB2 哈希方程与 DAG 剪枝数学推导
-- [docs/INTERFACE_SPEC.md](docs/INTERFACE_SPEC.md)：编排中枢、抢占调度与导出接口设计规范
+- [docs/ALGORITHM.md](docs/ALGORITHM.md)：DJB2 哈希方程与 DAG 剪枝数学推导
+- [docs/INTERFACES.md](docs/INTERFACES.md)：编排中枢、抢占调度与导出接口设计规范
 - [docs/TESTING.md](docs/TESTING.md)：调度与导出器测试矩阵与断言深度解析
