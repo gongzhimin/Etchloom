@@ -1,6 +1,6 @@
 [package]
 name = "etchloom"
-version = "0.1.7"
+version = "0.1.8"
 description = "A local-first generative digital classical printmaking studio."
 authors = ["Etchloom Authors"]
 edition = "2021"

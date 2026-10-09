@@ -1,6 +1,6 @@
 {
   "name": "etchloom",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "description": "A local-first generative digital printmaking studio.",
   "scripts": {

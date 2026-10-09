@@ -29,7 +29,7 @@ jobs:
             if (!tag && context.ref && context.ref.startsWith('refs/tags/')) {
               tag = context.ref.replace('refs/tags/', '');
             }
-            tag = tag || 'v0.1.7';
+            tag = tag || 'v0.1.8';
             console.log('Resolving release for tag:', tag);
             try {
               const existing = await github.rest.repos.getReleaseByTag({
@@ -46,7 +46,7 @@ jobs:
                 repo: context.repo.repo,
                 tag_name: tag,
                 name: `Etchloom ${tag}`,
-                body: `## Etchloom Desktop & Mobile Release\n\n- **Android**: Download the \`.apk\` (ARM64) package below to install directly on your Android phone or tablet.\n- **Windows**: Download the \`.exe\` (NSIS installer) or \`.msi\` package below.\n- **macOS**: Download the \`.dmg\` package below.\n\n### Features:\n- 100% Offline standalone application (~35-40 MB)\n- Embedded dual neural networks (Informative Drawings & MiDaS v2.1 Small ONNX)\n- Integrated in-app WebGPU / WASM local hardware acceleration with automatic geometric fallback\n- Classical printmaking engine & physical acid simulation\n- Optimized touch-first mobile interaction with adaptive aspect ratio and bottom sheet drawers\n- Automatic discovery & promotion to local Python CUDA service (\`127.0.0.1:7861\`)\n\n---\n\n### 🍎 macOS 安装说明 (提示“已损坏，无法打开”解决办法):\n由于开源项目未购买苹果年费开发者证书，macOS Gatekeeper 安全机制会将下载的应用打上隔离标记并提示“已损坏”。\n**一秒解决步骤**：\n1. 将 \`Etchloom.app\` 从 DMG 拖入「应用程序 (Applications)」；\n2. 打开 Mac「终端 (Terminal)」，执行以下命令并输入电脑密码：\n\`\`\`bash\nsudo xattr -rd com.apple.quarantine /Applications/Etchloom.app\n\`\`\`\n执行完成后即可正常双击启动！`,
+                body: `## What's New in v0.1.8\n\n- **Reset Etch**: Easily restart the acid bath if lines bite too deep, without losing your plate drawing.\n- **Plate Protection**: Warns and backs up before overwriting existing needle marks or stop-out varnish.\n- **Bug Fixes**: Fixed simulation timer resets, undo state sync, and status translations.\n\n---\n\n### Downloads\n- **Windows**: \`.exe\` (installer) or \`.msi\`\n- **macOS**: \`.dmg\`\n- **Android**: \`.apk\` (ARM64)\n\n---\n\n> **macOS Note**: If prompted that the app is damaged, open Terminal and run:\n> \`sudo xattr -rd com.apple.quarantine /Applications/Etchloom.app\``,
                 draft: false,
                 prerelease: false
               });
@@ -165,7 +165,7 @@ jobs:
         run: |
           TAG="${{ github.ref_name }}"
           if [ -z "$TAG" ] || [ "${{ github.ref_type }}" != "tag" ]; then
-            TAG="v0.1.7"
+            TAG="v0.1.8"
           fi
 
           APK_SRC=$(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" | head -n 1)
