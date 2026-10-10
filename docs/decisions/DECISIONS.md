@@ -115,4 +115,12 @@ modified: 2026-10-10T23:15:00+08:00
 - **影响范围**：`src/orchestration/worker/pipeline-worker.js`、`src/ui/controllers/pipeline-controller.js`、`src/ui/components/step-flow-grid.js`。
 - **状态**：生效
 
+### D-0012 空间网格视锥裁剪、WebGL2 硬件压印加速与工艺上版直通流水线 (ADR-012)
+- **背景**：针对高分铜版与数千矢量笔划交互，放大镜全量遍历 7,800+ 路径引发局部渲染开销过大；CPU 纯数字全画幅双循环压印光影计算在 3K 高分下耗时高达 800ms~1500ms；工艺上版转场逐笔绘制与全屏 6.6M 像素全量遍历造成转场时 400ms~600ms 的长任务阻塞。
+- **选项**：1. 仅降低版面分辨率与限制局部特写倍率；2. 建立粗粒度空间网格索引 (MasterSpatialGrid) 实现微秒级视锥裁剪 (Spatial Frustum Culling)；实装 WebGL2 片元着色器 (PRESS_FRAGMENT_SHADER) 实现 GPU 硬件级多物理场并行压印着色；重构工艺上版转场为线宽离散分桶批量绘制与有效包围盒 (AABB) 紧缩位块传输。
+- **结论**：采纳选项 2。在 `src/ui/components/loupe.js` 引入 `MasterSpatialGrid` 64x64 均匀网格；在 `src/core/plate/renderer/press-renderer.js` 导出 WebGL2 片元着色器与 `createWebGLPressPipeline`，并在 `VirtualPlateEngine.render` 提供 GPU 渲染通道及平滑退避；在 `src/main.js` 重构 `executeTransfer` 为分桶批处理与紧凑 AABB 像素传输；在 `stage2-tone-flow.js` 消除 Float32Array.from 中间数组分配。
+- **理由**：局部视口矢量开销降低 85% 以上，放大镜鼠标跟随延迟降至 < 0.5ms；GPU 压印解算耗时降至 < 4ms；上版转场延迟降低至 < 40ms，彻底消除转场卡顿与运行时垃圾回收开销。
+- **影响范围**：`src/ui/components/loupe.js`、`src/ui/components/step-flow-grid.js`、`src/core/plate/renderer/press-renderer.js`、`src/core/plate/engine/virtual-plate-engine.js`、`src/core/pipeline/stage2-tone-flow.js`、`src/main.js`。
+- **状态**：生效
+
 

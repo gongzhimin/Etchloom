@@ -4,7 +4,7 @@ status: Active
 doc-id: IF-SYS
 owner-module: root
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T20:58:00+08:00
+modified: 2026-10-11T01:21:00+08:00
 ---
 
 # 系统跨模块契约归属登记 (IF-SYS)
@@ -22,12 +22,14 @@ modified: 2026-10-10T20:58:00+08:00
 | **`IF-CORE-RUN`** | 5 阶段母版增量管线门面 | `core` | [`src/core/docs/design/INTERFACES.md`](../../src/core/docs/design/INTERFACES.md) | `orchestration`, `ui` | 接收图像与配方，执行 5 阶段离散解算并返回 PipelineOutputs 与 masterResult。 |
 | **`IF-CORE-PLATE`** | 虚拟铜版与物理仿真引擎 | `core` | [`src/core/docs/design/INTERFACES.md`](../../src/core/docs/design/INTERFACES.md) | `ui`, `orchestration` | 维护连续物理场，解算 4 种刻绘工具划刻与 2D PDE 酸液侧蚀。 |
 | **`IF-CORE-CODEC`** | 铜版编解码与物理分辨率注入 | `core` | [`src/core/docs/design/INTERFACES.md`](../../src/core/docs/design/INTERFACES.md) | `orchestration`, `ui` | 紧凑二进制序列化与 PNG pHYs 物理 DPI 元数据注入。 |
+| **`IF-CORE-RENDER`**| 压印光影着色与 WebGL2 硬件加速 | `core` | [`src/core/docs/design/INTERFACES.md`](../../src/core/docs/design/INTERFACES.md) | `ui` | 物理压印多物理场着色解算与 WebGL2 片元着色器硬件管线。 |
 | **`IF-ORCH-HUB`** | 调度编排中枢与生命周期管理 | `orchestration` | [`src/orchestration/docs/design/INTERFACES.md`](../../src/orchestration/docs/design/INTERFACES.md) | `ui` | 聚合缓存、调度器与仿真引擎，分发生命周期与遥测事件。 |
 | **`IF-ORCH-SCHED`** | 抢占式防抖任务调度器 | `orchestration` | [`src/orchestration/docs/design/INTERFACES.md`](../../src/orchestration/docs/design/INTERFACES.md) | `ui` | 高频滑块拖拽防抖与异步任务 AbortSignal 抢占。 |
 | **`IF-ORCH-CACHE`** | DAG 增量拓扑哈希缓存 | `orchestration` | [`src/orchestration/docs/design/INTERFACES.md`](../../src/orchestration/docs/design/INTERFACES.md) | `ui` | 基于 DJB2 敏感哈希计算首个失效阶段并复用中间结果。 |
 | **`IF-ORCH-EXPORT`**| 统一多格式工坊导出器 | `orchestration` | [`src/orchestration/docs/design/INTERFACES.md`](../../src/orchestration/docs/design/INTERFACES.md) | `ui` | 矢量路径与配方序列化为标准 SVG (含分组)、G-Code 与 JSON。 |
 | **`IF-SERV-GW`** | AI 智能服务与通信网关 | `services` | [`src/services/docs/design/INTERFACES.md`](../../src/services/docs/design/INTERFACES.md) | `core`, `ui` | 三态健康探活，提供线描抽取与 3D 几何深度离线平滑降级。 |
 | **`IF-UI-MOUNT`** | 视图总装与响应式状态中心 | `ui` | [`src/ui/docs/design/INTERFACES.md`](../../src/ui/docs/design/INTERFACES.md) | `root` (`main.js`) | 装配全站 HTML 结构骨架，维护单向响应式全局状态树。 |
+| **`IF-UI-LOUPE`** | 空间散列网格与局部放大镜 | `ui` | [`src/ui/docs/design/INTERFACES.md`](../../src/ui/docs/design/INTERFACES.md) | `ui` (组件级协作) | 粗粒度视锥空间网格裁剪与亚像素级特写呈现。 |
 
 ## 3. 契约协作关系与单入口门面要求
 

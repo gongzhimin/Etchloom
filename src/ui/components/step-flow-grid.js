@@ -354,10 +354,22 @@ class StepFlowGrid {
 
     if (!cardState.loupe) {
       if (typeof LoupeMagnifier !== 'undefined') {
-        cardState.loupe = new LoupeMagnifier(cardState.canvas, { diameter: 160, zoom: 4 });
+        cardState.loupe = new LoupeMagnifier(cardState.canvas, {
+          diameter: 160,
+          zoom: 4,
+          vectorPaths: cardState.lastPaths || null,
+          srcWidth: cardState.lastSrcWidth || this.lastSrcWidth || 900,
+          srcHeight: cardState.lastSrcHeight || this.lastSrcHeight || 660
+        });
       } else {
         return false;
       }
+    } else if (cardState.lastPaths && cardState.loupe.setVectorPaths) {
+      cardState.loupe.setVectorPaths(
+        cardState.lastPaths,
+        cardState.lastSrcWidth || this.lastSrcWidth || 900,
+        cardState.lastSrcHeight || this.lastSrcHeight || 660
+      );
     }
 
     const isActive = cardState.loupe.toggle();

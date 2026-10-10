@@ -321,35 +321,77 @@ export function executeTransfer({ pathsToCarve, selectedRes = 1500, selectedTech
   mctx.lineCap = 'round';
   mctx.lineJoin = 'round';
 
-  for (const path of pathsToCarve) {
+  // Compute tight AABB union bounding box across all transfer paths to avoid 6.6M full pixel scan
+  let minArtX = W, maxArtX = 0, minArtY = H, maxArtY = 0;
+  const buckets = new Map();
+
+  for (let pIdx = 0; pIdx < pathsToCarve.length; pIdx++) {
+    const path = pathsToCarve[pIdx];
     const pts = path.points;
     if (!pts || pts.length < 2) continue;
 
-    mctx.lineWidth = transferStrokeWidth(path.width, scale, W, lineWidthScale);
+    const strokeW = Math.round(transferStrokeWidth(path.width, scale, W, lineWidthScale) * 10) / 10;
+    let list = buckets.get(strokeW);
+    if (!list) {
+      list = [];
+      buckets.set(strokeW, list);
+    }
+    list.push(pts);
 
+    for (let k = 0; k < pts.length; k++) {
+      const px = offX + pts[k][0] * scale;
+      const py = offY + pts[k][1] * scale;
+      if (px < minArtX) minArtX = px;
+      if (px > maxArtX) maxArtX = px;
+      if (py < minArtY) minArtY = py;
+      if (py > maxArtY) maxArtY = py;
+    }
+  }
+
+  // Draw batched paths by line width
+  for (const [wVal, pathList] of buckets) {
+    mctx.lineWidth = wVal;
     mctx.beginPath();
-    mctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
-    for (let k = 1; k < pts.length; k++) {
-      mctx.lineTo(offX + pts[k][0] * scale, offY + pts[k][1] * scale);
+    for (let l = 0; l < pathList.length; l++) {
+      const pts = pathList[l];
+      mctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+      for (let k = 1; k < pts.length; k++) {
+        mctx.lineTo(offX + pts[k][0] * scale, offY + pts[k][1] * scale);
+      }
     }
     mctx.stroke();
   }
 
-  const imgData = mctx.getImageData(0, 0, W, H).data;
+  // Bounding box restricted transfer read
+  const pad = 4;
+  const startX = Math.max(0, Math.floor(minArtX - pad));
+  const startY = Math.max(0, Math.floor(minArtY - pad));
+  const endX = Math.min(W, Math.ceil(maxArtX + pad));
+  const endY = Math.min(H, Math.ceil(maxArtY + pad));
+  const boundW = Math.max(1, endX - startX);
+  const boundH = Math.max(1, endY - startY);
+
+  const imgData = mctx.getImageData(startX, startY, boundW, boundH).data;
   const isDrypoint = selectedTechnique === 'drypoint';
   const pressFactor = needlePressure || 0.65;
+  const pressRatio = pressFactor / 0.65;
 
-  for (let i = 0; i < N; i++) {
-    const alpha = imgData[i * 4 + 3];
-    if (alpha > 0) {
-      const val = (alpha / 255) * (pressFactor / 0.65);
-      exposed[i] = Math.max(exposed[i], Math.min(1.0, val));
-      blocked[i] = 0;
-      if (isDrypoint) {
-        depth[i] = Math.min(1, depth[i] + val * 0.32);
-        burr[i] = Math.min(1, burr[i] + val * 0.42);
-      } else {
-        burr[i] = 0;
+  for (let y = 0; y < boundH; y++) {
+    const rowOffset = (startY + y) * W + startX;
+    const imgRowOffset = y * boundW * 4;
+    for (let x = 0; x < boundW; x++) {
+      const alpha = imgData[imgRowOffset + x * 4 + 3];
+      if (alpha > 0) {
+        const i = rowOffset + x;
+        const val = (alpha / 255) * pressRatio;
+        exposed[i] = Math.max(exposed[i], Math.min(1.0, val));
+        blocked[i] = 0;
+        if (isDrypoint) {
+          depth[i] = Math.min(1, depth[i] + val * 0.32);
+          burr[i] = Math.min(1, burr[i] + val * 0.42);
+        } else {
+          burr[i] = 0;
+        }
       }
     }
   }

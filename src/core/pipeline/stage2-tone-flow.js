@@ -33,8 +33,17 @@
     const n = w * h;
     const meanI = boxBlurFloat(guide, w, h, r);
     const meanP = boxBlurFloat(p, w, h, r);
-    const meanIp = boxBlurFloat(Float32Array.from(guide, (v, i) => v * p[i]), w, h, r);
-    const meanII = boxBlurFloat(Float32Array.from(guide, v => v * v), w, h, r);
+
+    // Zero-allocation buffer reuse: avoid Float32Array.from creating intermediate objects
+    const ip = new Float32Array(n);
+    const ii = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const g = guide[i];
+      ip[i] = g * p[i];
+      ii[i] = g * g;
+    }
+    const meanIp = boxBlurFloat(ip, w, h, r);
+    const meanII = boxBlurFloat(ii, w, h, r);
 
     const a = new Float32Array(n), b = new Float32Array(n);
     for (let i = 0; i < n; i++) {

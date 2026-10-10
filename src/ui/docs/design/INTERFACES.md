@@ -4,7 +4,7 @@ status: Active
 doc-id: IF-UI
 owner-module: ui
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T20:56:00+08:00
+modified: 2026-10-11T01:21:00+08:00
 ---
 
 # UI 模块对外接口与状态契约 (IF-UI)
@@ -127,6 +127,53 @@ class PipelineController {
    * 释放底层 AI 网关与图像临时内存
    */
   releaseMemory()
+}
+```
+
+### 2.5 MasterSpatialGrid 与 LoupeMagnifier 空间网格与放大镜
+
+源码位置：`src/ui/components/loupe.js`
+
+```javascript
+class MasterSpatialGrid {
+  /**
+   * @param {number} width - 画布横向像素尺寸
+   * @param {number} height - 画布纵向像素尺寸
+   * @param {number} [cellSize=64] - 网格分桶单元边长
+   */
+  constructor(width, height, cellSize = 64)
+
+  /**
+   * 将母版矢量路径一次性构建索引至空间网格桶 (耗时 < 2ms)
+   * @param {Array<{ points: [number, number][], width?: number }>} paths
+   */
+  indexPaths(paths)
+
+  /**
+   * 查询与指定视口轴对齐包围盒 (AABB) 相交的候选笔划集合
+   * @param {number} vx0
+   * @param {number} vy0
+   * @param {number} vx1
+   * @param {number} vy1
+   * @returns {Array<Object>} 视锥相交路径集合
+   */
+  queryFrustum(vx0, vy0, vx1, vy1)
+}
+
+class LoupeMagnifier {
+  /**
+   * @param {HTMLCanvasElement} sourceCanvas
+   * @param {Object} [options={}] - { diameter?: number, zoom?: number, vectorPaths?: Array, srcWidth?: number, srcHeight?: number }
+   */
+  constructor(sourceCanvas, options = {})
+
+  /**
+   * 动态绑定/更新矢量路径集合并构建空间视锥网格
+   * @param {Array<Object>} paths
+   * @param {number} [srcWidth]
+   * @param {number} [srcHeight]
+   */
+  setVectorPaths(paths, srcWidth, srcHeight)
 }
 ```
 

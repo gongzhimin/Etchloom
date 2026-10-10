@@ -229,13 +229,25 @@ class VirtualPlateEngine {
 
   /**
    * Renders plate view, depth view, or cotton paper print view.
+   * If options.glCanvas is provided and WebGL2 is supported, renders via GPU hardware fragment shader.
    * 
    * @param {'plate'|'depth'|'print'} [mode='plate'] 
    * @param {Object} [options={}] 
+   * @param {HTMLCanvasElement} [options.glCanvas] Optional WebGL2 target canvas for hardware acceleration
    * @param {Uint8ClampedArray} [targetBuffer] 
-   * @returns {{ width: number, height: number, pixels: Uint8ClampedArray }}
+   * @returns {{ width: number, height: number, pixels: Uint8ClampedArray, glAccelerated?: boolean }}
    */
   render(mode = 'plate', options = {}, targetBuffer = null) {
+    if (options.glCanvas && typeof PressRenderer !== 'undefined' && PressRenderer.createWebGLPressPipeline) {
+      if (!this._glPipeline || this._glCanvas !== options.glCanvas) {
+        this._glCanvas = options.glCanvas;
+        this._glPipeline = PressRenderer.createWebGLPressPipeline(options.glCanvas);
+      }
+      if (this._glPipeline) {
+        this._glPipeline.render(this, mode, options);
+        return { width: this.width, height: this.height, pixels: null, glAccelerated: true };
+      }
+    }
     return renderPlate(this, mode, options, targetBuffer);
   }
 

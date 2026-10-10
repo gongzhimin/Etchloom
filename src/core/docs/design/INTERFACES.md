@@ -4,7 +4,7 @@ status: Active
 doc-id: IF-CORE
 owner-module: core
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T23:15:00+08:00
+modified: 2026-10-11T01:20:00+08:00
 ---
 
 # 核心模块对外接口契约 (IF-CORE)
@@ -17,6 +17,7 @@ modified: 2026-10-10T23:15:00+08:00
    - 图像生成管线：`PipelineRunner`（`src/core/pipeline/pipeline-runner.js`）
    - 虚拟铜版物理仿真：`VirtualPlateEngine`（`src/core/plate/engine/virtual-plate-engine.js`）
    - 物理铜版编解码：`PlateCodec`（`src/core/codecs/plate-codec.js`）
+   - 压印光影着色与 WebGL2 管线：`PressRenderer`（`src/core/plate/renderer/press-renderer.js`）
 
 ## 2. 函数式接口签名与类定义
 
@@ -128,11 +129,11 @@ class VirtualPlateEngine {
   etch(dt, strength = 0.45, grain = 0.45)
 
   /**
-   * 渲染铜版视口图像或凹版压印图
+   * 渲染铜版视口图像或凹版压印图。支持 CPU 软件渲染与 WebGL2 片元着色器硬件加速自动退避。
    * @param {'plate'|'depth'|'print'} [mode='plate'] - 渲染模式
-   * @param {Object} [options={}] - 擦版程度与纸张预设选项
+   * @param {Object} [options={}] - 擦版程度与纸张预设选项，可传入 options.glCanvas 激活 WebGL2
    * @param {Uint8ClampedArray|null} [targetBuffer=null] - 可选复用的像素缓冲区
-   * @returns {{ width: number, height: number, pixels: Uint8ClampedArray }}
+   * @returns {{ width: number, height: number, pixels: Uint8ClampedArray|null, glAccelerated?: boolean }}
    */
   render(mode = 'plate', options = {}, targetBuffer = null)
 

@@ -224,12 +224,194 @@ function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null) {
     fragColor = vec4(clamp(outColor, 0.0, 1.0), 1.0);
   }`;
 
-  const api = { renderPlate, PRESS_FRAGMENT_SHADER };
+  /**
+   * Creates a WebGL2 hardware accelerated rendering pipeline wrapper.
+   * Gracefully returns null if WebGL2 is not supported in the current environment.
+   *
+   * @param {HTMLCanvasElement} canvas
+   * @returns {Object|null} WebGL press pipeline instance or null if unavailable
+   */
+  function createWebGLPressPipeline(canvas) {
+    if (!canvas || typeof canvas.getContext !== 'function') return null;
+    let gl = null;
+    try {
+      gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, antialias: false });
+    } catch (_) {
+      return null;
+    }
+    if (!gl) return null;
+
+    const vsSource = `#version 300 es
+    in vec2 aPos;
+    out vec2 vUv;
+    void main() {
+      vUv = (aPos + 1.0) * 0.5;
+      vUv.y = 1.0 - vUv.y; // flip Y for WebGL texture coordinate space
+      gl.Position = vec4(aPos, 0.0, 1.0);
+    }`;
+
+    function createShader(glCtx, type, source) {
+      const shader = glCtx.createShader(type);
+      glCtx.shaderSource(shader, source);
+      glCtx.compileShader(shader);
+      if (!glCtx.getShaderParameter(shader, glCtx.COMPILE_STATUS)) {
+        glCtx.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    }
+
+    const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fs = createShader(gl, gl.FRAGMENT_SHADER, PRESS_FRAGMENT_SHADER);
+    if (!vs || !fs) return null;
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      return null;
+    }
+
+    // Fullscreen Quad VAO
+    const quadVao = gl.createVertexArray();
+    gl.bindVertexArray(quadVao);
+    const quadVbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadVbo);
+    const quadVertices = new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+      -1,  1,
+       1, -1,
+       1,  1
+    ]);
+    gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
+    const aPosLoc = gl.getAttribLocation(program, 'aPos');
+    gl.enableVertexAttribArray(aPosLoc);
+    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.bindVertexArray(null);
+
+    // Uniform locations
+    const uDepthLoc = gl.getUniformLocation(program, 'uDepthField');
+    const uExposedLoc = gl.getUniformLocation(program, 'uExposedField');
+    const uBlockedLoc = gl.getUniformLocation(program, 'uBlockedField');
+    const uBurrLoc = gl.getUniformLocation(program, 'uBurrField');
+    const uGrainLoc = gl.getUniformLocation(program, 'uGrainNoise');
+    const uModeLoc = gl.getUniformLocation(program, 'uMode');
+    const uInkLoc = gl.getUniformLocation(program, 'uInk');
+    const uPressureLoc = gl.getUniformLocation(program, 'uPressure');
+    const uToneLoc = gl.getUniformLocation(program, 'uTone');
+    const uPaperBaseLoc = gl.getUniformLocation(program, 'uPaperBase');
+    const uWLoc = gl.getUniformLocation(program, 'uW');
+    const uHLoc = gl.getUniformLocation(program, 'uH');
+
+    // Create 5 scalar textures
+    const textures = {
+      depth: gl.createTexture(),
+      exposed: gl.createTexture(),
+      blocked: gl.createTexture(),
+      burr: gl.createTexture(),
+      grain: gl.createTexture()
+    };
+
+    function setupTexture(tex) {
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    Object.values(textures).forEach(setupTexture);
+
+    let lastW = 0, lastH = 0;
+
+    return {
+      gl,
+      render(plate, mode = 'plate', options = {}) {
+        const { width: W, height: H, depthField, exposedField, blockedField, burrField, grainNoise } = plate;
+        if (canvas.width !== W || canvas.height !== H) {
+          canvas.width = W;
+          canvas.height = H;
+        }
+        gl.viewport(0, 0, W, H);
+        gl.useProgram(program);
+
+        const uploadF32 = (unit, tex, data) => {
+          gl.activeTexture(gl.TEXTURE0 + unit);
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          if (lastW !== W || lastH !== H) {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, W, H, 0, gl.RED, gl.FLOAT, data);
+          } else {
+            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RED, gl.FLOAT, data);
+          }
+        };
+
+        const uploadU8 = (unit, tex, data) => {
+          gl.activeTexture(gl.TEXTURE0 + unit);
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          // Convert Uint8 to Float32 normalized for sampler2D
+          const fData = new Float32Array(data.length);
+          for (let k = 0; k < data.length; k++) fData[k] = data[k] > 0 ? 1.0 : 0.0;
+          if (lastW !== W || lastH !== H) {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, W, H, 0, gl.RED, gl.FLOAT, fData);
+          } else {
+            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RED, gl.FLOAT, fData);
+          }
+        };
+
+        uploadF32(0, textures.depth, depthField);
+        uploadF32(1, textures.exposed, exposedField);
+        uploadU8(2, textures.blocked, blockedField);
+        uploadF32(3, textures.burr, burrField);
+        uploadF32(4, textures.grain, grainNoise);
+        lastW = W;
+        lastH = H;
+
+        gl.uniform1i(uDepthLoc, 0);
+        gl.uniform1i(uExposedLoc, 1);
+        gl.uniform1i(uBlockedLoc, 2);
+        gl.uniform1i(uBurrLoc, 3);
+        gl.uniform1i(uGrainLoc, 4);
+
+        const modeCode = mode === 'depth' ? 0 : (mode === 'plate' ? 1 : 2);
+        gl.uniform1i(uModeLoc, modeCode);
+        gl.uniform1f(uInkLoc, options.ink ?? 0.90);
+        gl.uniform1f(uPressureLoc, options.pressure ?? 0.65);
+        gl.uniform1f(uToneLoc, options.tone ?? 0.04);
+        gl.uniform1f(uWLoc, W);
+        gl.uniform1f(uHLoc, H);
+
+        const paper = options.paper || 'rough';
+        const paperBase = paper === 'smooth' ? [252, 249, 243]
+          : paper === 'linen' ? [244, 238, 224]
+          : paper === 'rosaspina' ? [247, 242, 229]
+          : [247, 238, 219];
+        gl.uniform3f(uPaperBaseLoc, paperBase[0], paperBase[1], paperBase[2]);
+
+        gl.bindVertexArray(quadVao);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.bindVertexArray(null);
+        return true;
+      },
+      destroy() {
+        Object.values(textures).forEach(tex => gl.deleteTexture(tex));
+        gl.deleteBuffer(quadVbo);
+        gl.deleteVertexArray(quadVao);
+        gl.deleteProgram(program);
+        gl.deleteShader(vs);
+        gl.deleteShader(fs);
+      }
+    };
+  }
+
+  const api = { renderPlate, PRESS_FRAGMENT_SHADER, createWebGLPressPipeline };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
   } else {
     root.PressRenderer = api;
     root.renderPlate = renderPlate;
+    root.createWebGLPressPipeline = createWebGLPressPipeline;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
