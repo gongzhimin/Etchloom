@@ -1,53 +1,58 @@
-# Etchloom 系统文档全景索引 (DOCUMENTATION INDEX)
-
-> **设计边界声明**：本文件为 Etchloom 系统的**文档总索引与架构导航**，不承担项目的安装、运行与使用说明。  
-> 若需查看项目简介、开发启动、构建及跨平台打包发布指南，请参见根目录 [../README.md](../README.md)。  
-
+---
+title: Etchloom 系统文档全景索引
+status: Active
+doc-id: RULE-DOC-NAV
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. 系统级核心规范 (System Specifications)
+# Etchloom 系统文档全景索引
 
-| 文档分类 | 权威文档链接 | 核心职责与范围 |
-| :--- | :--- | :--- |
-| **系统需求** | [requirements/REQUIREMENTS.md](requirements/REQUIREMENTS.md) | 定义系统愿景、业务场景（SCEN-001~003）、非功能质量与全局验收标准。 |
-| **系统架构** | [design/ARCHITECTURE.md](design/ARCHITECTURE.md) | 定义一级模块边界、分层单向拓扑、跨模块协作时序与依赖约束。 |
-| **对外契约** | [design/INTERFACES.md](design/INTERFACES.md) | 全系统统一权威接口签名列表（PipelineRunner、TaskScheduler、VirtualPlateStudio 等）。 |
-| **通用算法** | [design/ALGORITHM.md](design/ALGORITHM.md) | 五阶段母版数学框架、图像尺寸自适应缩放与 DJB2 增量拓扑缓存哈希方程。 |
-| **业务流转** | [design/WORKFLOW.md](design/WORKFLOW.md) | 两阶段工坊工作流转、酸槽物理腐蚀 4 态状态机与抢占容错机制。 |
-| **数据字典** | [design/DATA_DICTIONARY.md](design/DATA_DICTIONARY.md) | 登记公共实体数据语义（RecipeSchema、PlateBufferLayout、VectorPath 等）。 |
-| **验证策略** | [verification/TESTING.md](verification/TESTING.md) | 系统测试策略金字塔、端到端关键验收用例矩阵与持续集成验证。 |
-| **架构决策** | [decisions/DECISIONS.md](decisions/DECISIONS.md) | 记录系统级技术选型与设计原则（ADR-001 ~ ADR-007）。 |
+## 文档导航
 
----
+### 系统级核心规范 (System Specifications)
 
-## 2. 工程规范与标准 (Engineering Standards)
+| 文档类型 | 链接 | 状态 | 一句话用途 |
+| :--- | :--- | :--- | :--- |
+| **系统需求** | [requirements/REQUIREMENTS.md](requirements/REQUIREMENTS.md) | Active | 系统愿景、业务场景（SCEN-001~003）、质量要求、系统与分模块验收标准。 |
+| **系统架构** | [design/ARCHITECTURE.md](design/ARCHITECTURE.md) | Active | 系统边界、一级模块职责、终端风格 ASCII 依赖拓扑与协作时序。 |
+| **对外契约** | [design/INTERFACES.md](design/INTERFACES.md) | Active | 跨模块契约归属总登记（登记与定义分离，权威定义在各模块）。 |
+| **通用算法** | [design/ALGORITHM.md](design/ALGORITHM.md) | Active | 五阶段母版数学框架、图像自适应下采样与 DJB2 内容敏感哈希。 |
+| **业务流转** | [design/WORKFLOW.md](design/WORKFLOW.md) | Active | 两阶段工坊工作流转、酸槽物理腐蚀 4 态状态机与抢占容错机制。 |
+| **数据字典** | [design/DATA_DICTIONARY.md](design/DATA_DICTIONARY.md) | Active | 公共数据语义归属登记（RecipeSchema、PlateBufferLayout、VectorStrokeSet 等）。 |
+| **验证策略** | [verification/TESTING.md](verification/TESTING.md) | Active | 系统测试策略金字塔、双轨验证矩阵、对抗攻防矩阵与缺陷台账。 |
+| **架构决策** | [decisions/DECISIONS.md](decisions/DECISIONS.md) | Active | 系统级重大技术选型与冲突仲裁记录（D-0001 ~ D-0007 / ADR-001 ~ ADR-007）。 |
 
-| 规范文件 | 规范编号 | 核心职责 |
-| :--- | :--- | :--- |
-| [standards/DOCUMENT_RULES.md](standards/DOCUMENT_RULES.md) | `STD-DOC-001` | 统一文档系统的组织、命名、10 类文档分工、SSOT 单一真理源原则。 |
-| [standards/COMMENT_RULES.md](standards/COMMENT_RULES.md) | `STD-COM-002` | 统一代码注释职责、JSDoc 强契约要求与禁止无效废话注释。 |
-| [standards/TRACEABILITY_RULES.md](standards/TRACEABILITY_RULES.md) | `STD-TRC-003` | 建立需求 (REQ)、设计 (DES)、代码与测试 (TEST) 结构化 ID 追踪链路。 |
-| [standards/CHANGE_VALIDATION.md](standards/CHANGE_VALIDATION.md) | `STD-CHG-004` | 规定代码与功能变更如何触发文档同步与发布门禁。 |
-| [standards/API_RULES.md](standards/API_RULES.md) | `STD-OPT-API-001` | 统一跨模块接口命名范式、异常抛出语义与 IPC 通信契约。 |
-| [standards/DATA_RULES.md](standards/DATA_RULES.md) | `STD-OPT-DAT-002` | 统一物理量度量（微米、毫米、秒）、时间戳与 TypedArray 内存布局。 |
-| [standards/UI_RULES.md](standards/UI_RULES.md) | `STD-OPT-UI-003` | Atelier 莫兰迪工坊视觉语言、Design Tokens、衬线字体分层与零 Emoji 规则。 |
-| [standards/TEST_RULES.md](standards/TEST_RULES.md) | `STD-OPT-TST-004` | 统一测试套件编写规范、无头 Mock 隔离与物理守恒断言。 |
+### 工程规范体系 (Standards)
 
----
+| 规范类型 | 链接 | 状态 | 一句话用途 |
+| :--- | :--- | :--- | :--- |
+| **元规范** | [standards/DOCUMENT_RULES.md](standards/DOCUMENT_RULES.md) | Active | 统一文档系统的组织、章节骨架、机器可读元数据与门禁职责。 |
+| **代码规范** | [standards/CODING_RULES.md](standards/CODING_RULES.md) | Active | 编码、排版、命名风格、纯领域计算零 DOM 隔离及预检要求。 |
+| **注释规范** | [standards/COMMENT_RULES.md](standards/COMMENT_RULES.md) | Active | 统一代码注释意图、JSDoc 强契约要求与禁止无效复读废话注释。 |
+| **追溯规范** | [standards/TRACEABILITY_RULES.md](standards/TRACEABILITY_RULES.md) | Active | 建立需求、设计、代码、测试之间机器可读的追溯 ID 关联网络。 |
+| **变更规范** | [standards/CHANGE_VALIDATION.md](standards/CHANGE_VALIDATION.md) | Active | 规定代码与功能变更如何触发文档同步与发布合并门禁。 |
+| **接口规范** | [standards/API_RULES.md](standards/API_RULES.md) | Active | 统一跨模块接口单一入口门面原则 (Single-Entry Facade) 与错误语义。 |
+| **数据规范** | [standards/DATA_RULES.md](standards/DATA_RULES.md) | Active | 统一物理量度量（微米、毫米、秒）、时间戳与 TypedArray 内存布局。 |
+| **界面规范** | [standards/UI_RULES.md](standards/UI_RULES.md) | Active | Atelier 莫兰迪工坊视觉语言、Design Tokens 与零 Emoji 规则。 |
+| **测试规范** | [standards/TEST_RULES.md](standards/TEST_RULES.md) | Active | 统一攻击视角测试哲学 (Attacker's Mindset) 与六大对抗攻防向量。 |
 
-## 3. 一级模块实现文档导航 (Module Documentation)
+### 一级模块实现文档导航 (Module Documentation)
 
-* **[src/core/docs/README.md](../src/core/README.md)（领域计算核心）**
-  * 架构拓扑：[src/core/docs/ARCHITECTURE.md](../src/core/docs/ARCHITECTURE.md)
-  * 通用接口：[src/core/docs/INTERFACES.md](../src/core/docs/INTERFACES.md)
-  * 测试矩阵：[src/core/docs/TESTING.md](../src/core/docs/TESTING.md)
-  * *子模块 · 虚拟铜版引擎*：[src/core/plate/README.md](../src/core/plate/README.md) (含 2D PDE 物理仿真)
-  * *子模块 · 神经排线引擎*：[src/core/hatching/README.md](../src/core/hatching/README.md) (含流线微分几何)
-* **[src/orchestration/docs/README.md](../src/orchestration/README.md)（编排与调度层）**
-  * 调度架构：[src/orchestration/docs/ARCHITECTURE.md](../src/orchestration/docs/ARCHITECTURE.md)
-  * 导出器接口：[src/orchestration/docs/INTERFACES.md](../src/orchestration/docs/INTERFACES.md)
-* **[src/services/docs/README.md](../src/services/README.md)（服务与硬件网关层）**
-  * 降级架构：[src/services/docs/ARCHITECTURE.md](../src/services/docs/ARCHITECTURE.md)
-* **[src/ui/docs/README.md](../src/ui/README.md)（前端交互与工坊视图）**
-  * 界面总装：[src/ui/docs/ARCHITECTURE.md](../src/ui/docs/ARCHITECTURE.md)
-  * 界面交互详述：[src/ui/docs/UI_DESIGN.md](../src/ui/docs/UI_DESIGN.md)
+- **[core（领域计算核心）](../src/core/docs/README.md)**：包含五阶段母版生成、微分几何排线、虚拟铜版物理引擎与 2D PDE 酸蚀解算。
+- **[orchestration（调度编排层）](../src/orchestration/docs/README.md)**：包含管线调度防抖抢占、DJB2 增量拓扑哈希缓存与多格式统一导出。
+- **[services（服务与网关层）](../src/services/docs/README.md)**：包含 WebGPU / WASM 硬件感知加速、本地 Python 服务探活与离线几何降级。
+- **[ui（工坊交互表现层）](../src/ui/docs/README.md)**：包含两阶段古典工坊进阶模式、4 态酸液控制台、高分辨率 Canvas 压印与三语国际化。
+
+## 权威关系
+
+1. **根级文档承载的权威事实**：
+   - 系统级业务目标、端到端业务场景与全局质量属性（权威在 `requirements/REQUIREMENTS.md`）；
+   - 一级模块边界、单向依赖拓扑与禁止反向依赖（权威在 `design/ARCHITECTURE.md`）；
+   - 跨模块契约与公共数据语义的归属登记（权威在 `design/INTERFACES.md` 与 `design/DATA_DICTIONARY.md`）；
+   - 全系统工程规范体系（权威在 `standards/*.md`）。
+2. **模块级引用的外部事实**：
+   - 模块对外接口的具体签名由模块自身 `INTERFACES.md` 权威定义，根级仅登记归属；
+   - 模块算法细节与内部状态机权威留存于模块自身 `design/` 目录；
+   - 本 `README.md` 仅提供全景索引与导航，本身不承载任何权威定义。

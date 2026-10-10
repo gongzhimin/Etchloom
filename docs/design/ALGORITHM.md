@@ -1,57 +1,49 @@
-# 全系统通用算法方案与计算框架 (ALGORITHM)
-
-> **文档标识**：ALG-SYS-FRAMEWORK  
-> **上级依据**：[docs/design/ARCHITECTURE.md](ARCHITECTURE.md)  
-> **设计边界**：本文件描述全系统通用算法框架与跨模块计算方案；局部专用算法严格留在对应子模块文档中。  
-
+---
+title: 全系统通用算法方案与计算框架
+status: Active
+doc-id: ALG-SYS
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. 五阶段母版生成管线算法总览
+# 全系统通用算法方案与计算框架
 
-系统将自然图像转化为古典版画母版的过程被严格划分为 5 个连续计算阶段（源码对应 `src/core/pipeline/pipeline-runner.js`）：
+## 1. 算法清单
 
-```text
-输入原始照片
-    │
-    ▼ [阶段 1: 灰度线描感知与骨架抽取 (Stage 1 · Informative Line Extraction)]
-神经网络或形态学边缘提取 + 图像白场保留 + 感知亮度映射
-    │
-    ▼ [阶段 2: 色调场与 3D 等高切线流场 (Stage 2 · Tone & 3D Surface Flow Field)]
-自适应导向滤波色调分解 + 双向梯度张量流场 + Lotus 3D 几何法线调制
-    │
-    ▼ [阶段 3: 轮廓与空气透视景深调制 (Stage 3 · Aerial Perspective Contours)]
-多尺度骨干轮廓提取 + 空气透视距离渐变 + 道格拉斯-普克曲线几何简化
-    │
-    ▼ [阶段 4: 曲率门控空间顺形排线 (Stage 4 · Curvature-Gated Spatial Hatching)]
-微分几何流线积分 + 曲率自适应步长 + 暗部交叉排线层叠 + 区域留墨预算守恒
-(强制双态坐标解构 `(pt[0] ?? pt.x)` 与 `Number.isFinite` 屏障，免疫异构输入导致的 NaN 毒化)
-    │
-    ▼ [阶段 5: 母版矢量合成与古典画框 (Stage 5 · Master Print Synthesis)]
-多图层拓扑融合 + 双层古典手工外框集成 + 视口外溢裁剪
-    │
-    ▼
-标准矢量图稿 (VectorPath 集合)
-```
+| 算法标识 | 算法名称 | 核心用途 | 权威实现位置 |
+| :--- | :--- | :--- | :--- |
+| **`ALG-PIPE-DAG`** | 五阶段母版生成管线 | 将静态图像离散转化为矢量排线母版 | `src/core/pipeline/pipeline-runner.js` |
+| **`ALG-IMG-DOWNSAMPLE`** | 尺寸自适应等比下采样 | 控制大图输入尺寸与内存预算，防 OOM | `src/core/image/photo-pro.js` |
+| **`ALG-CACHE-DJB2`** | 拓扑内容敏感哈希 | 对阶段入参计算敏感指纹，实现增量重算 | `src/orchestration/cache/stage-cache.js` |
 
-* **子模块算法详解索引**：
-  * 排线流线积分与微分张量：参见 [src/core/hatching/docs/ALGORITHM.md](../../src/core/hatching/docs/ALGORITHM.md)
-  * 酸槽 2D PDE 侧向潜蚀物理数值仿真：参见 [src/core/plate/docs/ALGORITHM.md](../../src/core/plate/docs/ALGORITHM.md)
-  * 色调分离与张量流场：参见 [src/core/docs/ALGORITHM.md](../../src/core/docs/ALGORITHM.md)
-  * 极端边界与容错计算规范：参见 [docs/standards/TEST_RULES.md](../standards/TEST_RULES.md#2-六大对抗性攻击向量攻击手册) 与 [docs/verification/TESTING.md](../verification/TESTING.md#5-缺陷审计与对抗性防御台账-defect--resilience-ledger)
+*注：局部专用算法（如 Jobard-Lefer 微分流线排线、2D PDE 酸液潜蚀仿真）严格归属于 [`src/core/docs/design/ALGORITHM.md`](../../src/core/docs/design/ALGORITHM.md)。*
 
+## 2. 算法定义
 
----
+### 2.1 五阶段母版离散计算管线 (`ALG-PIPE-DAG`)
+- **问题陈述**：自然图像具有连续平滑色调与无序噪声，必须转化为符合古典版画物理雕刻规律的离散黑白线条。
+- **阶段流转**：
+  1. 阶段 1 · 灰度线描感知抽取（DoG 几何滤波与本地神经网络双轨）；
+  2. 阶段 2 · 色调场与 3D 等高切线流场分解（何恺明导向滤波与张量流）；
+  3. 阶段 3 · 空间骨干轮廓与空气透视衰减（8-邻域中心线追踪与 Sobel 梯度微调）；
+  4. 阶段 4 · 曲率门控空间顺形排线（微分几何流线积分与留墨预算守恒，强制采用 `(pt[0] ?? pt.x)` 坐标解构与 `Number.isFinite` 屏障防 `NaN` 毒化）；
+  5. 阶段 5 · 母版矢量合成与古典画框集成（图层拓扑融合与刻深初估）。
+- **复杂度与边界**：时间复杂度 $O(W \cdot H)$，空间复杂度稳定在 $50\,\text{MB}$ 以内。
 
-## 2. 图像预处理与尺寸自适应下采样算法
+### 2.2 尺寸自适应下采样算法 (`ALG-IMG-DOWNSAMPLE`)
+- **问题陈述**：超大分辨率输入（如 8K 照片）会导致密集计算内存暴增并引发主线程掉帧。
+- **数学方程**：
+  $$\text{scale} = \min\left(1.0, \frac{\text{MAX\_DIM}}{\max(W_{\text{src}}, H_{\text{src}})}\right), \quad \text{MAX\_DIM} = 1800\,\text{px}$$
+- **正确性条件**：长宽比严格保真，缩放后最大边长严格 $\le 1800\,\text{px}$。
 
-为确保实时交互性与内存稳定性，任何超大输入图像在进入计算前执行以下限制：
-$$\text{scale} = \min\left(1.0, \frac{\text{MAX\_DIM}}{\max(W_{\text{src}}, H_{\text{src}})}\right)$$
-* $\text{MAX\_DIM} = 1800\,\text{px}$：保证在 4K 屏幕上细节分毫毕现的同时，内存占用保持在安全的 $50\,\text{MB}$ 以内。
+### 2.3 DJB2 变体内容敏感哈希 (`ALG-CACHE-DJB2`)
+- **问题陈述**：用户调整单一参数时，避免全流程重算，实现毫秒级交互反馈。
+- **递推方程**：
+  $$H_k = ((H_{k-1} \ll 5) + H_{k-1}) \oplus C_k, \quad H_0 = 5381$$
+- **性能指标**：阶段 4 单独重算时复用阶段 1–3 缓存，延迟从 $350\,\text{ms}$ 降至 $12\,\text{ms}$。
 
----
+## 3. 验证策略
 
-## 3. 拓扑内容敏感哈希算法 (DJB2 变体)
-
-编排层通过计算阶段输入参数及前序输出的哈希值实现瞬时增量重算（DAG 缓存，源码对应 `src/orchestration/cache/stage-cache.js`）：
-$$H_{k} = ((H_{k-1} \ll 5) + H_{k-1}) \oplus C_k$$
-* 当用户仅调整阶段 4（排线密度、交叉线）滑块时，阶段 1 至 3 的哈希值保持完全不变，计算中枢直接从缓存复用前序中间层，耗时从 $350\,\text{ms}$ 降低至 $12\,\text{ms}$。
+- **黄金样本比对**：通过测试套件比对确定性输入下的输出一致性（参见 `tests/five-stage-pipeline.test.cjs`）；
+- **数值边界与对抗验证**：执行 `NaN` 毒化与负值参数攻击（参见 `tests/adversarial-resilience.test.cjs` 与 [`verification/TESTING.md`](../verification/TESTING.md#3-对抗性攻防测试矩阵-adversarial-attack-matrix)）。

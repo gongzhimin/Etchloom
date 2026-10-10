@@ -1,103 +1,62 @@
-# 公共数据语义与数据字典规范 (DATA_DICTIONARY)
-
-> **文档标识**：DATA-SYS-REGISTRY  
-> **上级依据**：[docs/standards/DATA_RULES.md](../standards/DATA_RULES.md)  
-> **设计边界**：定义全系统共享的公共实体数据结构与序列化协议；子模块专有私有变量不在本文件罗列。  
-
+---
+title: 公共数据语义与数据字典规范
+status: Active
+doc-id: DATA-SYS
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. 核心实体定义清单
+# 公共数据语义与数据字典规范
 
-### [DATA-RECIPE-001] 母版配方模式 (RecipeSchema)
-定义驱动 5 阶段管线计算与铜版仿真的真实参数配置（对应 `src/ui/store/app-store.js` 与 `src/orchestration/engine/orchestrator.js`）：
+## 1. 数据归属总表
 
-```typescript
-interface RecipeSchema {
-  // 阶段 1：灰度线描感知参数
-  lineThreshold: number;        // [0, 100], 边缘强度灵敏度 (默认 50)
-  lineNoiseSuppression: number; // 噪点平滑半径 (默认 2)
-  lotus3D?: boolean;            // 是否启用 Lotus 3D 几何特征注入 (默认 true)
+系统内所有跨模块消费的数据实体、语义归属与权威定义登记如下（消费方仅引用，不复制定义）：
 
-  // 阶段 2：色调场与等高流场参数
-  exposure?: number;            // 曝光校准
-  blackPoint?: number;          // [0, 100], 暗部剪切点 (默认 0)
-  whitePoint?: number;          // [0, 100], 高光保留点 (默认 100)
-  toneContrast: number;         // 对比度拉伸倍率 (默认 1.0)
-  toneBrightness: number;       // 亮度偏移 (默认 0.0)
-  flowSmoothing: number;        // 流线场导向滤波平滑度 (默认 2)
+| 实体标识 | 实体名称 | 属主模块 | 权威源码实现 | 消费模块 | 一句话语义 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`DATA-RECIPE-001`** | `RecipeSchema` | `orchestration` | `src/orchestration/engine/orchestrator.js` | `core`, `ui` | 驱动 5 阶段管线与物理仿真的完整配置参数。 |
+| **`DATA-PLATE-002`** | `PlateBufferLayout` | `core` | `src/core/plate/engine/virtual-plate-engine.js` | `ui` | 连续 TypedArray 四场（depth, exposed, blocked, burr）。 |
+| **`DATA-VECTOR-003`** | `VectorStrokeSet` | `core` | `src/core/pipeline/stage5-master.js` | `orchestration`, `ui` | 结构化矢量折线集合（points, width, role, depth）。 |
+| **`DATA-SESSION-004`**| `DesignSession` | `ui` | `src/ui/store/app-store.js` | `orchestration` | 用户多稿历史、当前选定配方及视口缩放状态。 |
 
-  // 阶段 3：轮廓与空气透视参数
-  contourDetail: number;        // 轮廓线细节密度 (默认 1.0 / 75)
-  contourSimplify: number;      // 道格拉斯-普克曲线简化阈值 (默认 1.0)
-  aerialStrength?: number;      // 景深衰减与空气透视强度 (默认 60)
-  needleWidth: number;          // 基础针尖线宽 (默认 1.0)
+## 2. 实体定义
 
-  // 阶段 4：微分几何顺形排线参数
-  density: number;              // [10, 100], 排线密集度 (默认 50)
-  angle: number;                // 基准排线偏转角 (默认 45°)
-  crossHatch: boolean;          // 是否启用暗部交叉排线 (默认 false)
-  cross?: number;               // 交叉排线强度阈值
-  curvatureGate?: number;       // 曲率自适应门控阈值
-  waviness: number;             // 手工震荡微扰振幅 (默认 0)
+### 2.1 配方参数模型 (`DATA-RECIPE-001: RecipeSchema`)
+- **字段明细**：
+  - `lineThreshold`: `number`, $[0, 100]$, 边缘响应阈值，默认 `50`；
+  - `lineNoiseSuppression`: `number`, $[0, 10]$, 降噪半径，默认 `2`；
+  - `toneContrast`: `number`, 对比度增益，默认 `1.0`；
+  - `density`: `number`, $[10, 100]$, 排线密度，默认 `50`；
+  - `needleWidth`: `number`, $[0.1, 5.0]\,\text{mm}$, 划刻针宽，默认 `1.0`；
+  - `acidStrength`: `number`, $[0.0, 1.0]$, 归一化酸液浓度，默认 `0.45`；
+  - `grain`: `number`, $[0.0, 1.0]$, 铜版本构金相粗糙度，默认 `0.45`；
+  - `paper`: `enum`, `'rough' | 'smooth' | 'linen' | 'rosaspina'`, 手工纸基预设。
+- **约束与空值**：所有必填数值不可为 `NaN` 或 `Infinity`；缺省字段按 `PrintGenerator.defaults` 自动补全。
+- **序列化格式**：JSON Object，UTF-8 编码。
 
-  // 阶段 5：古典边框与母版合成
-  frameStyle: 'double' | 'fine' | 'rough' | 'none'; // 古典外框样式 (默认 'double')
-  inkGain: number;              // 留墨增益与网点扩大补偿 (默认 0)
+### 2.2 虚拟铜版内存模型 (`DATA-PLATE-002: PlateBufferLayout`)
+- **字段明细**：
+  - `width`: `number`, 铜版宽度像素（900 / 1500 / 3000）；
+  - `height`: `number`, 铜版高度像素（660 / 1100 / 2200）；
+  - `depthField`: `Float32Array[N]`, 刻槽深度 $[0.0, 1.0]$（映射 $[0, 45]\,\mu\text{m}$）；
+  - `exposedField`: `Float32Array[N]`, 裸铜暴开程度 $[0.0, 1.0]$；
+  - `blockedField`: `Uint8Array[N]`, 防蚀漆掩膜 $\{0, 1\}$；
+  - `burrField`: `Float32Array[N]`, 干刻金属外翻毛刺 $[0.0, 1.0]$。
+- **约束**：连续内存行优先平铺，$N = \text{width} \times \text{height}$。
 
-  // 铜版物理仿真参数
-  acidStrength: number;         // 酸液化学浓度 (默认 0.45)
-  grain: number;                // 铜版本构金相晶粒粗糙度 (默认 0.45)
-  ink: number;                  // 油墨充盈饱满度 (默认 0.90)
-  pressure: number;             // 印刷机滚筒压印压力 (默认 0.65)
-  plateTone: number;            // 未咬蚀空白铜面残留油墨调性 (默认 0.04)
-  paper: 'rough' | 'smooth' | 'linen' | 'rosaspina'; // 手工版画纸基预设
-}
-```
+### 2.3 矢量笔画集合 (`DATA-VECTOR-003: VectorStrokeSet`)
+- **字段明细**：
+  - `points`: `Array<[x: number, y: number] | {x: number, y: number}>`, 坐标离散点集；
+  - `width`: `number`, 基础线宽（像素）；
+  - `role`: `enum`, `'contour' | 'hatch' | 'cross' | 'frame'`, 笔画艺术语义角色；
+  - `depth`: `number`, 估算铜版刻槽深度 $[0.0, 1.0]$。
+- **序列化格式**：标准 SVG `<path>` 元素集合，坐标保留 2 位小数。
 
----
+## 3. 数据映射
 
-### [DATA-PLATE-002] 虚拟铜版内存布局 (PlateBufferLayout)
-铜版物理引擎在连续内存中的核心场数组（对应 `src/core/plate/engine/virtual-plate-engine.js`）：
-
-| 数组名称 | 类型 | 尺寸 | 语义解释与数值范围 |
+| 内存实体 | 持久化格式 | 传输格式 (IPC/Network) | 权威映射位置 |
 | :--- | :--- | :--- | :--- |
-| `depthField` | `Float32Array` | $W \times H$ | 刻槽深度场。未咬蚀为 $0.0$，最大理论收敛至 $1.0$ ($\approx 45\,\mu\text{m}$)。 |
-| `exposedField` | `Float32Array` | $W \times H$ | 裸铜暴露度场。防蚀漆划开程度 $[0.0, 1.0]$，受酸液 4-邻域侧向潜蚀加宽。 |
-| `blockedField` | `Uint8Array` | $W \times H$ | 防蚀漆阻断掩膜。$1$ 表示有漆阻断（钝化），$0$ 表示无漆。 |
-| `burrField` | `Float32Array` | $W \times H$ | 金属毛刺高度场。干刻起刺 $[0.0, 1.0]$，刮磨或强酸下单调衰减。 |
-| `grainNoise` | `Float32Array` | $W \times H$ | 铜版本构金相微观随机晶粒场 $[0.0, 1.0]$。 |
-| `nextExposedField` | `Float32Array` | $W \times H$ | 2D PDE 数值迭代用双缓冲切片，保障因果时间步更新一致性。 |
-
----
-
-### [DATA-PATH-003] 矢量几何线条 (VectorPath)
-```typescript
-interface VectorPath {
-  points: [number, number][]; // 浮点离散坐标点列 [[x0, y0], [x1, y1], ...]
-  width: number;              // 基础笔画宽度 (像素)
-  opacity?: number;           // 笔触透明度 [0.0, 1.0]
-  role: 'contour' | 'hatch' | 'cross' | 'frame'; // 语义图层角色
-  depth?: number;             // 估计刻深 [0.0, 1.0]
-}
-```
-
----
-
-### [DATA-BACKUP-004] 铜版存档备份数据 (PlateBackupPayload)
-用于保存到本地 JSON 备份文件及持久化恢复（对应 `src/ui/controllers/plate-studio-controller.js#savePlateBackup`）：
-```typescript
-interface PlateBackupPayload {
-  version: 1 | 2;             // 编解码器版本号 (v1 平铺数值数组，v2 采用 Base64 紧凑编码)
-  width: number;              // 900 / 1500 / 3000
-  height: number;
-  depth: number[] | string;   // 深度数据或 PlateCodec Base64 编码串
-  exposed: number[] | string;
-  blocked: number[] | string;
-  burr: number[] | string;
-  elapsed: number;            // 累计腐蚀时间 (秒)
-  paperMM: number;            // 打印物理尺寸 (默认 254mm)
-  seed: number;               // 随机种子
-  plateSources: any[];        // 上版母版矢量来源追踪记录
-  timestamp: string;          // ISO 8601 创建时间戳
-}
-```
+| `PlateBufferLayout` | JSON (Base64 TypedArray 编码) | JSON Blob | `src/core/codecs/plate-codec.js` |
+| `RecipeSchema` | JSON (UTF-8 纯文本) | JSON IPC Payload | `src/orchestration/engine/orchestrator.js` |
+| `VectorStrokeSet` | SVG 1.1 XML 文件 | UTF-8 String | `src/orchestration/export/exporter.js` |

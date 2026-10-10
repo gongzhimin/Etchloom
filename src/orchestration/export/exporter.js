@@ -44,8 +44,16 @@ function exportSVG(masterPaths, options = {}) {
     return pathList.map(p => {
       const pts = p.points || p;
       if (!Array.isArray(pts) || pts.length < 2) return '';
-      const w = (p.width ?? defaultWidth).toFixed(2);
-      const d = pts.map((pt, idx) => {
+      const strokeW = Number.isFinite(p.width) ? p.width : defaultWidth;
+      const w = strokeW.toFixed(2);
+      const validPts = pts.filter(pt => {
+        if (!pt) return false;
+        const x = pt[0] ?? pt.x;
+        const y = pt[1] ?? pt.y;
+        return Number.isFinite(x) && Number.isFinite(y);
+      });
+      if (validPts.length < 2) return '';
+      const d = validPts.map((pt, idx) => {
         const x = (pt[0] ?? pt.x).toFixed(2);
         const y = (pt[1] ?? pt.y).toFixed(2);
         return idx === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;

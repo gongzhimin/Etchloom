@@ -1,102 +1,90 @@
-# 系统架构总览与模块依赖拓扑 (ARCHITECTURE)
-
-> **文档标识**：DES-ARCH-TOP-001  
-> **上级依据**：[docs/requirements/REQUIREMENTS.md](../requirements/REQUIREMENTS.md)  
-> **权威范围**：全系统一级模块边界、依赖拓扑与通信规范  
-
+---
+title: 系统架构总览与模块依赖拓扑
+status: Active
+doc-id: ARCH-SYS
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. 系统边界与顶层架构
+# 系统架构总览与模块依赖拓扑
 
-Etchloom 采用严格的分层单向依赖架构。系统严禁跨层反向依赖，计算核心与物理仿真层保持纯函数式与零 DOM 依赖。
+## 1. 系统边界
 
-```mermaid
-flowchart TD
-    subgraph UI ["表现层 (src/ui)"]
-        UI_TPL["Templates & Layouts"]
-        UI_CTRL["Controllers (Pipeline / Studio)"]
-        UI_STORE["AppStore & Reactive State"]
-        UI_I18N["I18n Manager (zh / en / vi)"]
-    end
+Etchloom 的系统边界定义在纯本地客户端计算环境与宿主系统的接缝处：
+- **外部输入**：用户选择的本地静态图像文件（File / Blob / URL）、用户鼠标/触控板/手写笔绘制事件；
+- **外部服务接缝**：本地可选 Python CUDA 辅助服务（`127.0.0.1:7861`，可选探活与推断，不强依赖）；
+- **系统产出**：标准 SVG 矢量文件、高分辨率棉纸印痕 PNG、铜版 JSON 状态归档、以及原生桌面窗口。系统不依赖外部云端 API，无网络通信边界。
 
-    subgraph ORCH ["编排与调度层 (src/orchestration)"]
-        ORCH_HUB["Orchestrator Hub (Unified Dispatcher)"]
-        SCHED["TaskScheduler (Preemption & Debounce)"]
-        CACHE["StageCache (DJB2 Content-Hash)"]
-        EXP["Universal Exporter (SVG / G-Code / JSON)"]
-    end
+## 2. 系统架构图
 
-    subgraph CORE ["计算与物理领域核心 (src/core)"]
-        RUNNER["PipelineRunner (Stage 1..5 Incremental DAG)"]
-        CORE_IMG["Image & Tone Preprocessing"]
-        CORE_HATCH["Curvature Hatching Engine"]
-        CORE_PLATE["Virtual Plate Physics Engine (2D PDE)"]
-        CORE_CODEC["Lossless Plate Codec"]
-    end
-
-    subgraph SVC ["客户端与网关层 (src/services)"]
-        GW["AIServiceGateway (Circuit Breaker)"]
-        CLIENT["WebAIClient (ONNX / WebGPU)"]
-    end
-
-    UI --> ORCH
-    ORCH --> CORE
-    ORCH --> SVC
-    SVC --> CORE
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    Atelier 表现层 (ui)                      │
+│     Two-Stage Controller │ Canvas Renderer │ I18n Manager   │
+└──────────────┬──────────────────────────────▲───────────────┘
+               │ 调度任务 / 参数更新          │ 渲染产物 / 状态
+┌──────────────▼──────────────────────────────┴───────────────┐
+│                 编排调度与生命周期 (orchestration)          │
+│     TaskScheduler (防抖抢占) │ StageCache │ Exporter        │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │ 增量管线调用                 │ 硬件感知请求
+┌──────────────▼──────────────┐┌──────────────▼───────────────┐
+│     领域核心 (core)         ││     服务网关 (services)      │
+│  PipelineRunner (5 Stages)  ││  AIServiceGateway (熔断降级) │
+│  VirtualPlateEngine (PDE)   ││  WebAIClient (ONNX / WebGPU) │
+└─────────────────────────────┘└──────────────────────────────┘
 ```
 
----
+## 3. 模块职责
 
-## 2. 一级模块职责与边界定义
+- **`core`**：负责图像色调解构、微分曲率排线场计算、虚拟铜版离散化及偏微分物理酸咬仿真；不承担任何 DOM 操作、事件监听与网络请求。
+- **`orchestration`**：负责 5 阶段管线 DAG 调度、任务防抖抢占、增量缓存及跨格式数据导出；不承担算法内部矩阵解算与 UI 组件持有。
+- **`services`**：负责硬件加速探测（WebGPU / WASM SIMD）、ONNX 模型加载及本地 Python 服务通信与熔断降级；不持有界面状态。
+- **`ui`**：负责两阶段古典工坊进阶模式呈现、用户交互手势监听、4 态酸液状态机与 Canvas 压印展示；不直接执行深度数值运算。
 
-| 模块名称 | 物理路径 | 核心职责 | 依赖约束 |
-| :--- | :--- | :--- | :--- |
-| **`src/core`** | 领域计算核心 | 提供图像色调解构、微分曲率排线场计算、虚拟铜版离散化及偏微分物理酸咬仿真。 | **严格零 DOM 依赖**，严禁引入 `document`、`window` 或 UI 样式。 |
-| **`src/orchestration`**| 调度与生命周期 | 维护 5 阶段管线 DAG 拓扑、任务防抖与抢占调度、增量阶段缓存及跨端数据导出。 | 依赖 `src/core` 与 `src/services`；不直接操作 DOM 节点。 |
-| **`src/services`** | 服务与硬件网关 | 管理 WebGPU 加速、ONNX Runtime Web 本地推理、离线权重加载及三态熔断降级。 | 纯业务无头逻辑，向 `src/orchestration` 暴露强类型 Promise 契约。 |
-| **`src/ui`** | 交互与工坊视图 | 实现两阶段渐进式工作流（母版制作 $\leftrightarrow$ 铜版工坊）、Canvas 压印渲染及三语国际化。 | 顶层调用方，通过控制器触发调度中枢，响应式消费数据。 |
+## 4. 文件结构树
 
----
-
-## 3. 跨模块协作时序
-
-### 业务场景：母版上版并进行酸液咬蚀与重置
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as 用户
-    participant UI as PlateStudioController
-    participant Engine as VirtualPlateEngine
-    participant Sched as TaskScheduler
-
-    User->>UI: 点击【上版，开始刻绘】
-    UI->>Engine: allocatePlate(W, H)
-    UI->>Engine: executeTransfer(vectorPaths) -> exposed 初始化
-    UI->>UI: capturePreEtchSnapshot() [锁存入酸前基准快照]
-    
-    User->>UI: 点击【开始腐蚀】
-    loop 动画帧循环 (每 80ms)
-        UI->>Engine: etch(accDt) -> 2D PDE 数值迭代
-        UI->>UI: updateAcidGauge() -> 实时更新刻深微米数与腐蚀程度分档
-    end
-
-    alt 发生过蚀，用户需要重新开始
-        User->>UI: 点击【重新腐蚀】
-        UI->>UI: resetEtch()
-        UI->>Engine: 还原 depth, exposed, burr 至 preEtchSnapshot
-        UI->>UI: elapsed = 0, etchState = 0
-        UI->>UI: 触发 dirty 脏重绘，界面瞬间还原至清爽划线初始态
-    end
+```text
+src/
+├── core/                         # 领域核心计算
+│   ├── pipeline/                 # 5 阶段离散母版管线
+│   ├── plate/                    # 虚拟铜版引擎与 2D PDE 酸液物理仿真
+│   ├── hatching/                 # 微分几何流线与注意力排线
+│   └── docs/                     # 核心模块文档 (含 design, verification, decisions)
+├── orchestration/                # 编排与生命周期
+│   ├── scheduler/                # 任务防抖抢占调度器
+│   ├── cache/                    # DJB2 内容哈希 DAG 缓存
+│   ├── export/                   # SVG / PNG / JSON 统一导出器
+│   └── docs/                     # 编排模块文档
+├── services/                     # 客户端硬件与模型网关
+│   ├── client/                   # AI 服务网关与回退熔断
+│   └── docs/                     # 网关模块文档
+└── ui/                           # Atelier 工坊交互与表现
+    ├── controllers/              # 流程与铜版控制器
+    ├── components/               # 进度网格、放大镜、浮层模态
+    ├── i18n/                     # 三语零 Emoji 国际化字典
+    └── docs/                     # UI 模块文档
 ```
 
----
+## 5. 依赖方向
 
-## 4. 下级模块文档导航
+系统的模块依赖遵循严格单向无环拓扑（DAG）：
+$$\text{ui} \longrightarrow \text{orchestration} \longrightarrow (\text{core}, \text{services})$$
+- `services` 向 `core` 提供离线线描感知结果；
+- ❌ **禁止反向依赖**：`core` 严禁反向依赖 `orchestration`、`services` 或 `ui`；`orchestration` 严禁依赖 `ui`。
 
-* 领域计算核心：[src/core/docs/ARCHITECTURE.md](../../src/core/docs/ARCHITECTURE.md)
-* 虚拟铜版引擎：[src/core/plate/docs/ARCHITECTURE.md](../../src/core/plate/docs/ARCHITECTURE.md)
-* 神经排线引擎：[src/core/hatching/docs/ARCHITECTURE.md](../../src/core/hatching/docs/ARCHITECTURE.md)
-* 调度与编排层：[src/orchestration/docs/ARCHITECTURE.md](../../src/orchestration/docs/ARCHITECTURE.md)
-* 客户端网关层：[src/services/docs/ARCHITECTURE.md](../../src/services/docs/ARCHITECTURE.md)
-* 前端界面总装：[src/ui/docs/ARCHITECTURE.md](../../src/ui/docs/ARCHITECTURE.md)
+## 6. 跨模块协作
+
+1. **母版生成流**：`ui` 监听到用户参数输入 $\rightarrow$ 提交给 `orchestration.TaskScheduler` $\rightarrow$ 比对 `StageCache` $\rightarrow$ 驱动 `core.PipelineRunner` 调用 `services.AIServiceGateway` 与排线算法 $\rightarrow$ 输出 `MasterResult` 响应式返回 `ui` 渲染。
+2. **铜版上版流**：`ui.TransferWizard` 校验铜版修改安全守卫 $\rightarrow$ 读取 `MasterResult` 矢量 $\rightarrow$ 调用 `core.VirtualPlateEngine` 进行点阵光栅化 $\rightarrow$ 建立物理刻绘基准。
+
+## 7. 权威契约索引
+
+| 契约标识 | 权威定义位置 | 消费方 |
+| :--- | :--- | :--- |
+| `IF-CORE-RUN` | `src/core/docs/design/INTERFACES.md` | `orchestration`, `ui` |
+| `IF-CORE-PLATE` | `src/core/docs/design/INTERFACES.md` | `ui` |
+| `IF-ORCH-SCHED` | `src/orchestration/docs/design/INTERFACES.md` | `ui` |
+| `IF-ORCH-CACHE` | `src/orchestration/docs/design/INTERFACES.md` | `core`, `ui` |
+| `IF-SERV-GW` | `src/services/docs/design/INTERFACES.md` | `core`, `orchestration` |

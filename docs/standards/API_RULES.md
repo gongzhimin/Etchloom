@@ -1,13 +1,19 @@
-# 统一接口设计与通信契约规范 (API_RULES)
-
-> **规范编号**：STD-OPT-API-001  
-> **适用范围**：跨模块调用、Service Gateway、Web Worker 通信与 Native Tauri IPC  
-> **设计哲学**：单一入口门面 (Single-Entry Facade)、复杂度对外终极隐藏、最小暴露面  
-> **与设计文档区别**：本规范规定接口设计范式、错误处理与版本约定；具体接口签名由各级 `INTERFACES.md` 权威定义。  
-
+---
+title: 统一接口设计与通信契约规范
+status: Active
+doc-id: RULE-API
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. 单一入口门面与复杂度隐藏原则 (Single-Entry Facade & Complexity Encapsulation)
+# 统一接口设计与通信契约规范
+
+## 1. 目的与范围
+
+本规范规定跨模块调用、Service Gateway、Web Worker 通信与 Native Tauri IPC 的接口设计范式、错误处理与版本约定；具体接口签名由各级 `INTERFACES.md` 权威定义。
+
+## 2. 规则正文
 
 为降低模块间耦合度并杜绝内部实现细节泄露，系统所有一级子系统与独立功能模块必须严格遵守**门面模式（Facade Pattern）**：
 
@@ -61,3 +67,9 @@
 ```
 * `code === 0`：操作成功；
 * `code !== 0`：操作失败，`message` 包含可读失败原因。
+
+## 3. 与其他规范的关系
+
+- 具体模块对外接口签名由各级 `INTERFACES.md` 权威定义；
+- 数据格式与类型约定由 `standards/DATA_RULES.md` 及 `design/DATA_DICTIONARY.md` 定义；
+- 冲突时以 `standards/DOCUMENT_RULES.md` 为准。

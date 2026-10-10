@@ -13,25 +13,31 @@ const { renderPlate } = typeof require !== 'undefined' ? require('../renderer/pr
 class VirtualPlateEngine {
   /**
    * @param {number} [width=900] Plate width in pixels (900, 1500, or 3000)
+   * @param {number} [height=null] Optional plate height in pixels. Defaults to 3:2 ratio (Math.round(width * 660 / 900))
    */
-  constructor(width = 900) {
+  constructor(width = 900, height = null) {
     this.history = [];
     this.plateSources = [];
     this.elapsedAcidTime = 0;
     this.seed = 17;
-    this.allocatePlate(width);
+    this.allocatePlate(width, height);
   }
 
   /**
-   * Reallocates all continuous typed array fields for the given plate width.
+   * Reallocates all continuous typed array fields for the given plate dimensions.
    * @param {number} width 
+   * @param {number} [height=null]
    */
-  allocatePlate(width) {
+  allocatePlate(width, height = null) {
     if (![900, 1500, 3000].includes(width)) {
       throw new Error('版面尺寸无效');
     }
     this.width = width;
-    this.height = Math.round(width * 660 / 900);
+    if (height && height > 0) {
+      this.height = Math.round(height);
+    } else {
+      this.height = Math.round(width * 660 / 900);
+    }
     this.pixelCount = this.width * this.height;
 
     const N = this.pixelCount;

@@ -1,24 +1,28 @@
-# 统一视觉设计与交互体验规范 (UI_RULES)
-
-> **规范编号**：STD-OPT-UI-003  
-> **适用范围**：前端所有页面布局、组件渲染、Canvas 绘图与 CSS 变量系统  
-> **与设计文档区别**：本规范规定通用视觉风格、Design Tokens 与可访问性原则；各页面与组件的具体交互由 `src/ui/docs/UI_DESIGN.md` 详述。  
-
+---
+title: 统一视觉设计与交互体验规范
+status: Active
+doc-id: RULE-UI
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. Atelier 莫兰迪古典工坊美学基调
+# 统一视觉设计与交互体验规范
 
+## 1. 目的与范围
+
+本规范规定全系统前端页面布局、组件渲染、Canvas 绘图与 CSS 变量系统的通用视觉风格、Design Tokens 与可访问性原则；各页面与组件的具体交互方案由 `src/ui/docs/design/UI_DESIGN.md` 详述。
+
+## 2. 规则正文
+
+### §2.1 Atelier 莫兰迪古典工坊美学基调
 系统采用 **Fresh Atelier Light（清透工坊浅色质感）** 设计语言：
-* **底色哲学**：采用棉麻画纸（Pale Warm Linen, `#faf8f5`）与纯净纸面白（`#ffffff`），摒弃压抑的重色调；
-* **点缀色彩**：以鼠尾草灰绿（Sage, `#536957`）作为主强调色，辅以陶土金铜色（Copper / Terracotta, `#9c755f`）体现金属蚀刻质感；
-* **边框与阴影**：羽毛般轻盈的暖灰微边框（`#eae5dc`），极度克制的漫反射阴影。
+- **底色哲学**：采用棉麻画纸（Pale Warm Linen, `#faf8f5`）与纯净纸面白（`#ffffff`），摒弃压抑的重色调；
+- **点缀色彩**：以鼠尾草灰绿（Sage, `#536957`）作为主强调色，辅以陶土金铜色（Copper / Terracotta, `#9c755f`）体现金属蚀刻质感；
+- **边框与阴影**：羽毛般轻盈的暖灰微边框（`#eae5dc`），极度克制的漫反射阴影。
 
----
-
-## 2. 核心 Design Tokens 字典
-
+### §2.2 核心 Design Tokens 字典
 所有样式必须使用 `styles/app.css` 中声明的 CSS 变量，严禁在 HTML 模板中内联任意硬编码颜色或尺寸：
-
 ```css
 :root {
   /* 背景层次 */
@@ -44,13 +48,15 @@
 }
 ```
 
----
-
-## 3. 字体排印与多语言排版原则
-
+### §2.3 字体排印与多语言排版原则
 1. **衬线体与非衬线体分层**：
-   * 标题、工序大纲：采用古典衬线体优先（`Playfair Display`, `Songti SC`, 典雅宋体），烘托版画工坊意境；
-   * 读数、状态、代码：采用等宽字体（`JetBrains Mono`, `SF Mono`, `monospace`）。
-2. **多语言与无 Emoji 原则**：
-   * 界面文案必须通过 `src/ui/i18n/i18n.js` 进行三语（`zh-CN`、`en-US`、`vi-VN`）统一调度；
-   * 界面**严格禁止使用 Emoji 表情**（如 🎨、⚡️、🔥），统一使用精细的 SVG 图标或克制文字标签。
+   - 标题、工序大纲：采用古典衬线体优先（`Playfair Display`, `Songti SC`, 典雅宋体），烘托版画工坊意境；
+   - 读数、状态、代码：采用等宽字体（`JetBrains Mono`, `SF Mono`, `monospace`）。
+2. **多语言与零 Emoji 铁律**：
+   - 界面文案必须通过 `src/ui/i18n/i18n.js` 进行三语（`zh-CN`、`en-US`、`vi-VN`）统一调度；
+   - 界面**严格禁止使用 Emoji 表情**（如 🎨、⚡️、🔥），统一使用精细的 SVG 图标或克制文字标签。
+
+## 3. 与其他规范的关系
+
+- 具体页面、交互细节与组件状态由 `src/ui/docs/design/UI_DESIGN.md` 详述；
+- 冲突时以 `standards/DOCUMENT_RULES.md` 为准。

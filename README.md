@@ -54,32 +54,32 @@ The architecture strictly decouples algorithmic computational engines from host 
 ├─ package.json                             # Project manifest (npm test / npm start)
 ├─ src/
 │  ├─ main.js                               # Frontend entry point (Native ES Modules)
-│  ├─ core/                                 # Layer 1: 5-Stage Algorithmic Core [Documentation](src/core/README.md)
+│  ├─ core/                                 # Layer 1: 5-Stage Algorithmic Core [Documentation](src/core/docs/README.md)
 │  │  ├─ pipeline/                          # 5-Stage pipeline operators & dispatcher
 │  │  ├─ codecs/                            # Contiguous physical plate serializing & decoding
 │  │  ├─ image/                             # Photographic tone analysis & seed variations
-│  │  ├─ hatching/                          # 15 Hatching & vector flow modules [Documentation](src/core/hatching/README.md)
-│  │  └─ plate/                             # Copperplate physical simulation [Documentation](src/core/plate/README.md)
+│  │  ├─ hatching/                          # 15 Hatching & vector flow modules
+│  │  └─ plate/                             # Copperplate physical simulation
 │  │     ├─ engine/                         # Virtual plate studio coordinator & history stack
 │  │     ├─ physics/                        # 2D PDE chemical acid bite & drypoint physics
 │  │     └─ renderer/                       # Intaglio press debossing & specular lighting
-│  ├─ orchestration/                        # Layer 2: Scheduling & Caching [Documentation](src/orchestration/README.md)
+│  ├─ orchestration/                        # Layer 2: Scheduling & Caching [Documentation](src/orchestration/docs/README.md)
 │  │  ├─ engine/                            # DAG pipeline coordinator
 │  │  ├─ scheduler/                         # Debounced task queue & preemptive cancellation
 │  │  ├─ cache/                             # Deterministic DJB2 hash-keyed stage cache
 │  │  ├─ export/                            # Multi-format vector & raster exporters
 │  │  └─ telemetry/                         # Execution profiling & event logging
-│  ├─ services/                             # Layer 2: Service Gateway [Documentation](src/services/README.md)
+│  ├─ services/                             # Layer 2: Service Gateway [Documentation](src/services/docs/README.md)
 │  │  └─ client/                            # Dual-backend WebAI & remote client gateway
-│  └─ ui/                                   # Layer 3 & 4: Presentation & Studio UI [Documentation](src/ui/README.md)
+│  └─ ui/                                   # Layer 3 & 4: Presentation & Studio UI [Documentation](src/ui/docs/README.md)
 │     ├─ i18n/                              # Chinese, English, and Vietnamese dictionary & binder
 │     ├─ templates/                         # Modular HTML component templates
-│     ├─ controllers/                       # Decoupled UI event controllers [Documentation](src/ui/controllers/README.md)
-│     ├─ components/                        # UI widgets, step flow grid, & loupe magnifier [Documentation](src/ui/components/README.md)
-│     └─ store/                             # Reactive unidirectional state store [Documentation](src/ui/store/README.md)
+│     ├─ controllers/                       # Decoupled UI event controllers
+│     ├─ components/                        # UI widgets, step flow grid, & loupe magnifier
+│     └─ store/                             # Reactive unidirectional state store
 ├─ services/                                # Layer 0: Python Neural Microservices
-│  ├─ informative_drawings/                 # Grayscale line extraction service [Documentation](services/informative_drawings/README.md)
-│  └─ lotus_geometry/                       # Lotus depth & surface normal service [Documentation](services/lotus_geometry/README.md)
+│  ├─ informative_drawings/                 # Grayscale line extraction service
+│  └─ lotus_geometry/                       # Lotus depth & surface normal service
 ├─ styles/                                  # Fresh Atelier Light design system CSS (app.css)
 ├─ tests/                                   # Node.js test suites discovered by scripts/test-runner.cjs
 ├─ docs/                                    # Technical specifications & engineering standards [Documentation Index](docs/README.md)
@@ -94,8 +94,10 @@ The architecture strictly decouples algorithmic computational engines from host 
   $$a = \frac{\text{cov}(I, p)}{\text{var}(I) + \epsilon}, \quad b = \bar{p} - a \cdot \bar{I}$$
 - **Aerial Perspective Depth-Modulated Stroke Width**:
   $$w(z) = w_0 \cdot \max\left(1 - \alpha, 1 - \alpha \cdot \frac{z - 0.35}{0.65}\right)$$
-- **2D PDE Isotropic Acid Bite Diffusion**:
-  $$E^{t+\Delta t} = \min\left(1.0, E^t + \max(0, E_{\text{edge}} - E^t) \cdot \Delta t \cdot S \cdot (0.14 + 0.55 G \eta)\right)$$
+- **2D PDE Isotropic Acid Bite Diffusion ($\Delta t_{\text{eff}} = \Delta t \times 0.4$)**:
+  $$E^{t+\Delta t} = \min\left(1.0, E^t + \max(0, E_{\text{edge}} - E^t) \cdot \Delta t_{\text{eff}} \cdot S \cdot (0.14 + 0.55 G \eta)\right)$$
+- **Vertical Groove Bite Deepening**:
+  $$D^{t+\Delta t} = \min\left(1.0, D^t + E^{t+\Delta t} \cdot \Delta t_{\text{eff}} \cdot S \cdot 0.058 \cdot (1.0 + G(\eta - 0.5))\right)$$
 
 ---
 

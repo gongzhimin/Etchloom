@@ -1,74 +1,106 @@
-# 需求、设计、代码与测试全链路追踪规范 (TRACEABILITY_RULES)
-
-> **规范编号**：STD-TRC-003  
-> **适用范围**：全项目需求基线、系统架构、算法设计、源码与测试用例  
-> **权威来源**：系统工程 V 模型与持续验证一致性标准  
-
+---
+title: 追溯 ID 命名与全链路关联规范
+status: Active
+doc-id: RULE-TRACE
+owner-module: root
+created: 2026-10-08T19:31:17+08:00
+modified: 2026-10-10T20:25:00+08:00
 ---
 
-## 1. 追踪标识符 (ID) 命名体系
+# 追溯 ID 命名与全链路关联规范
 
-为实现双向追踪（需求 $\leftrightarrow$ 设计 $\leftrightarrow$ 代码 $\leftrightarrow$ 测试），系统统一采用前缀结构化 ID：
+## 1. 目的
 
-| 实体类型 | ID 命名规则 | 范例 | 所在权威文档 |
-| :--- | :--- | :--- | :--- |
-| **系统需求** | `REQ-SYS-[分类]-[序号]` | `REQ-SYS-QUAL-001` (全精度离线) | `docs/requirements/REQUIREMENTS.md` |
-| **模块需求** | `REQ-MOD-[模块]-[序号]` | `REQ-MOD-PLATE-002` (酸液潜蚀) | `src/[module]/docs/REQUIREMENTS.md` (或本模块设计中明确) |
-| **架构设计** | `DES-ARCH-[层级]-[序号]` | `DES-ARCH-TOP-001` (两阶段管线) | `docs/design/ARCHITECTURE.md` |
-| **接口契约** | `IF-[模块]-[接口名]-[序号]` | `IF-PIPE-RUN-001` (管线调度执行) | `docs/design/INTERFACES.md` |
-| **算法方案** | `ALG-[领域]-[算法名]-[序号]` | `ALG-PLATE-PDE-001` (2D PDE 数值解) | `docs/design/ALGORITHM.md` / `src/[mod]/docs/ALGORITHM.md` |
-| **数据字典** | `DATA-[实体]-[序号]` | `DATA-RECIPE-001` (全局刻印配置) | `docs/design/DATA_DICTIONARY.md` |
-| **测试用例** | `TEST-[类型]-[模块]-[序号]` | `TEST-E2E-ACID-001` (酸液闭环验证) | `docs/verification/TESTING.md` / 测试源码 |
+建立需求（REQ）、验收标准（AC）、业务场景（SCEN）、测试用例（T / TEST）、决策（D）以及代码符号之间的机器可读关联网络，使得任一节点发生变更时，影响面可被精准、机械化定位。
 
----
+## 2. ID 命名规则
 
-## 2. 定义与引用的严格区别
+本规范是全库六类追溯 ID 格式的唯一权威来源：
 
-1. **定义（Declaration）**：
-   * 只能在一个权威文档中声明一次；
-   * 格式必须使用标准锚点加粗标注：
-     ```markdown
-     ### [REQ-SYS-QUAL-001] 全离线与高精度保真
-     **定义**：系统所有线条生成与物理仿真必须 100% 运行于本地，严禁依赖云端 API 计算。
-     ```
-2. **引用（Reference）**：
-   * 在下游设计、代码注释或测试用例中关联该 ID：
-     * **文档中**：`> **承接需求**：[REQ-SYS-QUAL-001](../requirements/REQUIREMENTS.md#req-sys-qual-001)`
-     * **代码中**：`// Implements: REQ-SYS-QUAL-001, DES-ARCH-TOP-001`
-     * **测试中**：`test('Plate Studio acid etching: groove depth genuinely increases [TEST-UNIT-PLATE-002 -> REQ-MOD-PLATE-002]', ...)`
+### §2.1 业务场景 ID (`SCEN-<编号>`)
+- **格式**：`SCEN-<三位数字>`
+- **示例**：`SCEN-001` (自然照片转化为古典铜版画母版)
+- **规则**：仅在根 `requirements/REQUIREMENTS.md` §2 定义；唯一性由门禁检查保证。
 
----
+### §2.2 系统与模块需求 ID (`REQ-<模块/SYS>-<分类/编号>`)
+- **格式**：`REQ-SYS-<三位数字>` 或 `REQ-<模块>-<三位数字>`
+- **示例**：`REQ-SYS-001`、`REQ-CORE-001`、`REQ-UI-002`
+- **规则**：全库唯一；统一在根 `requirements/REQUIREMENTS.md` §5 中定义，模块特有需求须注明理由与来源。
 
-## 3. 全链路追踪矩阵 (Traceability Matrix) 结构
+### §2.3 验收标准 ID (`AC-<模块/SYS>-<三位数字>`)
+- **格式**：`AC-SYS-<三位数字>` 或 `AC-<模块>-<三位数字>`
+- **示例**：`AC-SYS-001`、`AC-CORE-001`
+- **规则**：表示端到端或模块级可判定的通过条件，关联需求 ID。
 
-每个系统级与模块级功能必须具备完整的追踪闭环：
+### §2.4 测试用例 ID (`T-<模块/SYS>-<三位数字>` / `ATK-<三位数字>`)
+- **格式**：`T-<模块>-<三位数字>` 或 `ATK-<三位数字>`
+- **示例**：`T-CORE-001`、`ATK-001`
+- **规则**：每个测试用例必须显式绑定一个目标 ID，无关联 ID 的测试不计入覆盖率。
 
-```text
-[REQ-SYS-xxx] 业务需求
-      │
-      ▼
-[DES-ARCH-xxx / ALG-xxx] 架构与数学建模
-      │
-      ▼
-[IF-xxx / DATA-xxx] 接口协议与数据结构
-      │
-      ▼
-[src/xxx.js] 代码实现 (JSDoc 显式反向引用)
-      │
-      ▼
-[TEST-xxx] 自动化测试验证 (断言验收条件覆盖)
-```
+### §2.5 决策记录 ID (`D-<四位数字>` / `D-<模块>-<三位数字>`)
+- **格式**：系统级 `D-<四位数字>`（如 `D-0001` 或历史别名 `ADR-001`），模块级 `D-<模块>-<三位数字>`（如 `D-CORE-001`）
+- **示例**：`D-0001`、`D-UI-001`
+- **规则**：影响范围超出一个模块的技术决策必须上升到根级 `D-<四位数字>` 记录。
 
----
+### §2.6 文档 ID (`<类型>-<模块>` / `RULE-<类型>`)
+- **格式**：规范文档用 `RULE-<类型>`（如 `RULE-DOC`、`RULE-CODING`）；设计与验证文档用 `<类型>-<模块>`（如 `ARCH-SYS`、`ARCH-CORE`、`IF-CORE`、`TEST-CORE`、`DATA-SYS`）
+- **规则**：所有文档在 YAML front matter 中作为 `doc-id` 声明，全库严格唯一。
 
-## 4. 文件移动、重构与废弃处理
+## 3. 关联格式
 
-1. **重构移动文件**：
-   若某模块或文件迁移路径，必须执行全局文本检索（Grep），更新所有引用该文件的相对路径链接，严禁留下失效的 404 死链。
-2. **需求或接口废弃 (Deprecation)**：
-   * 不得直接从历史文档中抹除 ID；
-   * 必须在对应条目标注 `[DEPRECATED]` 并注明替代方案及对应 ADR 决策编号：
-     ```markdown
-     ### [REQ-SYS-OLD-003] [DEPRECATED -> REQ-SYS-NEW-008] 旧版单阶段工作流
-     > 废弃原因参见 [ADR-004](../decisions/DECISIONS.md#adr-004-two-stage-workflow)
-     ```
+全库支持五种单向关联书写格式：
+1. **需求 $\rightarrow$ 场景**：在需求正文中注明 `来源：细化自 SCEN-001`；
+2. **验收标准 $\rightarrow$ 需求**：在验收标准项注明 `关联：REQ-CORE-001`；
+3. **测试 $\rightarrow$ 需求/验收**：在测试用例标题或注释中声明 `[测试用例名 -> AC-CORE-001]`；
+4. **决策 $\rightarrow$ 需求/架构**：在 ADR/决策记录中声明 `关联需求：REQ-SYS-002`；
+5. **代码 $\rightarrow$ 设计/契约**：在实现文件 JSDoc 头部声明 `@ref docs/design/INTERFACES.md#IF-CORE-001`。
+
+## 4. 引用 vs 定义
+
+1. **唯一权威定义**：同一事实在全库只有一个 Active 定义位置；
+2. **引用禁止复述**：引用方通过链接与 ID 指向权威定义，严禁跨文档整段复制需求或契约文本。
+
+## 5. 代码符号定位
+
+代码反向追踪文档时，统一采用三层定位语法：
+- 文件层：`file:///path/to/file.js`
+- 符号层：`file:///path/to/file.js#ClassName`
+- 行级层：`file:///path/to/file.js#L20-L45`
+
+## 6. 跨模块引用
+
+1. 只能引用目标模块公开在 `docs/design/INTERFACES.md` 中的单入口契约；
+2. 跨模块依赖方向必须严格遵守 `docs/design/ARCHITECTURE.md` 的拓扑规定，严禁出现逆向或循环依赖。
+
+## 7. 文件移动和删除
+
+文件移动或删除时，操作者必须在同一次提交中完成以下清单校验：
+- [ ] 检索全库代码与文档对该旧文件路径的所有引用；
+- [ ] 更新全部相对路径超链接；
+- [ ] 若移动权威定义，更新所有引用该 ID 的锚点链接；
+- [ ] 运行 `docs/check-documentation.ps1` 校验零死链。
+
+## 8. 门禁检查
+
+门禁脚本自动化执行以下三类机械检查：
+1. **ID 存在性检查**：引用的 ID 必须在全库权威定义中真实存在；
+2. **重复定义检查**：全库不允许出现重复的 `doc-id` 或 `REQ` / `AC` ID；
+3. **引用完整性检查**：测试用例必须能向上溯源至需求或验收 ID。
+
+## 9. 工具支持
+
+- 门禁校验命令：`powershell -ExecutionPolicy Bypass -File docs/check-documentation.ps1`
+- 全库 ID 搜索：`Select-String -Path "docs/**/*.md" -Pattern "REQ-CORE-[0-9]+"`
+
+## 10. 最佳实践
+
+- ID 分类命名简明扼要，避免随意变更已有 ID 编号；
+- 模块能力需求必须清晰界定边界（明确“不做什么”）；
+- 每次架构决策必须标注受影响的代码与文档清单。
+
+## 11. 与其他规范的关系
+
+- 本规范是全库六类 ID 格式与关联语法的**唯一权威来源**；
+- 规则含义与必填性让渡给各领域专门规范；
+- 变更时文档更新责任让渡给 `standards/CHANGE_VALIDATION.md`；
+- 冲突时以 `standards/DOCUMENT_RULES.md` 为准。

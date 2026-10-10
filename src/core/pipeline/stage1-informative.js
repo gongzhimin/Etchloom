@@ -131,13 +131,14 @@
       const fs = require('fs');
       const { execFileSync } = require('child_process');
 
-      const pythonBin = options.pythonBin || process.env.PYTHON_BIN || 'C:\\Users\\Jimin\\miniconda3\\envs\\midi_gen\\python.exe';
+      const os = require('os');
+      const pythonBin = options.pythonBin || process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
       const cliScript = path.resolve(__dirname, '../../services/informative_drawings/infer_cli.py');
       const weightsPath = path.resolve(__dirname, '../../services/informative_drawings/weights/model.pth');
 
       if (!fs.existsSync(cliScript) || !fs.existsSync(weightsPath)) return null;
 
-      const tmpDir = path.resolve(__dirname, '../../experiments');
+      const tmpDir = path.join(os.tmpdir(), 'molandi_pipeline');
       if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
       const randSuffix = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

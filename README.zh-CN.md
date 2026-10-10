@@ -54,32 +54,32 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 ├─ package.json                             # 项目配置 (npm test / npm start)
 ├─ src/
 │  ├─ main.js                               # 前端主入口 (Native ES Modules)
-│  ├─ core/                                 # Layer 1: 5阶段算法核心 [查看文档](src/core/README.md)
+│  ├─ core/                                 # Layer 1: 5阶段算法核心 [查看文档](src/core/docs/README.md)
 │  │  ├─ pipeline/                          # 5 阶段管线算子与调度器
 │  │  ├─ codecs/                            # 纯连续物理版面编解码
 │  │  ├─ image/                             # 摄影图像分析与种子变奏
-│  │  ├─ hatching/                          # 15 个排线与流场算法模块 (fields, rules, curves) [查看文档](src/core/hatching/README.md)
-│  │  └─ plate/                             # 铜版物理仿真引擎 [查看文档](src/core/plate/README.md)
+│  │  ├─ hatching/                          # 15 个排线与流场算法模块 (fields, rules, curves)
+│  │  └─ plate/                             # 铜版物理仿真引擎
 │  │     ├─ engine/                         # 虚拟铜版画核心装配引擎
 │  │     ├─ physics/                        # 2D偏微分酸蚀扩散物理仿真
 │  │     └─ renderer/                       # 凹版压印与光影着色器
-│  ├─ orchestration/                        # Layer 2: 任务调度与增量缓存 [查看文档](src/orchestration/README.md)
+│  ├─ orchestration/                        # Layer 2: 任务调度与增量缓存 [查看文档](src/orchestration/docs/README.md)
 │  │  ├─ engine/                            # DAG 管线调度编排核心
 │  │  ├─ scheduler/                         # 任务队列与微任务抢占器
 │  │  ├─ cache/                             # DJB2 确定性哈希阶段缓存
 │  │  ├─ export/                            # 矢量与位图序列化导出器
 │  │  └─ telemetry/                         # 性能时延与阶段日志探针
-│  ├─ services/                             # Layer 2: 微服务网关 [查看文档](src/services/README.md)
+│  ├─ services/                             # Layer 2: 微服务网关 [查看文档](src/services/docs/README.md)
 │  │  └─ client/                            # 前端微服务通信与容灾降级网关 (WebAI & Remote)
-│  └─ ui/                                   # Layer 3 & 4: 前端界面总装 [查看文档](src/ui/README.md)
+│  └─ ui/                                   # Layer 3 & 4: 前端界面总装 [查看文档](src/ui/docs/README.md)
 │     ├─ i18n/                              # 中、英、越三语国际化词条字典
 │     ├─ templates/                         # HTML UI 装配微模板
-│     ├─ controllers/                       # 业务控制器 [查看文档](src/ui/controllers/README.md)
-│     ├─ components/                        # 原子组件与放大镜交互 [查看文档](src/ui/components/README.md)
-│     └─ store/                             # 应用状态中心 [查看文档](src/ui/store/README.md)
+│     ├─ controllers/                       # 业务控制器
+│     ├─ components/                        # 原子组件与放大镜交互
+│     └─ store/                             # 应用状态中心
 ├─ services/                                # Layer 0: Python 神经网络微服务
-│  ├─ informative_drawings/                 # 灰度线描推理服务 [查看文档](services/informative_drawings/README.md)
-│  └─ lotus_geometry/                       # Lotus 深度与法线模型 [查看文档](services/lotus_geometry/README.md)
+│  ├─ informative_drawings/                 # 灰度线描推理服务
+│  └─ lotus_geometry/                       # Lotus 深度与法线模型
 ├─ styles/                                  # 莫兰迪古典浅色工作室设计系统 CSS (Fresh Atelier Light app.css)
 ├─ tests/                                   # scripts/test-runner.cjs 自动发现 Node.js 测试文件
 ├─ docs/                                    # 规范工程技术规范与工程标准 [查看索引](docs/README.md)
@@ -92,7 +92,10 @@ Etchloom 是一套面向计算机图形学、计算摄影与数字版画制作�
 
 - **导向滤波色调分解**：$a = \frac{\text{cov}(I, p)}{\text{var}(I) + \epsilon}, \quad b = \bar{p} - a \cdot \bar{I}$
 - **空气透视深度线宽衰减**：$w(z) = w_0 \cdot \max(1 - \alpha, 1 - \alpha \cdot \frac{z - 0.35}{0.65})$
-- **2D 偏微分方程各向同性侧蚀扩散**：$E^{t+\Delta t} = \min(1.0, E^t + \max(0, E_{\text{edge}} - E^t) \cdot \Delta t \cdot S \cdot (0.14 + 0.55 G \eta))$
+- **2D 偏微分方程各向同性侧蚀扩散（反应动力学定标 $\Delta t_{\text{eff}} = \Delta t \times 0.4$）**：
+  $$E^{t+\Delta t} = \min\left(1.0, E^t + \max(0, E_{\text{edge}} - E^t) \cdot \Delta t_{\text{eff}} \cdot S \cdot (0.14 + 0.55 G \eta)\right)$$
+- **纵向咬槽深化**：
+  $$D^{t+\Delta t} = \min\left(1.0, D^t + E^{t+\Delta t} \cdot \Delta t_{\text{eff}} \cdot S \cdot 0.058 \cdot (1.0 + G(\eta - 0.5))\right)$$
 
 ---
 

@@ -39,6 +39,7 @@ function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
   const N = W * H;
   const next = plate.nextExposedField || new Float32Array(N);
   next.set(exposed);
+  const reactionDt = dt * 0.4;
 
   for (let y = 1; y < H - 1; y++) {
     const row = y * W;
@@ -50,18 +51,18 @@ function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
       const edge = Math.max(exposed[i - 1], exposed[i + 1], exposed[i - W], exposed[i + W]);
       next[i] = Math.min(
         1.0,
-        exposed[i] + Math.max(0, edge - exposed[i]) * dt * strength * (0.14 + grain * grainNoise[i] * 0.55)
+        exposed[i] + Math.max(0, edge - exposed[i]) * reactionDt * strength * (0.14 + grain * grainNoise[i] * 0.55)
       );
 
       // Vertical bite deepening
       depth[i] = Math.min(
         1.0,
-        depth[i] + next[i] * dt * strength * 0.058 * (1.0 + grain * (grainNoise[i] - 0.5))
+        depth[i] + next[i] * reactionDt * strength * 0.058 * (1.0 + grain * (grainNoise[i] - 0.5))
       );
 
       // Acid dissolution of micro burr edges
       if (burr[i] > 0) {
-        burr[i] = Math.max(0, burr[i] - dt * strength * 0.14);
+        burr[i] = Math.max(0, burr[i] - reactionDt * strength * 0.14);
       }
     }
   }
