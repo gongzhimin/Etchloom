@@ -708,6 +708,8 @@ class StepFlowGrid {
   }
 
   _renderBatchedChunk(ctx, paths, startIndex, endIndex, scale, offX, offY) {
+    if (!ctx) return;
+    ctx.save();
     const buckets = new Map();
     for (let i = startIndex; i < endIndex; i++) {
       const path = paths[i];
@@ -734,6 +736,7 @@ class StepFlowGrid {
       }
       ctx.stroke();
     }
+    ctx.restore();
   }
 
   /**

@@ -720,15 +720,20 @@ export class PipelineController {
             }, { once: true });
           }
 
-          const workerContext = {
-            sourceImage: {
-              width: curW,
-              height: curH,
-              pixels: this.currentLoadedImage.pixels,
-              lineMap: this.currentLoadedImage.lineMap || null
-            },
-            geometry: this.currentDepthMap ? { depthMap: this.currentDepthMap } : null
-          };
+          const needSendContext = (this._workerSourceVersion !== this.sourceVersion);
+          let workerContext = null;
+          if (needSendContext) {
+            workerContext = {
+              sourceImage: {
+                width: curW,
+                height: curH,
+                pixels: this.currentLoadedImage.pixels,
+                lineMap: this.currentLoadedImage.lineMap || null
+              },
+              geometry: this.currentDepthMap ? { depthMap: this.currentDepthMap } : null
+            };
+            this._workerSourceVersion = this.sourceVersion;
+          }
 
           this.worker.postMessage({
             type: 'RUN_INCREMENTAL',

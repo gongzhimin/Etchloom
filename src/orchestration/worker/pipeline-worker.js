@@ -38,10 +38,17 @@ try {
 }
 
 let activeAbortController = null;
+let cachedWorkerContext = null;
 
 self.onmessage = async function(e) {
   const data = e.data;
   if (!data || !data.type) return;
+
+  if (data.type === 'SET_SOURCE') {
+    cachedWorkerContext = data.context;
+    self.postMessage({ type: 'SOURCE_SET', sourceVersion: data.sourceVersion });
+    return;
+  }
 
   if (data.type === 'ABORT') {
     if (activeAbortController) {
@@ -52,7 +59,15 @@ self.onmessage = async function(e) {
   }
 
   if (data.type === 'RUN_INCREMENTAL') {
-    const { requestId, context, previousOutputs, params, startStage } = data;
+    const { requestId, previousOutputs, params, startStage } = data;
+    const context = data.context || cachedWorkerContext;
+    if (!context) {
+      self.postMessage({ type: 'ERROR', requestId, message: 'Worker source context not initialized' });
+      return;
+    }
+    if (data.context) {
+      cachedWorkerContext = data.context;
+    }
     if (activeAbortController) {
       activeAbortController.abort('SUPERSEDED_BY_NEW_REQUEST');
     }

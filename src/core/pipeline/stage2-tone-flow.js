@@ -8,9 +8,52 @@
 (function(root){
   'use strict';
 
-  function boxBlurFloat(src, w, h, r) {
-    if (r <= 0) return new Float32Array(src);
-    const out = new Float32Array(w * h), integral = new Float64Array((w + 1) * (h + 1));
+  // Reusable scratch memory arena to achieve zero-GC during high-frequency tone decomposition
+  const BufferArena = {
+    f64Integral: null,
+    f64Len: 0,
+    f32ScratchA: null,
+    f32ScratchB: null,
+    f32ScratchC: null,
+    f32ScratchD: null,
+    f32Len: 0,
+
+    acquireIntegral(len) {
+      if (!this.f64Integral || this.f64Len < len) {
+        this.f64Len = Math.max(len, 3001 * 2201);
+        this.f64Integral = new Float64Array(this.f64Len);
+      }
+      return this.f64Integral;
+    },
+
+    acquireF32Pool(len) {
+      if (!this.f32ScratchA || this.f32Len < len) {
+        this.f32Len = Math.max(len, 3000 * 2200);
+        this.f32ScratchA = new Float32Array(this.f32Len);
+        this.f32ScratchB = new Float32Array(this.f32Len);
+        this.f32ScratchC = new Float32Array(this.f32Len);
+        this.f32ScratchD = new Float32Array(this.f32Len);
+      }
+      return [
+        this.f32ScratchA.subarray(0, len),
+        this.f32ScratchB.subarray(0, len),
+        this.f32ScratchC.subarray(0, len),
+        this.f32ScratchD.subarray(0, len)
+      ];
+    }
+  };
+
+  function boxBlurFloat(src, w, h, r, targetOut = null) {
+    const n = w * h;
+    const out = targetOut || new Float32Array(n);
+    if (r <= 0) {
+      out.set(src);
+      return out;
+    }
+    const integralLen = (w + 1) * (h + 1);
+    const integral = BufferArena.acquireIntegral(integralLen);
+    integral.fill(0, 0, integralLen);
+
     for (let y = 0; y < h; y++) {
       let row = 0, yw = y * w;
       for (let x = 0; x < w; x++) {
@@ -28,32 +71,31 @@
     return out;
   }
 
-  // Fast Edge-Preserving Guided Filter
+  // Fast Edge-Preserving Guided Filter with Zero-GC buffer pool
   function guidedFilter(guide, p, w, h, r, eps = 0.02) {
     const n = w * h;
+    const [scratchIp, scratchIi, scratchA, scratchB] = BufferArena.acquireF32Pool(n);
+
     const meanI = boxBlurFloat(guide, w, h, r);
     const meanP = boxBlurFloat(p, w, h, r);
 
-    // Zero-allocation buffer reuse: avoid Float32Array.from creating intermediate objects
-    const ip = new Float32Array(n);
-    const ii = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       const g = guide[i];
-      ip[i] = g * p[i];
-      ii[i] = g * g;
+      scratchIp[i] = g * p[i];
+      scratchIi[i] = g * g;
     }
-    const meanIp = boxBlurFloat(ip, w, h, r);
-    const meanII = boxBlurFloat(ii, w, h, r);
+    const meanIp = boxBlurFloat(scratchIp, w, h, r);
+    const meanII = boxBlurFloat(scratchIi, w, h, r);
 
-    const a = new Float32Array(n), b = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       const varI = Math.max(0, meanII[i] - meanI[i] * meanI[i]);
       const covIp = meanIp[i] - meanI[i] * meanP[i];
-      a[i] = covIp / (varI + eps);
-      b[i] = meanP[i] - a[i] * meanI[i];
+      scratchA[i] = covIp / (varI + eps);
+      scratchB[i] = meanP[i] - scratchA[i] * meanI[i];
     }
-    const meanA = boxBlurFloat(a, w, h, r);
-    const meanB = boxBlurFloat(b, w, h, r);
+    const meanA = boxBlurFloat(scratchA, w, h, r);
+    const meanB = boxBlurFloat(scratchB, w, h, r);
+
     const out = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       out[i] = meanA[i] * guide[i] + meanB[i];
