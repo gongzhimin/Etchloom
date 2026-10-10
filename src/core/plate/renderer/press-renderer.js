@@ -156,7 +156,75 @@ function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null) {
   return { width: W, height: H, pixels };
 }
 
-  const api = { renderPlate };
+  /**
+   * WebGL 2.0 Fragment Shader source for hardware-accelerated press rendering.
+   */
+  const PRESS_FRAGMENT_SHADER = `#version 300 es
+  precision highp float;
+  in vec2 vUv;
+  out vec4 fragColor;
+
+  uniform sampler2D uDepthField;
+  uniform sampler2D uExposedField;
+  uniform sampler2D uBlockedField;
+  uniform sampler2D uBurrField;
+  uniform sampler2D uGrainNoise;
+
+  uniform int uMode; // 0: depth, 1: plate, 2: print
+  uniform float uInk;
+  uniform float uPressure;
+  uniform float uTone;
+  uniform vec3 uPaperBase;
+  uniform float uW;
+  uniform float uH;
+
+  void main() {
+    vec2 uv = vUv;
+    if (uMode == 2) {
+      uv.x = 1.0 - uv.x; // mirror print
+    }
+    float d = texture(uDepthField, uv).r;
+    float exposed = texture(uExposedField, uv).r;
+    float blocked = texture(uBlockedField, uv).r;
+    float bu = texture(uBurrField, uv).r;
+    float noise = texture(uGrainNoise, vUv).r;
+
+    if (uMode == 0) {
+      float dVal = min(1.0, d + bu * 0.4);
+      fragColor = vec4(vec3(dVal), 1.0);
+      return;
+    }
+
+    if (uMode == 1) {
+      float dLeft = texture(uDepthField, uv - vec2(1.0 / uW, 0.0)).r;
+      float slope = d - dLeft;
+      float burrReflect = bu * 55.0;
+
+      float r = (116.0 + noise * 9.0 - d * 67.0 + slope * 110.0 + exposed * 27.0 + burrReflect) / 255.0;
+      float g = (85.0 + noise * 7.0 - d * 50.0 + slope * 95.0 + exposed * 25.0 + burrReflect * 0.9) / 255.0;
+      float b = (61.0 + noise * 5.0 - d * 29.0 + slope * 75.0 + exposed * 23.0 + burrReflect * 0.8) / 255.0;
+
+      if (blocked > 0.5) {
+        r *= 0.42; g *= 0.32; b *= 0.20;
+      }
+      fragColor = vec4(clamp(vec3(r, g, b), 0.0, 1.0), 1.0);
+      return;
+    }
+
+    // Print mode
+    float dropOut = 0.07 * (1.0 - uPressure);
+    float effD = max(0.0, d - dropOut);
+    float transferRate = effD > 0.0 ? (1.0 - exp(-effD * (1.8 + 13.0 * uPressure))) : 0.0;
+    float burrInk = bu * 0.95 * uInk * (0.30 + 0.70 * uPressure);
+    float lineInk = transferRate * (0.25 + 0.75 * uInk) + burrInk;
+    float black = min(0.98, lineInk + uTone * uInk * 0.32);
+
+    vec3 paperColor = (uPaperBase - noise * 5.0 - 1.5) / 255.0;
+    vec3 outColor = paperColor * (1.0 - black);
+    fragColor = vec4(clamp(outColor, 0.0, 1.0), 1.0);
+  }`;
+
+  const api = { renderPlate, PRESS_FRAGMENT_SHADER };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;

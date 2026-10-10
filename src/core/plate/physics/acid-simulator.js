@@ -22,7 +22,7 @@
  * @param {number} strength Acid concentration factor [0.0 ~ 1.0] (default: 0.45)
  * @param {number} grain Metallurgical grain roughness factor [0.0 ~ 1.0] (default: 0.45)
  */
-function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
+function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45, dirtyBounds = null) {
   if (!plate || !Number.isFinite(dt) || dt <= 0 || !Number.isFinite(strength) || !Number.isFinite(grain)) {
     return;
   }
@@ -41,9 +41,14 @@ function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45) {
   next.set(exposed);
   const reactionDt = dt * 0.4;
 
-  for (let y = 1; y < H - 1; y++) {
+  const startY = dirtyBounds ? Math.max(1, dirtyBounds[1] - 2) : 1;
+  const endY = dirtyBounds ? Math.min(H - 1, dirtyBounds[3] + 3) : H - 1;
+  const startX = dirtyBounds ? Math.max(1, dirtyBounds[0] - 2) : 1;
+  const endX = dirtyBounds ? Math.min(W - 1, dirtyBounds[2] + 3) : W - 1;
+
+  for (let y = startY; y < endY; y++) {
     const row = y * W;
-    for (let x = 1; x < W - 1; x++) {
+    for (let x = startX; x < endX; x++) {
       const i = row + x;
       if (blocked[i]) continue;
 

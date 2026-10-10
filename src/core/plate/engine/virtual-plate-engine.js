@@ -20,6 +20,7 @@ class VirtualPlateEngine {
     this.plateSources = [];
     this.elapsedAcidTime = 0;
     this.seed = 17;
+    this.dirtyBounds = null;
     this.allocatePlate(width, height);
   }
 
@@ -47,8 +48,27 @@ class VirtualPlateEngine {
     this.burrField = new Float32Array(N);
     this.grainNoise = new Float32Array(N);
     this.nextExposedField = new Float32Array(N);
+    this.dirtyBounds = null;
 
     this.resetGrain();
+  }
+
+  /**
+   * Expands the current dirty bounding box.
+   * @param {number} minX 
+   * @param {number} minY 
+   * @param {number} maxX 
+   * @param {number} maxY 
+   */
+  markDirty(minX, minY, maxX, maxY) {
+    if (!this.dirtyBounds) {
+      this.dirtyBounds = [minX, minY, maxX, maxY];
+    } else {
+      this.dirtyBounds[0] = Math.min(this.dirtyBounds[0], minX);
+      this.dirtyBounds[1] = Math.min(this.dirtyBounds[1], minY);
+      this.dirtyBounds[2] = Math.max(this.dirtyBounds[2], maxX);
+      this.dirtyBounds[3] = Math.max(this.dirtyBounds[3], maxY);
+    }
   }
 
   /**
@@ -85,6 +105,7 @@ class VirtualPlateEngine {
     const yMax = Math.min(H - 1, Math.floor(y + maxR + 1));
     const xMin = Math.max(0, Math.floor(x - maxR - 1));
     const xMax = Math.min(W - 1, Math.floor(x + maxR + 1));
+    this.markDirty(xMin, yMin, xMax, yMax);
 
     for (let yy = yMin; yy <= yMax; yy++) {
       const row = yy * W;
@@ -202,7 +223,7 @@ class VirtualPlateEngine {
     if (!Number.isFinite(dt) || dt <= 0 || !Number.isFinite(strength) || !Number.isFinite(grain)) {
       return;
     }
-    simulateAcidBite(this, dt, strength, grain);
+    simulateAcidBite(this, dt, strength, grain, this.dirtyBounds);
     this.elapsedAcidTime += dt;
   }
 

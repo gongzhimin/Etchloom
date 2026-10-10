@@ -36,6 +36,18 @@ export let sourceAspectRatio = null;
 export let etchState = 0; // 0: Standby (待开始), 1: Biting (腐蚀中), 2: Paused (已暂停)
 export let preEtchSnapshot = null;
 export let etchAcc = 0;
+export let plateDirtyBounds = null;
+
+export function markPlateDirty(minX, minY, maxX, maxY) {
+  if (!plateDirtyBounds) {
+    plateDirtyBounds = [minX, minY, maxX, maxY];
+  } else {
+    plateDirtyBounds[0] = Math.min(plateDirtyBounds[0], minX);
+    plateDirtyBounds[1] = Math.min(plateDirtyBounds[1], minY);
+    plateDirtyBounds[2] = Math.max(plateDirtyBounds[2], maxX);
+    plateDirtyBounds[3] = Math.max(plateDirtyBounds[3], maxY);
+  }
+}
 
 /**
  * 锁存铜版入酸前的纯净划线与刻绘基准状态
@@ -120,6 +132,7 @@ export function allocatePlate(width, height = null) {
   blocked = new Uint8Array(N);
   burr = new Float32Array(N);
   next = new Float32Array(N);
+  plateDirtyBounds = null;
   preEtchSnapshot = null;
   resetGrain();
   dirty = true;
@@ -308,8 +321,14 @@ export function setView(v) {
 export function dab(x, y, force = 1) {
   let r = Number($('size')?.value || 4) * W / 900 / 2;
   let maxR = tool === 'dry' ? r * 1.85 : tool === 'polish' ? r * 1.6 : r;
-  for (let yy = Math.max(0, Math.floor(y - maxR - 1)); yy <= Math.min(H - 1, y + maxR + 1); yy++) {
-    for (let xx = Math.max(0, Math.floor(x - maxR - 1)); xx <= Math.min(W - 1, x + maxR + 1); xx++) {
+  const y0 = Math.max(0, Math.floor(y - maxR - 1));
+  const y1 = Math.min(H - 1, y + maxR + 1);
+  const x0 = Math.max(0, Math.floor(x - maxR - 1));
+  const x1 = Math.min(W - 1, x + maxR + 1);
+  markPlateDirty(x0, y0, x1, y1);
+
+  for (let yy = y0; yy <= y1; yy++) {
+    for (let xx = x0; xx <= x1; xx++) {
       let dist = Math.hypot(xx - x, yy - y);
       let f = Math.max(0, Math.min(1, r + 0.5 - dist)) * force;
       let i = yy * W + xx;
@@ -374,9 +393,16 @@ export function etch(dt) {
   let strength = val('acid'), g = val('grain');
   const reactionDt = dt * 0.4;
   next.set(exposed);
-  for (let y = 1; y < H - 1; y++) {
-    for (let x = 1; x < W - 1; x++) {
-      let i = y * W + x;
+
+  const startY = plateDirtyBounds ? Math.max(1, plateDirtyBounds[1] - 2) : 1;
+  const endY = plateDirtyBounds ? Math.min(H - 1, plateDirtyBounds[3] + 3) : H - 1;
+  const startX = plateDirtyBounds ? Math.max(1, plateDirtyBounds[0] - 2) : 1;
+  const endX = plateDirtyBounds ? Math.min(W - 1, plateDirtyBounds[2] + 3) : W - 1;
+
+  for (let y = startY; y < endY; y++) {
+    const row = y * W;
+    for (let x = startX; x < endX; x++) {
+      let i = row + x;
       if (blocked[i]) continue;
       let edge = Math.max(exposed[i - 1], exposed[i + 1], exposed[i - W], exposed[i + W]);
       next[i] = Math.min(1, exposed[i] + Math.max(0, edge - exposed[i]) * reactionDt * strength * (0.14 + g * grainNoise[i] * 0.55));
