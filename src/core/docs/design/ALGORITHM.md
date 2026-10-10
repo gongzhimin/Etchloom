@@ -59,6 +59,8 @@ modified: 2026-10-10T23:15:00+08:00
 3. **双缓冲因果一致性**：酸液侧向扩散更新采用预分配的 `nextExposedField`，解算完成后一次性通过 `.set()` 回写，防止原地更新造成非对称扩散偏差。
 4. **局部脏包围盒 (Dirty AABB) 稀疏裁剪**：工坊仅在有手工划线或补漆扰动的有效包围盒区域 `[minX, minY, maxX, maxY]` 内解算偏微分扩散，未受触碰的平坦基底在最外层以 $O(1)$ 忽略。
 5. **矢量笔触分桶批处理 (Batched Vector Rendering)**：针对 7,000+ 笔画的离散排线，按线宽离散化分桶，利用统一 `Path2D` 批量绘制，消除高频 Canvas 状态切换开销。
+6. **铜版局部脏矩形提交 (Dirty Rect Partial Blit)**：手工刻绘与局部酸蚀时，仅遍历并重算受扰动脏矩形 `[startX, startY, endX, endY]` 范围内的像素，并通过 Canvas 7 参数形式 `putImageData(im, 0, 0, sx, sy, sw, sh)` 局部位块传输，避免高分辨率全幅重绘。
+7. **参数滑块拖拽交互分级 (Slider Drag LOD Draft)**：在高频连续拖拽过程中激活 `isDraft: true`，将轮廓种子扫描步长由 2px 放宽至 4px，将排线种子步长放宽至 3.0 倍间距并截断最大流线步数；在拖拽释放后触发 `isDraft: false` 全精密度重算与缓存固化。
 
 ## 4. 复杂度分析与性能基准
 
@@ -66,9 +68,11 @@ modified: 2026-10-10T23:15:00+08:00
 | :--- | :--- | :--- | :--- |
 | **积分图平滑** | $O(W \times H)$ | $O(W \times H)$ Float64 | $< 18\text{ms}$ |
 | **导向滤波** | $O(W \times H)$ | $O(W \times H)$ Float32 | $< 45\text{ms}$ |
-| **Jobard-Lefer 排线** | $O(N_{\text{samples}})$ (空间散列桶) | $O(N_{\text{buckets}})$ | $< 120\text{ms}$ |
+| **Jobard-Lefer 排线 (全精度)** | $O(N_{\text{samples}})$ (空间散列桶) | $O(N_{\text{buckets}})$ | $< 120\text{ms}$ |
+| **Jobard-Lefer 排线 (拖拽草稿 LOD)** | $O(N_{\text{samples}} / 4)$ | $O(N_{\text{buckets}})$ | $< 25\text{ms}$ |
 | **2D 偏微分酸液模拟 (全画幅)** | $O(W \times H \times \text{steps})$ | $O(W \times H)$ 双缓冲 | $< 25\text{ms}$ / 单步 |
 | **2D 偏微分酸液模拟 (局部脏 AABB)** | $O(W_{\text{box}} \times H_{\text{box}} \times \text{steps})$ | $O(1)$ 局部包围盒 | $< 3\text{ms}$ / 单步 |
+| **铜版手工刻绘局部渲染 (脏矩形 Blit)** | $O(W_{\text{box}} \times H_{\text{box}})$ | $O(1)$ 复用缓冲区 | $< 0.3\text{ms}$ / 单笔印压 |
 | **矢量排线批量光栅化** | $O(N_{\text{strokes}})$ 分桶批处理 | $O(K_{\text{buckets}})$ | $< 8\text{ms}$ (7,800+ 笔画) |
 
 ## 5. 验证与黄金样本

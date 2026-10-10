@@ -173,6 +173,12 @@ function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45, dirtyBounds 
  */
 function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null): { width: number, height: number, pixels: Uint8ClampedArray }
 const PRESS_FRAGMENT_SHADER: string
+
+/**
+ * 虚拟铜版工坊视图渲染与局部脏矩形提交
+ * 源码位置：src/ui/controllers/plate-studio-controller.js
+ */
+function render(target = getCtx(), mode = view, dirtyBounds = null): void
 ```
 
 ## 3. 输入/输出真实类型定义

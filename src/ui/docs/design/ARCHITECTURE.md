@@ -70,4 +70,7 @@ src/ui/
 
 - **技术栈**：原生 Vanilla JavaScript (ESM)、原生 Canvas API、CSS3 Flexbox/Grid 与 CSS 自定义属性；
 - **无重型框架依赖**：不依赖 React/Vue/Angular 等前端重型框架，保持 100% 极简纯净；
-- **性能约束**：主预览画布在 CSS 中等比适配视口，高频调参通过防抖调度保证 60 FPS 流畅渲染。
+- **性能与交互约束**：
+  1. **主预览适配**：主预览画布在 CSS 中等比适配视口；
+  2. **母版参数拖拽 LOD**：连续滑块拖拽触发草稿级 LOD 计算（`isDraft: true`，降低种子采样步长并截断流线最大步数），在拖拽释放后触发 `isDraft: false` 全精密度重算并持久化至 `StageCache`；
+  3. **铜版刻绘脏矩形提交**：在 `plate` 与 `depth` 视口模式下，笔刷刻绘仅在 `plateDirtyBounds` 包围盒内进行 CPU 像素循环，并通过 Canvas 7 参数形式 `putImageData(im, 0, 0, sx, sy, sw, sh)` 局部位块传输，杜绝全画幅重绘卡顿。

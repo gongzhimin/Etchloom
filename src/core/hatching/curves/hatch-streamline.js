@@ -22,17 +22,17 @@
       this.cellSize = cellSize;
       this.cols = Math.ceil(width / cellSize);
       this.rows = Math.ceil(height / cellSize);
-      this.cells = new Map();
+      this.cells = new Array(this.cols * this.rows);
     }
 
     add(x, y) {
       const gx = Math.floor(x / this.cellSize);
       const gy = Math.floor(y / this.cellSize);
       const key = gy * this.cols + gx;
-      let bucket = this.cells.get(key);
+      let bucket = this.cells[key];
       if (!bucket) {
         bucket = [];
-        this.cells.set(key, bucket);
+        this.cells[key] = bucket;
       }
       bucket.push(x, y);
     }
@@ -49,8 +49,9 @@
       const maxY = Math.min(this.rows - 1, gy + rCells);
 
       for (let cy = minY; cy <= maxY; cy++) {
+        const rowOffset = cy * this.cols;
         for (let cx = minX; cx <= maxX; cx++) {
-          const bucket = this.cells.get(cy * this.cols + cx);
+          const bucket = this.cells[rowOffset + cx];
           if (!bucket) continue;
           for (let i = 0; i < bucket.length; i += 2) {
             const dx = x - bucket[i];
@@ -81,11 +82,12 @@
    */
   function traceStreamline(sx, sy, field, layer, toneField, sdf, grid, options) {
     const { width: w, height: h } = toneField;
-    const stepSize = options.stepSize ?? 1.1;
+    const isDraft = Boolean(options && options.isDraft);
+    const stepSize = options.stepSize ?? (isDraft ? 1.6 : 1.1);
     const kissingMargin = options.kissingMargin ?? 2.0;
     const minSpacing = options.minSpacing ?? 2.0;
     const maxSpacing = options.maxSpacing ?? 6.8;
-    const defaultMaxSteps = layer === 'cross' ? (options.crossMaxSteps ?? 32) : 80;
+    const defaultMaxSteps = layer === 'cross' ? (options.crossMaxSteps ?? (isDraft ? 24 : 32)) : (isDraft ? 55 : 80);
     const maxSteps = options.maxSteps ?? defaultMaxSteps;
 
     const sDark = sampleTone(toneField, sx, sy);
@@ -169,7 +171,8 @@
     const seedQueue = [];
 
     // 1. Generate orderly coarse candidate seeds across grid
-    const seedStep = Math.max(8, Math.round(maxSpacing * 2.2));
+    const isDraft = Boolean(options && options.isDraft);
+    const seedStep = Math.max(isDraft ? 12 : 8, Math.round(maxSpacing * (isDraft ? 3.0 : 2.2)));
     const initialCandidates = [];
     for (let y = seedStep; y < h - seedStep; y += seedStep) {
       for (let x = seedStep; x < w - seedStep; x += seedStep) {

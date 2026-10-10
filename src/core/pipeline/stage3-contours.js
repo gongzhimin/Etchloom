@@ -17,9 +17,10 @@
     const dx = [1, 1, 0, -1, -1, -1, 0, 1];
     const dy = [0, 1, 1, 1, 0, -1, -1, -1];
 
-    for (let y = 2; y < h - 2; y += 2) {
+    const gridStep = params.isDraft ? 4 : 2;
+    for (let y = gridStep; y < h - gridStep; y += gridStep) {
       const yw = y * w;
-      for (let x = 2; x < w - 2; x += 2) {
+      for (let x = gridStep; x < w - gridStep; x += gridStep) {
         const idx = yw + x;
         if (visited[idx] || data[idx] > minThreshold) continue;
 

@@ -571,7 +571,7 @@ function initEventBindings() {
     openWizardDrawerBtn.onclick = () => transferWizard.open();
   }
 
-  // Master Algorithm Recipe Sliders Reactive Binding
+  // Master Algorithm Recipe Sliders Reactive Binding (Draft LOD during drag, full fidelity on settle)
   const masterParamIds = ['exposure', 'blackPoint', 'whitePoint', 'contourDetail', 'aerialStrength', 'needleWidth', 'density', 'curvatureGate', 'crossHatch'];
   for (const id of masterParamIds) {
     const slider = $(id);
@@ -581,7 +581,10 @@ function initEventBindings() {
         if (out) {
           out.textContent = id === 'needleWidth' ? `${(slider.value / 10).toFixed(1)} mm` : `${slider.value}%`;
         }
-        pipelineController.scheduleParameterRun();
+        pipelineController.scheduleParameterRun({ isDraft: true });
+      });
+      slider.addEventListener('change', () => {
+        pipelineController.scheduleParameterRun({ isDraft: false });
       });
     }
   }

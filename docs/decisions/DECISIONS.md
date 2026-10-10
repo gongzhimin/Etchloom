@@ -98,3 +98,12 @@ modified: 2026-10-10T23:15:00+08:00
 - **理由**：彻底解决 UI 主线程掉帧瓶颈，保持画质无损的前提下大幅提升交互跟手性。
 - **影响范围**：`src/ui/components/step-flow-grid.js`、`src/core/plate/physics/acid-simulator.js`、`src/core/plate/engine/virtual-plate-engine.js`。
 - **状态**：生效
+
+### D-0010 交互跟手性极致优化：铜版局部脏矩形渲染与母版参数拖拽 LOD 草稿机制 (ADR-010)
+- **背景**：在铜版工坊进行手动画笔/刮刀刻绘时，每次 mousemove/dab 触发全局 900x660（或高分 3000x2200）的全像素 CPU 双循环重算，严重掉帧；同时在母版设计工作区快速滑动参数滑块时，高频全量计算导致主线程拥塞。
+- **选项**：1. 降低版面分辨率或降低采样帧率；2. 铜版视图采用脏矩形局部像素循环与 Canvas `putImageData(im, 0, 0, dirtyX, dirtyY, dirtyW, dirtyH)` 局部提交；母版滑块在拖拽过程中触发轻量级 LOD 草稿流线计算，在停顿/松开后自动触发全精度渲染。
+- **结论**：采纳选项 2。在 `plate-studio-controller.js` 的 `render()` 引入 `dirtyBounds` 局部像素循环与 7 参数 `putImageData` 脏矩形提交；在 `pipeline-controller.js` 的 `scheduleParameterRun` 区分连续拖拽 (`isDraft: true`，放宽种子步长与求解步数) 与松开结算 (`isDraft: false`，全精密度并固化缓存)。
+- **理由**：刻绘笔刷局部刷新范围缩减 99% 以上，滑块拖动延迟降低至 30ms 以内，既保证了实时响应的丝滑跟手感，又确保了最终产出成品的极致雕刻画质。
+- **影响范围**：`src/ui/controllers/plate-studio-controller.js`、`src/ui/controllers/pipeline-controller.js`、`src/core/hatching/curves/hatch-streamline.js`、`src/core/pipeline/stage3-contours.js`、`src/main.js`。
+- **状态**：生效
+

@@ -415,12 +415,13 @@ export function etch(dt) {
   dirty = true;
 }
 
-export function render(target = getCtx(), mode = view) {
+export function render(target = getCtx(), mode = view, dirtyBounds = null) {
   if (!target || !target.createImageData) return;
   if (!cachedRenderImageData || cachedRenderW !== W || cachedRenderH !== H) {
     cachedRenderImageData = target.createImageData(W, H);
     cachedRenderW = W;
     cachedRenderH = H;
+    dirtyBounds = null;
   }
   let im = cachedRenderImageData;
   let a = im.data;
@@ -435,10 +436,17 @@ export function render(target = getCtx(), mode = view) {
   let pm = Math.round(26 * W / 900);
   let bw = Math.round(7 * W / 900);
 
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      let i = y * W + x;
-      let j = (mode === 'print' && mirrorPrint) ? y * W + W - 1 - x : i;
+  const isPartial = Boolean(dirtyBounds && (mode === 'plate' || mode === 'depth'));
+  const startX = isPartial ? Math.max(0, Math.floor(dirtyBounds[0]) - 1) : 0;
+  const startY = isPartial ? Math.max(0, Math.floor(dirtyBounds[1]) - 1) : 0;
+  const endX = isPartial ? Math.min(W, Math.ceil(dirtyBounds[2]) + 2) : W;
+  const endY = isPartial ? Math.min(H, Math.ceil(dirtyBounds[3]) + 2) : H;
+
+  for (let y = startY; y < endY; y++) {
+    const rowOffset = y * W;
+    for (let x = startX; x < endX; x++) {
+      let i = rowOffset + x;
+      let j = (mode === 'print' && mirrorPrint) ? rowOffset + W - 1 - x : i;
       let d = depth[j];
       let bu = burr[j];
       let noise = grainNoise[i];
@@ -495,7 +503,11 @@ export function render(target = getCtx(), mode = view) {
       a[i * 4 + 3] = 255;
     }
   }
-  target.putImageData(im, 0, 0);
+  if (isPartial && startX < endX && startY < endY) {
+    target.putImageData(im, 0, 0, startX, startY, endX - startX, endY - startY);
+  } else {
+    target.putImageData(im, 0, 0);
+  }
 
   // Classical Engraved Frame Border (古典版画外框/边框)
   if (mode === 'print' && target && typeof target.strokeRect === 'function') {
@@ -1186,7 +1198,8 @@ export function bindPlateStudioEvents(options = {}) {
       }
     }
     if (dirty) {
-      render();
+      render(getCtx(), view, plateDirtyBounds);
+      plateDirtyBounds = null;
       const timeStr = `${(typeof i18nManager !== 'undefined' && i18nManager && typeof i18nManager.t === 'function') ? i18nManager.t('caption.timer') : '腐蚀累计'} ${elapsed.toFixed(1)} s`;
       if ($('timer')) $('timer').textContent = timeStr;
       if ($('timerBadge')) $('timerBadge').textContent = timeStr;

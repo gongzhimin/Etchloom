@@ -514,8 +514,9 @@ export class PipelineController {
     }
   }
 
-  scheduleParameterRun() {
+  scheduleParameterRun(options = {}) {
     if (!this.currentLoadedImage) return;
+    const isDraft = Boolean(options && options.isDraft);
     const request = ++this.recomputeRequest;
     this.onRecomputeState?.(true);
 
@@ -533,16 +534,17 @@ export class PipelineController {
       return;
     }
 
+    const debounceMs = isDraft ? 45 : 0;
     this.scheduler.schedule(async (signal) => {
-      await this._executeIncrementalRun(signal);
-    }).catch(err => {
+      await this._executeIncrementalRun(signal, isDraft);
+    }, debounceMs).catch(err => {
       console.error('Parameter redraw failed:', err);
     }).finally(() => {
       if (request === this.recomputeRequest) this.onRecomputeState?.(false);
     });
   }
 
-  async _executeIncrementalRun(signal) {
+  async _executeIncrementalRun(signal, isDraft = false) {
     if (!this.currentLoadedImage) return;
     const curW = this.currentLoadedImage.width;
     const curH = this.currentLoadedImage.height;
@@ -561,7 +563,8 @@ export class PipelineController {
       cross: recipeParams.cross,
       targetWidth: curW,
       targetHeight: curH,
-      depthMap: this.currentDepthMap || null
+      depthMap: this.currentDepthMap || null,
+      isDraft
     };
 
     if (!this.stageCache) {
@@ -672,7 +675,7 @@ export class PipelineController {
         this.syncHeroMasterPreview(masterPaths, curW, curH);
       }
 
-      if (this.stageCache) {
+      if (this.stageCache && !isDraft) {
         if (outputs.stage1) this.stageCache.put(1, newHashes[1] || 's1', outputs.stage1);
         if (outputs.stage2) this.stageCache.put(2, newHashes[2] || 's2', outputs.stage2);
         if (outputs.stage3) this.stageCache.put(3, newHashes[3] || 's3', outputs.stage3);
@@ -684,14 +687,14 @@ export class PipelineController {
       const totalElapsed = (tEnd - tStart).toFixed(1);
 
       this.updateTelemetry({
-        status: '运行就绪',
-        task: 'IDLE',
+        status: isDraft ? '参数拖拽实时预览' : '运行就绪',
+        task: isDraft ? 'DRAFT_PREVIEW' : 'IDLE',
         duration: totalElapsed,
         strokes: masterPaths.length,
-        cache: `${5 - (5 - startStage + 1)}/5 命中`
+        cache: isDraft ? '草稿模式' : `${5 - (5 - startStage + 1)}/5 命中`
       });
 
-      this.log('管线', `参数微调完成 (重算阶段 ${startStage}..5): 生成 ${masterPaths.length} 条矢量线条，增量耗时 ${totalElapsed}ms。`, 'done');
+      this.log('管线', `${isDraft ? '草稿预览生成' : '参数微调完成'} (重算阶段 ${startStage}..5): 生成 ${masterPaths.length} 条矢量线条，增量耗时 ${totalElapsed}ms。`, 'done');
     } catch (err) {
       if (err.name === 'AbortError' || signal?.aborted) {
         return;
