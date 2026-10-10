@@ -5,10 +5,24 @@
 (function(root) {
   'use strict';
 
+  const CrossFieldArena = {
+    f64Integral: null,
+    f64Len: 0,
+    acquireIntegral(len) {
+      if (!this.f64Integral || this.f64Len < len) {
+        this.f64Len = Math.max(len, 3001 * 2201);
+        this.f64Integral = new Float64Array(this.f64Len);
+      }
+      return this.f64Integral;
+    }
+  };
+
   function boxBlurFloat(src, w, h, r) {
     if (r <= 0) return new Float32Array(src);
     const out = new Float32Array(w * h);
-    const integral = new Float64Array((w + 1) * (h + 1));
+    const integralLen = (w + 1) * (h + 1);
+    const integral = CrossFieldArena.acquireIntegral(integralLen);
+    integral.fill(0, 0, integralLen);
 
     for (let y = 0; y < h; y++) {
       let row = 0, yw = y * w;

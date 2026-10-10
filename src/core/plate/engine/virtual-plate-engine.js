@@ -48,6 +48,7 @@ class VirtualPlateEngine {
     this.burrField = new Float32Array(N);
     this.grainNoise = new Float32Array(N);
     this.nextExposedField = new Float32Array(N);
+    this.hasBurr = false;
     this.dirtyBounds = null;
 
     this.resetGrain();
@@ -130,6 +131,7 @@ class VirtualPlateEngine {
           }
         } else if (tool === 'dry') {
           // Drypoint cutting with burr
+          this.hasBurr = true;
           if (f > 0) {
             this.blockedField[i] = 0;
             this.exposedField[i] = Math.max(this.exposedField[i], f * 0.7);
@@ -262,7 +264,7 @@ class VirtualPlateEngine {
       depth: this.depthField.slice(),
       exposed: this.exposedField.slice(),
       blocked: this.blockedField.slice(),
-      burr: this.burrField.slice(),
+      burr: this.hasBurr ? this.burrField.slice() : null,
       elapsedAcidTime: this.elapsedAcidTime,
       plateSources: structuredClone(this.plateSources)
     });
@@ -272,7 +274,7 @@ class VirtualPlateEngine {
       this.history.length > 1 &&
       (this.history.length > 12 ||
         this.history.reduce(
-          (sum, s) => sum + s.depth.byteLength * 2 + s.blocked.byteLength + (s.burr ? s.burr.byteLength : 0),
+          (sum, s) => sum + s.depth.byteLength + s.exposed.byteLength + s.blocked.byteLength + (s.burr ? s.burr.byteLength : 0),
           0
         ) > 128 * 1048576)
     ) {
@@ -296,8 +298,10 @@ class VirtualPlateEngine {
     this.blockedField.set(s.blocked);
     if (s.burr) {
       this.burrField.set(s.burr);
+      this.hasBurr = true;
     } else {
       this.burrField.fill(0);
+      this.hasBurr = false;
     }
     this.elapsedAcidTime = s.elapsedAcidTime ?? s.elapsed ?? 0;
     this.plateSources = s.plateSources || [];
@@ -312,6 +316,7 @@ class VirtualPlateEngine {
     this.exposedField.fill(0);
     this.blockedField.fill(0);
     this.burrField.fill(0);
+    this.hasBurr = false;
     this.elapsedAcidTime = 0;
     this.plateSources = [];
   }
@@ -360,8 +365,10 @@ class VirtualPlateEngine {
       } else {
         this.burrField.set(PlateCodec.decode(data.burr, Float32Array, N));
       }
+      this.hasBurr = true;
     } else {
       this.burrField.fill(0);
+      this.hasBurr = false;
     }
 
     this.elapsedAcidTime = Number.isFinite(data.elapsed) ? Math.max(0, data.elapsed) : 0;

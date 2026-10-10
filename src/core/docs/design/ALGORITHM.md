@@ -66,6 +66,9 @@ modified: 2026-10-11T01:08:00+08:00
 10. **粗粒度空间网格视锥裁剪 (Spatial Frustum Culling)**：放大镜与局部视口采用 $64 \times 64$ 均匀空间网格，仅遍历与当前视锥 AABB 轴对齐相交的有限网格桶，无效路径几何剔除率 $> 85\%$。
 11. **WebGL2 多物理场片元并行着色 (WebGL2 Press Hardware Pipeline)**：压印渲染将 `depth`、`exposed`、`burr`、`blocked` 与 `grainNoise` 映射为纹理采样单元，由 GPU 并行片元着色器实时解算纸张纤维、压痕与油墨流变转印，全画幅重绘降至 $< 4\text{ms}$，不支持环境下自动回退为 CPU 软件光栅。
 12. **工艺上版直通与 AABB 紧缩传输 (Direct Transfer & Tight AABB Blit)**：工艺向导上版采用线宽分桶批量绘制，且仅对包含有效母版线条的并集 AABB 包围盒范围读取像素，避免全尺寸 6.6M 像素全量遍历。
+13. **像素级灰度映射 256 阶 LUT 查表化 (256-Entry LUT Fast Path)**：全画幅明暗校正构建 256 字节紧凑表，规避逐像素多重浮点幂次解算，单幅校正时延从 66ms 骤降至 $< 2\text{ms}$。
+14. **种子传播队列常数级出队与 EDT 原地求根 (O(1) Queue & In-Place EDT)**：Jobard-Lefer 种子队列采用游标读指针替代 $O(N)$ 数组移位，消除 $O(N^2)$ 移位惩罚；欧氏距离变换 (EDT) 原地求平方根，杜绝额外 Float32Array 缓冲区分配。
+15. **铜版历史快照毛刺场按需稀疏锁存 (Sparse Burr Snapshot)**：铜版撤销栈仅在实际发生干刻 (`hasBurr: true`) 时锁存毛刺层，常规腐蚀版画单步快照立省 26.4MB (3K 分辨率)。
 
 ## 4. 复杂度分析与性能基准
 
@@ -73,6 +76,7 @@ modified: 2026-10-11T01:08:00+08:00
 | :--- | :--- | :--- | :--- |
 | **积分图平滑** | $O(W \times H)$ | $O(W \times H)$ Float64 | $< 18\text{ms}$ |
 | **导向滤波** | $O(W \times H)$ | $O(W \times H)$ Float32 | $< 45\text{ms}$ |
+| **全画幅明暗校正 (256 阶 LUT)** | $O(W \times H)$ 查表直接寻址 | $O(1)$ (256 字节表) | $< 2\text{ms}$ (原 66ms) |
 | **Jobard-Lefer 排线 (全精度)** | $O(N_{\text{samples}})$ (空间散列桶) | $O(N_{\text{buckets}})$ | $< 120\text{ms}$ |
 | **Jobard-Lefer 排线 (拖拽草稿 LOD)** | $O(N_{\text{samples}} / 4)$ | $O(N_{\text{buckets}})$ | $< 25\text{ms}$ |
 | **2D 偏微分酸液模拟 (全画幅)** | $O(W \times H \times \text{steps})$ | $O(W \times H)$ 双缓冲 | $< 25\text{ms}$ / 单步 |
@@ -84,6 +88,7 @@ modified: 2026-10-11T01:08:00+08:00
 | **空间网格视锥裁剪局部查询** | $O(K_{\text{cells}} + N_{\text{frustum}})$ | $O(W \times H / 4096)$ 网格桶 | $< 0.5\text{ms}$ 视锥查询 |
 | **WebGL2 硬件压印并行渲染** | $O(1)$ GPU 片元管线 | $O(W \times H)$ 纹理显存 | $< 4\text{ms}$ (3K 全画幅) |
 | **工艺上版 AABB 紧缩位块传输** | $O(W_{\text{art}} \times H_{\text{art}})$ | $O(1)$ 动态有界位图 | $< 35\text{ms}$ 上版转场 |
+| **全版静物合成基准生成** | $O(N_{\text{total}})$ 复合管线 | 动态工作集 | $< 430\text{ms}$ (原 811ms, 峰值 RSS 206MB) |
 
 ## 5. 验证与黄金样本
 

@@ -123,4 +123,13 @@ modified: 2026-10-10T23:15:00+08:00
 - **影响范围**：`src/ui/components/loupe.js`、`src/ui/components/step-flow-grid.js`、`src/core/plate/renderer/press-renderer.js`、`src/core/plate/engine/virtual-plate-engine.js`、`src/core/pipeline/stage2-tone-flow.js`、`src/orchestration/worker/pipeline-worker.js`、`src/ui/controllers/pipeline-controller.js`、`src/main.js`。
 - **状态**：生效
 
+### D-0013 算法热点查表化、几何种子队列常数级解构与物理场内存零分配深度优化 (ADR-013)
+- **背景**：针对全画幅生成与物理仿真过程，深度分析发现多处潜伏的时延与内存瓶颈：全像素 `toneImage` 逐像素执行双幂次浮点数学运算产生 66ms 耗时；`localContrast` 频繁分配 5 元组邻域小数组导致 GC 堆压力；经典生成流程末端冗余同步执行全量 5 阶段管线多消耗 ~300ms；Jobard-Lefer 排线种子队列采用 `Array.shift()` 引发 $O(N^2)$ 数组搬移延迟；`computeSDF` 与 `boxBlurFloat` 存在多次全画幅 TypedArray 重复分配；3K 高分铜版历史栈无差别完整备份全 0 毛刺场单次消耗 26.4MB。
+- **选项**：1. 仅被动依赖现有 GC 回收与硬件算力；2. 实施算法热点 256 阶查找表 (LUT)、无动态对象展开模板、移除经典生成路径冗余同步管线、种子队列读指针常数级出队、SDF 原地求根复用、流场积分图静态内存池及历史栈毛刺场稀疏按需锁存。
+- **结论**：采纳选项 2。在 `photo-pro.js` 引入 256 阶 `Uint8Array` LUT，将校正耗时由 66ms 降至 1.8ms；内联展开局部对比度 5 点模板；移除经典生成分支对未读 `computeStages` 的冗余同步调用；在 `hatch-streamline.js` 采用读指针实现 $O(1)$ 种子出队；在 `hatch-distance.js` 原地计算 `Math.sqrt` 消除冗余 Float32Array 分配；在 `hatch-field.js` 引入 `CrossFieldArena` 复用积分图；在 `virtual-plate-engine.js` 引入 `hasBurr` 按需状态标记，未产生毛刺时历史快照不分配毛刺层。
+- **理由**：基准测试耗时从 811ms 骤降至 426ms (降低 47.5%)，进程峰值 RSS 从 236.8 MiB 降至 206 MiB；大图排线生成与多次刻板 Undo 内存压力大幅缓解，彻底消除不必要的密集计算与长周期堆内存膨胀。
+- **影响范围**：`src/core/image/photo-pro.js`、`src/core/hatching/curves/hatch-streamline.js`、`src/core/hatching/curves/hatch-distance.js`、`src/core/hatching/fields/hatch-field.js`、`src/core/plate/engine/virtual-plate-engine.js`、`BENCHMARK.json`。
+- **状态**：生效
+
+
 

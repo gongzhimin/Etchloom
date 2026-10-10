@@ -70,7 +70,13 @@
   }
 
   function toneImage(image, pro) {
-    return { ...image, pixels: image.pixels.map(v => value(v, pro)) };
+    const lut = new Uint8Array(256);
+    for (let v = 0; v < 256; v++) lut[v] = value(v, pro);
+    const src = image.pixels, n = src.length;
+    const isTyped = src instanceof Uint8Array || src instanceof Uint8ClampedArray;
+    const out = isTyped ? new Uint8Array(n) : new Array(n);
+    for (let i = 0; i < n; i++) out[i] = lut[src[i]];
+    return { ...image, pixels: out };
   }
 
   function autoLevels(image) {
@@ -168,7 +174,10 @@
   }
 
   function sample(image, x, y) {
-    return image.pixels[Math.min(image.height - 1, Math.max(0, Math.floor(y * image.height / 660))) * image.width + Math.min(image.width - 1, Math.max(0, Math.floor(x * image.width / 900)))];
+    const w = image.width, h = image.height;
+    const px = (w === 900) ? Math.max(0, Math.min(899, x | 0)) : Math.min(w - 1, Math.max(0, (x * w / 900) | 0));
+    const py = (h === 660) ? Math.max(0, Math.min(659, y | 0)) : Math.min(h - 1, Math.max(0, (y * h / 660) | 0));
+    return image.pixels[py * w + px];
   }
 
   function hash(x, y, seed) {
@@ -186,11 +195,13 @@
   }
 
   function localContrast(image, x, y) {
-    let lo = 255, hi = 0;
-    for (const [dx, dy] of [[-4, 0], [4, 0], [0, -4], [0, 4], [0, 0]]) {
-      const v = sample(image, x + dx, y + dy);
-      lo = Math.min(lo, v); hi = Math.max(hi, v);
-    }
+    const v0 = sample(image, x, y);
+    const v1 = sample(image, x - 4, y);
+    const v2 = sample(image, x + 4, y);
+    const v3 = sample(image, x, y - 4);
+    const v4 = sample(image, x, y + 4);
+    const lo = Math.min(v0, v1, v2, v3, v4);
+    const hi = Math.max(v0, v1, v2, v3, v4);
     return (hi - lo) / 255;
   }
 
@@ -495,8 +506,10 @@
       }
       progress(90, '局部编辑');
       const edited = applyEdits(grammar.paths, p.edits);
-      // Precompute 5-stage bundle in background for smooth UI inspection
-      computeStages(image, { ...recipe.params, ...p });
+      // Precompute 5-stage bundle only when explicitly requested
+      if (p.precomputeStages) {
+        computeStages(image, { ...recipe.params, ...p });
+      }
       return {
         ...base,
         paths: edited,

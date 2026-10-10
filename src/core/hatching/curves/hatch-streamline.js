@@ -188,10 +188,15 @@
     initialCandidates.sort((a, b) => b.score - a.score);
     let candidateIndex = 0;
 
-    while (seedQueue.length > 0 || candidateIndex < initialCandidates.length) {
+    let queueHead = 0;
+    while (queueHead < seedQueue.length || candidateIndex < initialCandidates.length) {
       let seed;
-      if (seedQueue.length > 0) {
-        seed = seedQueue.shift();
+      if (queueHead < seedQueue.length) {
+        seed = seedQueue[queueHead++];
+        if (queueHead > 1024 && queueHead * 2 > seedQueue.length) {
+          seedQueue = seedQueue.slice(queueHead);
+          queueHead = 0;
+        }
       } else {
         seed = initialCandidates[candidateIndex++];
       }

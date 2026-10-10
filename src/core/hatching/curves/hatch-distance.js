@@ -91,12 +91,11 @@
       }
     }
 
-    // Final distance in pixels
-    const sdf = new Float32Array(n);
+    // Final distance in pixels computed in-place to avoid allocating redundant Float32Array
     for (let i = 0; i < n; i++) {
-      sdf[i] = Math.sqrt(grid[i]);
+      grid[i] = Math.sqrt(grid[i]);
     }
-    return sdf;
+    return grid;
   }
 
   /**
