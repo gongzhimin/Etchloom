@@ -1168,29 +1168,21 @@ function generateFrameSvg(cw, ch, geom, strokeColor = '#1a1918') {
   return '';
 }
 
-const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame, generateFrameSvg, pathsToSvgXml };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.StepFlowGrid = StepFlowGrid;
-  globalThis.getFrameGeometry = getFrameGeometry;
-  globalThis.drawEngravedFrame = drawEngravedFrame;
-  globalThis.generateFrameSvg = generateFrameSvg;
-  globalThis.pathsToSvgXml = pathsToSvgXml;
-}
-
+  const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame, generateFrameSvg, pathsToSvgXml };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.StepFlowGridModule || StepFlowGrid);
+    module.exports = api;
+  }
+  if (typeof globalThis !== 'undefined') {
+    globalThis.StepFlowGrid = StepFlowGrid;
+    globalThis.StepFlowGridModule = api;
+    globalThis.getFrameGeometry = getFrameGeometry;
+    globalThis.drawEngravedFrame = drawEngravedFrame;
+    globalThis.generateFrameSvg = generateFrameSvg;
+    globalThis.pathsToSvgXml = pathsToSvgXml;
   }
   if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.StepFlowGridModule = api;
-    }
-    if (typeof StepFlowGrid !== 'undefined') {
-      root.StepFlowGrid = StepFlowGrid;
-    }
+    root.StepFlowGridModule = api;
+    root.StepFlowGrid = StepFlowGrid;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

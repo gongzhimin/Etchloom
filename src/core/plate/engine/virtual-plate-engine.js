@@ -370,25 +370,15 @@ class VirtualPlateEngine {
   }
 }
 
-const api = { VirtualPlateEngine };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = api;
-}
-if (typeof globalThis !== 'undefined') {
-  globalThis.VirtualPlateEngine = VirtualPlateEngine;
-}
-
+  const api = { VirtualPlateEngine };
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = typeof api !== 'undefined' ? api : (root.VirtualPlateEngine || VirtualPlateEngine);
+    module.exports = api;
+  }
+  if (typeof globalThis !== 'undefined') {
+    globalThis.VirtualPlateEngine = VirtualPlateEngine;
   }
   if (typeof root !== 'undefined') {
-    if (typeof api !== 'undefined') {
-      root.VirtualPlateEngine = api;
-    }
-    if (typeof VirtualPlateEngine !== 'undefined') {
-      root.VirtualPlateEngine = VirtualPlateEngine;
-    }
+    root.VirtualPlateEngine = VirtualPlateEngine;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
