@@ -15,6 +15,6 @@
     "brightGaps": 11
   },
   "elapsedMs": 426,
-  "processPeakRSSMiB": 206,
+  "processPeakRSSMiB": 208.8,
   "note": "Node process peak RSS; not browser memory. Browser UI reports a working-set estimate."
 }

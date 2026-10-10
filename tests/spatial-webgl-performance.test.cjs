@@ -84,3 +84,22 @@ test('Performance Architecture: VirtualPlateEngine fallback and WebGL2 render in
   assert.equal(fallbackRes.width, 900);
   assert.ok(fallbackRes.pixels instanceof Uint8ClampedArray);
 });
+
+test('Performance Architecture: Stage 4 high-density seed queue compaction runs cleanly without error', () => {
+  const Stage4 = require('../src/core/pipeline/stage4-hatching.js');
+  const w = 900, h = 660;
+  const toneField = { width: w, height: h, tone: new Float32Array(w * h).fill(0.85) };
+  const flowField = {
+    width: w, height: h,
+    vx: new Float32Array(w * h).fill(1),
+    vy: new Float32Array(w * h).fill(0),
+    coherence: new Float32Array(w * h).fill(1)
+  };
+  const contourMask = new Uint8Array(w * h);
+
+  // Trigger dense seed generation with > 1024 seeds to exercise seedQueue compaction
+  const paths = Stage4.runStage4(toneField, flowField, contourMask, { density: 85, hatch: 100 });
+  assert.ok(Array.isArray(paths));
+  assert.ok(paths.length > 500, 'Dense hatching should produce hundreds of streamlines cleanly');
+});
+

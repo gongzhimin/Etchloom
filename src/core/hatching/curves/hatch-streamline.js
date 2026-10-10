@@ -168,7 +168,7 @@
 
     const grid = new SpatialHashGrid(w, h, minSpacing * 0.5);
     const paths = [];
-    const seedQueue = [];
+    let seedQueue = [];
 
     // 1. Generate orderly coarse candidate seeds across grid
     const isDraft = Boolean(options && options.isDraft);
