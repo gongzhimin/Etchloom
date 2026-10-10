@@ -644,14 +644,17 @@ function initEventBindings() {
   const handleFrameChange = (style) => {
     if (frameSelect && frameSelect.value !== style) frameSelect.value = style;
     if (plateFrameSelect && plateFrameSelect.value !== style) plateFrameSelect.value = style;
-    if (stepGrid) {
-      stepGrid.setFrameStyle(style);
-    }
     const source = pipelineController.getMasterData().loadedImage;
     const paths = pipelineController.getMasterData().masterPaths;
-    if (source && paths?.length) {
-      pipelineController.syncHeroMasterPreview(paths, source.width, source.height);
+    const syncHero = () => {
+      if (source && paths?.length) {
+        pipelineController.syncHeroMasterPreview(paths, source.width, source.height);
+      }
+    };
+    if (stepGrid) {
+      stepGrid.setFrameStyle(style, syncHero);
     }
+    syncHero();
     setPlateFrameStyle(style);
     const styleLabel = i18nManager ? i18nManager.t(`frame.${style}`) : style;
     const cat = i18nManager ? i18nManager.t('console.frame') : '版画';

@@ -47,11 +47,13 @@ class StepFlowGrid {
     }
   }
 
-  setFrameStyle(style) {
+  setFrameStyle(style, onUpdate = null) {
     this.frameStyle = style || 'double';
     if (this.stepStates[6]?.lastPaths) {
       this.updateStepPaths(6, this.stepStates[6].lastPaths, this.lastSrcWidth, this.lastSrcHeight, {
-        frameStyle: this.frameStyle
+        frameStyle: this.frameStyle,
+        onChunkRendered: onUpdate,
+        onComplete: onUpdate
       });
     }
   }
@@ -626,25 +628,30 @@ class StepFlowGrid {
         ctx.restore();
       };
 
-      const isProgressive = options.progressive !== false && paths.length > 600 && typeof requestAnimationFrame === 'function';
+      const isProgressive = options.progressive === true && paths.length > 600 && typeof requestAnimationFrame === 'function';
       if (!isProgressive) {
         renderStep6Chunk(0, paths.length);
+        options.onChunkRendered?.();
+        options.onComplete?.();
         return;
       }
 
       // Initial visual chunk (0..600) rendered immediately for instant TTFVS
       renderStep6Chunk(0, 600);
+      options.onChunkRendered?.();
       let curOffset = 600;
       const CHUNK_SIZE = 1200;
       const streamNext = () => {
         if (curOffset >= paths.length) {
           this.stepStates[stepIndex].streamRaf = null;
+          options.onChunkRendered?.();
           options.onComplete?.();
           return;
         }
         const nextEnd = Math.min(paths.length, curOffset + CHUNK_SIZE);
         renderStep6Chunk(curOffset, nextEnd);
         curOffset = nextEnd;
+        options.onChunkRendered?.();
         if (curOffset < paths.length) {
           this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
         } else {
@@ -678,16 +685,20 @@ class StepFlowGrid {
     const isProgressive = options.progressive !== false && paths.length > 600 && typeof requestAnimationFrame === 'function';
     if (!isProgressive) {
       this._renderBatchedChunk(ctx, paths, 0, paths.length, scale, offX, offY);
+      options.onChunkRendered?.();
+      options.onComplete?.();
       return;
     }
 
     // Initial visual chunk (0..600) rendered immediately for instant TTFVS
     this._renderBatchedChunk(ctx, paths, 0, 600, scale, offX, offY);
+    options.onChunkRendered?.();
     let curOffset = 600;
     const CHUNK_SIZE = 1200;
     const streamNext = () => {
       if (curOffset >= paths.length) {
         this.stepStates[stepIndex].streamRaf = null;
+        options.onChunkRendered?.();
         options.onComplete?.();
         return;
       }
@@ -697,6 +708,7 @@ class StepFlowGrid {
       ctx.lineJoin = 'round';
       this._renderBatchedChunk(ctx, paths, curOffset, nextEnd, scale, offX, offY);
       curOffset = nextEnd;
+      options.onChunkRendered?.();
       if (curOffset < paths.length) {
         this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
       } else {

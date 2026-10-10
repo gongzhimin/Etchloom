@@ -16,10 +16,12 @@ test('StepFlowGrid: Progressive Chunk Streaming streams paths across animation f
     height: 660,
     getContext: () => ({
       fillRect() {},
+      strokeRect() {},
       beginPath() {},
       moveTo() {},
       lineTo() {},
       stroke() { strokeCalls++; },
+      fill() {},
       save() {},
       restore() {},
       rect() {},
@@ -85,8 +87,20 @@ test('StepFlowGrid: Progressive Chunk Streaming streams paths across animation f
     assert.ok(grid.stepStates[5].streamRaf !== null);
     grid.setStepStatus(5, 'COMPUTING');
     assert.equal(grid.stepStates[5].streamRaf, null, 'Streaming cancelled on status change to COMPUTING');
+
+    // 4. Step 6 defaults to non-progressive synchronous rendering for full hero fidelity
+    strokeCalls = 0;
+    let step6Completed = false;
+    grid.stepStates[6].canvas = mockCanvas;
+    grid.updateStepPaths(6, paths, 900, 660, {
+      onComplete: () => { step6Completed = true; }
+    });
+    assert.ok(strokeCalls > 0, 'Step 6 rendered all strokes synchronously');
+    assert.equal(step6Completed, true, 'Step 6 onComplete called immediately');
+    assert.equal(grid.stepStates[6].streamRaf, null, 'Step 6 has no pending RAF');
   } finally {
     delete global.requestAnimationFrame;
     delete global.cancelAnimationFrame;
   }
 });
+

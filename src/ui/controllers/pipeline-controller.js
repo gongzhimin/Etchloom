@@ -435,7 +435,9 @@ export class PipelineController {
           this.stepGrid.updateStepPaths(6, this.lastMasterPaths, curW, curH, {
             bgTone: theme?.paperGround || '#faf7f0',
             strokeColor: theme?.inkPrimary || '#1a1918',
-            frameStyle: recipeParams.frameStyle
+            frameStyle: recipeParams.frameStyle,
+            onChunkRendered: () => this.syncHeroMasterPreview(this.lastMasterPaths, curW, curH),
+            onComplete: () => this.syncHeroMasterPreview(this.lastMasterPaths, curW, curH)
           });
           const renderElapsed = parseFloat((_now() - renderStart).toFixed(1));
           this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' }, renderElapsed);
@@ -764,7 +766,9 @@ export class PipelineController {
         this.stepGrid.updateStepPaths(6, masterPaths, curW, curH, {
           bgTone: theme?.paperGround || '#faf7f0',
           strokeColor: theme?.inkPrimary || '#1a1918',
-          frameStyle: recipeParams.frameStyle
+          frameStyle: recipeParams.frameStyle,
+          onChunkRendered: () => this.syncHeroMasterPreview(masterPaths, curW, curH),
+          onComplete: () => this.syncHeroMasterPreview(masterPaths, curW, curH)
         });
         this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' }, parseFloat((_now() - stageStart).toFixed(1)));
         this.syncHeroMasterPreview(masterPaths, curW, curH);
@@ -987,7 +991,9 @@ export class PipelineController {
         : (globalThis.ThemeBridge?.getRenderTheme ? globalThis.ThemeBridge.getRenderTheme() : null);
       this.stepGrid.updateStepPaths(6, allPaths, w, h, {
         bgTone: theme?.paperGround || '#f0ebd9',
-        strokeColor: theme?.inkPrimary || '#1a1918'
+        strokeColor: theme?.inkPrimary || '#1a1918',
+        onChunkRendered: () => this.syncHeroMasterPreview(allPaths, w, h),
+        onComplete: () => this.syncHeroMasterPreview(allPaths, w, h)
       });
       this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' });
       this.syncHeroMasterPreview(allPaths, w, h);
@@ -1022,8 +1028,10 @@ export class PipelineController {
     if (!heroCanvas) return;
     const srcCanvas = this.stepGrid?.stepStates[6]?.canvas || this.stepGrid?.stepStates[5]?.canvas;
     if (srcCanvas) {
-      heroCanvas.width = srcCanvas.width;
-      heroCanvas.height = srcCanvas.height;
+      if (heroCanvas.width !== srcCanvas.width || heroCanvas.height !== srcCanvas.height) {
+        heroCanvas.width = srcCanvas.width;
+        heroCanvas.height = srcCanvas.height;
+      }
       const aspectStr = `${srcCanvas.width} / ${srcCanvas.height}`;
       heroCanvas.style.aspectRatio = aspectStr;
       const heroViewport = document.getElementById('masterHeroViewport');
