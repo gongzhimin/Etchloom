@@ -593,17 +593,30 @@ class StepFlowGrid {
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
+      // Batched stroke rendering for Step 6: eliminate thousands of independent beginPath/stroke state transitions
+      const buckets = new Map();
       for (let i = 0; i < paths.length; i++) {
         const path = paths[i];
         const pts = path.points || path;
         if (!pts || pts.length < 2) continue;
+        const strokeW = Math.round(Math.max(0.4, (path.width || 0.8) * scale) * 10) / 10;
+        let list = buckets.get(strokeW);
+        if (!list) {
+          list = [];
+          buckets.set(strokeW, list);
+        }
+        list.push(pts);
+      }
 
+      for (const [wVal, pathList] of buckets) {
+        ctx.lineWidth = wVal;
         ctx.beginPath();
-        const strokeW = Math.max(0.4, (path.width || 0.8) * scale);
-        ctx.lineWidth = strokeW;
-        ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
-        for (let j = 1; j < pts.length; j++) {
-          ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+        for (let pIdx = 0; pIdx < pathList.length; pIdx++) {
+          const pts = pathList[pIdx];
+          ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+          for (let j = 1; j < pts.length; j++) {
+            ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+          }
         }
         ctx.stroke();
       }
@@ -621,29 +634,39 @@ class StepFlowGrid {
     ctx.fillRect(0, 0, cw, ch);
 
     // Default ink color
-    ctx.strokeStyle = options.strokeColor || (isLightBg ? (theme.inkPrimary || '#1b1b1b') : '#ded9cc');
+    const defaultColor = options.strokeColor || (isLightBg ? (theme.inkPrimary || '#1b1b1b') : '#ded9cc');
+    const stageColor = stepIndex === 3 ? (isLightBg ? 'rgba(20, 20, 20, 0.85)' : (theme.contourGold || '#c8b67e'))
+      : stepIndex === 4 ? (isLightBg ? 'rgba(30, 28, 26, 0.9)' : (theme.hatchSage || '#b4c0ab'))
+      : defaultColor;
+
+    ctx.strokeStyle = stageColor;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
+    // Batched stroke rendering for Steps 3, 4, 5
+    const buckets = new Map();
     for (let i = 0; i < paths.length; i++) {
       const path = paths[i];
       const pts = path.points || path;
       if (!pts || pts.length < 2) continue;
-
-      ctx.beginPath();
-      const strokeW = Math.max(0.4, (path.width || 0.8) * scale);
-      ctx.lineWidth = strokeW;
-
-      // Subtle nuance by stage
-      if (stepIndex === 3) {
-        ctx.strokeStyle = isLightBg ? 'rgba(20, 20, 20, 0.85)' : (theme.contourGold || '#c8b67e');
-      } else if (stepIndex === 4) {
-        ctx.strokeStyle = isLightBg ? 'rgba(30, 28, 26, 0.9)' : (theme.hatchSage || '#b4c0ab');
+      const strokeW = Math.round(Math.max(0.4, (path.width || 0.8) * scale) * 10) / 10;
+      let list = buckets.get(strokeW);
+      if (!list) {
+        list = [];
+        buckets.set(strokeW, list);
       }
+      list.push(pts);
+    }
 
-      ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
-      for (let j = 1; j < pts.length; j++) {
-        ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+    for (const [wVal, pathList] of buckets) {
+      ctx.lineWidth = wVal;
+      ctx.beginPath();
+      for (let pIdx = 0; pIdx < pathList.length; pIdx++) {
+        const pts = pathList[pIdx];
+        ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+        for (let j = 1; j < pts.length; j++) {
+          ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+        }
       }
       ctx.stroke();
     }

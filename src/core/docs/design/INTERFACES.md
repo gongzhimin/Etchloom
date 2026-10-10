@@ -4,7 +4,7 @@ status: Active
 doc-id: IF-CORE
 owner-module: core
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T20:55:00+08:00
+modified: 2026-10-10T23:15:00+08:00
 ---
 
 # 核心模块对外接口契约 (IF-CORE)
@@ -111,6 +111,15 @@ class VirtualPlateEngine {
   applyMasterPaths(paths, tool = 'needle', defaultSize = 2)
 
   /**
+   * 记录并扩展版面变动脏包围盒，用于局部稀疏酸蚀加速
+   * @param {number} minX
+   * @param {number} minY
+   * @param {number} maxX
+   * @param {number} maxY
+   */
+  markDirty(minX, minY, maxX, maxY)
+
+  /**
    * 推进 2D 偏微分方程酸液化学腐蚀时间步
    * @param {number} dt - 浸酸秒数 (> 0)
    * @param {number} [strength=0.45] - 酸液浓度系数
@@ -151,6 +160,19 @@ class VirtualPlateEngine {
    */
   getStats()
 }
+
+/**
+ * 2D 偏微分方程酸液动态化学咬蚀解算器
+ * 源码位置：src/core/plate/physics/acid-simulator.js
+ */
+function simulateAcidBite(plate, dt, strength = 0.45, grain = 0.45, dirtyBounds = null): { dt: number }
+
+/**
+ * 凹版光影压印渲染器与 GPU 片元着色器
+ * 源码位置：src/core/plate/renderer/press-renderer.js
+ */
+function renderPlate(plate, mode = 'plate', options = {}, targetBuffer = null): { width: number, height: number, pixels: Uint8ClampedArray }
+const PRESS_FRAGMENT_SHADER: string
 ```
 
 ## 3. 输入/输出真实类型定义

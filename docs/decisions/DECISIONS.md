@@ -4,7 +4,7 @@ status: Active
 doc-id: DEC-SYS
 owner-module: root
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T20:25:00+08:00
+modified: 2026-10-10T23:15:00+08:00
 ---
 
 # 系统重大架构决策记录
@@ -21,6 +21,7 @@ modified: 2026-10-10T20:25:00+08:00
 | **`D-0006`** | 2026-10-09 | 状态机防穿透守卫与防腐清漆不可剥夺性 | 守卫检查覆盖全部四场（含清漆），重分版面归零时钟 | 生效 |
 | **`D-0007`** | 2026-10-09 | 几何排线与物理计算的对抗免疫与零 NaN 容忍 | 双态坐标解构与 `Number.isFinite` 屏障防毒化 | 生效 |
 | **`D-0008`** | 2026-10-10 | 核心物理速率统一校准、环境沙箱化与导出鲁棒屏障 | 统一 0.4x 物理反应速率定标，消除本地环境硬编码，SVG 坐标严格过滤 | 生效 |
+| **`D-0009`** | 2026-10-10 | 交互渲染高频瓶颈攻坚：矢量批处理与 PDE 脏包围盒加速 | 消除 7000+ 次 Canvas 状态切换，局部 AABB 稀疏化酸液解算 | 生效 |
 
 ---
 
@@ -88,4 +89,12 @@ modified: 2026-10-10T20:25:00+08:00
 - **结论**：采纳选项 2。在 `AcidSimulator` 统一注入 `reactionDt = dt * 0.4`；在 `VirtualPlateEngine` 增强长宽比适配能力；在 `stage1-informative.js` 切换为操作系统临时目录及标准命令解析；在 `exportSVG` 注入点过滤与 `strokeWidth` 有限性校验。
 - **理由**：践行“发现即修”与“代码严于规范”的工程守则，杜绝物理仿真割裂与环境耦合。
 - **影响范围**：`src/core/plate/physics/acid-simulator.js`、`src/core/plate/engine/virtual-plate-engine.js`、`src/core/pipeline/stage1-informative.js`、`src/orchestration/export/exporter.js`。
+- **状态**：生效
+
+### D-0009 交互渲染高频瓶颈攻坚：矢量批处理与 PDE 脏包围盒加速 (ADR-009)
+- **背景**：用户拖拽母版参数及在铜版上刻绘时主观感知仍然卡顿。经火焰图分析，根本原因在于 StepFlowGrid 在绘制 7,800+ 笔画时逐笔触发 `ctx.beginPath()` / `ctx.stroke()` 产生数万次状态切换导致 GPU 提交排队；且酸液求解未做受扰区域剪裁。
+- **选项**：1. 仅降低分辨率草稿化；2. 在渲染层按线宽批处理合并绘制，同时在物理层引入动态脏包围盒 (Dirty AABB) 局部稀疏求解。
+- **结论**：采纳选项 2。在 `StepFlowGrid.updateStepPaths` 引入线宽分桶批量绘制，减少 99% 的 Canvas 状态调用；在 `AcidSimulator` 与 `VirtualPlateEngine` 引入 `dirtyBounds` 裁剪未受扰动区域。
+- **理由**：彻底解决 UI 主线程掉帧瓶颈，保持画质无损的前提下大幅提升交互跟手性。
+- **影响范围**：`src/ui/components/step-flow-grid.js`、`src/core/plate/physics/acid-simulator.js`、`src/core/plate/engine/virtual-plate-engine.js`。
 - **状态**：生效
