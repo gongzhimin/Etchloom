@@ -33,6 +33,53 @@ export class PipelineController {
     const CacheClass = (typeof StageCache !== 'undefined' ? StageCache : (globalThis.StageCache || null));
     this.scheduler = SchedulerClass ? new SchedulerClass(140) : null;
     this.stageCache = CacheClass ? new CacheClass() : null;
+
+    this.worker = null;
+    this.workerRequestId = 0;
+    this.workerPending = new Map();
+    if (typeof Worker !== 'undefined' && typeof window !== 'undefined') {
+      try {
+        this.worker = new Worker('src/orchestration/worker/pipeline-worker.js');
+        this._initWorker();
+      } catch (_) {
+        this.worker = null;
+      }
+    }
+  }
+
+  _initWorker() {
+    if (!this.worker) return;
+    this.worker.onmessage = (e) => {
+      const data = e.data;
+      if (!data) return;
+      const { requestId, type } = data;
+      const pending = this.workerPending.get(requestId);
+      if (!pending) return;
+
+      if (type === 'PROGRESS') {
+        if (typeof pending.onProgress === 'function') {
+          pending.onProgress(data.stage, data.progress, data.artifact);
+        }
+      } else if (type === 'COMPLETE') {
+        this.workerPending.delete(requestId);
+        pending.resolve(data.outputs);
+      } else if (type === 'ABORTED') {
+        this.workerPending.delete(requestId);
+        const err = new Error('PIPELINE_ABORTED');
+        err.name = 'AbortError';
+        pending.reject(err);
+      } else if (type === 'ERROR') {
+        this.workerPending.delete(requestId);
+        pending.reject(new Error(data.message || 'Worker pipeline error'));
+      }
+    };
+    this.worker.onerror = (err) => {
+      for (const [, pending] of this.workerPending) {
+        pending.reject(err);
+      }
+      this.workerPending.clear();
+      this.worker = null;
+    };
   }
 
   releaseMemory() {
@@ -632,7 +679,8 @@ export class PipelineController {
       const _now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
       let stageStart = _now();
 
-      const outputs = await Runner.runIncremental(context, previousOutputs, params, startStage, signal, (stage, progress, artifact) => {
+      let outputs;
+      const onProgressCallback = (stage, progress, artifact) => {
         if (signal && signal.aborted) return;
         if (!this.stepGrid) return;
         const stageElapsed = parseFloat((_now() - stageStart).toFixed(1));
@@ -651,7 +699,49 @@ export class PipelineController {
           this.stepGrid.setStepStatus(4, 'DONE', { key: 'card.hatchingCount', args: [artifact.hatchingPaths.length] }, stageElapsed);
         }
         stageStart = _now();
-      });
+      };
+
+      if (this.worker) {
+        const reqId = ++this.workerRequestId;
+        outputs = await new Promise((resolve, reject) => {
+          this.workerPending.set(reqId, {
+            resolve,
+            reject,
+            onProgress: onProgressCallback
+          });
+
+          if (signal) {
+            signal.addEventListener('abort', () => {
+              this.worker?.postMessage({ type: 'ABORT', requestId: reqId, reason: signal.reason });
+              this.workerPending.delete(reqId);
+              const abortErr = new Error(signal.reason || 'PIPELINE_ABORTED');
+              abortErr.name = 'AbortError';
+              reject(abortErr);
+            }, { once: true });
+          }
+
+          const workerContext = {
+            sourceImage: {
+              width: curW,
+              height: curH,
+              pixels: this.currentLoadedImage.pixels,
+              lineMap: this.currentLoadedImage.lineMap || null
+            },
+            geometry: this.currentDepthMap ? { depthMap: this.currentDepthMap } : null
+          };
+
+          this.worker.postMessage({
+            type: 'RUN_INCREMENTAL',
+            requestId: reqId,
+            context: workerContext,
+            previousOutputs,
+            params,
+            startStage
+          });
+        });
+      } else {
+        outputs = await Runner.runIncremental(context, previousOutputs, params, startStage, signal, onProgressCallback);
+      }
 
       if (signal && signal.aborted) return;
 

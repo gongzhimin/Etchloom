@@ -23,6 +23,8 @@ src/orchestration/
 │   └── orchestrator.js       # Orchestrator 核心类，派发管线阶段事件与微任务
 ├── scheduler/                # 抢占式微任务防抖调度
 │   └── task-scheduler.js     # TaskScheduler 队列与 AbortController 管理
+├── worker/                   # 专用后台 Web Worker 异步计算
+│   └── pipeline-worker.js    # PipelineWorker 离线计算与增量执行沙箱
 ├── cache/                    # DAG 增量缓存与哈希检测
 │   └── stage-cache.js        # StageCache 状态指纹与失效分析
 ├── export/                   # 工业母版多格式导出器
@@ -36,6 +38,7 @@ src/orchestration/
 | :--- | :--- | :--- |
 | `engine/orchestrator.js` | `Orchestrator` | 顶层生命周期调度中枢，派发管线阶段事件与中间产物联动 |
 | `scheduler/task-scheduler.js` | `TaskScheduler` | 防抖计时器、微任务执行队列与 AbortSignal 抢占中止 |
+| `worker/pipeline-worker.js` | `PipelineWorker` | 独立 Web Worker 异步管线线程，零阻塞 UI 执行五阶段计算 |
 | `cache/stage-cache.js` | `StageCache` | 32-bit DJB2 确定性哈希计算与下游阶段失效链分析 |
 | `export/exporter.js` | `Exporter` | 分层 SVG、G-Code 切片走刀与 PNG pHYs 物理分辨率导出器 |
 | `telemetry/telemetry-sink.js` | `TelemetrySink` | 阶段耗时统计、吞吐量监控与事件分发 |

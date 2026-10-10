@@ -4,7 +4,7 @@ status: Active
 doc-id: ARCH-UI
 owner-module: ui
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T20:43:00+08:00
+modified: 2026-10-11T01:08:00+08:00
 ---
 
 # UI 交互与视图总装架构设计 (ARCH-UI)
@@ -18,10 +18,10 @@ modified: 2026-10-10T20:43:00+08:00
 ```text
 src/ui/
 ├── components/          # 原子交互组件
-│   ├── step-flow-grid.js   # 默认折叠的横向七卡胶片栏组件
+│   ├── step-flow-grid.js   # 默认折叠的横向七卡胶片栏组件（支持分块渐进渲染）
 │   └── loupe.js            # 灯箱放大镜视口
 ├── controllers/         # 业务场景控制器
-│   ├── pipeline-controller.js     # 算法母版调参与异步生成控制器
+│   ├── pipeline-controller.js     # 算法母版调参与异步生成控制器（支持 Web Worker 离线计算与抢占）
 │   ├── plate-studio-controller.js # 铜版物理交互与试印控制器
 │   ├── transfer-wizard-controller.js # 工艺上版向导控制器
 │   └── lightbox-controller.js     # 全屏特写灯箱控制器
@@ -73,4 +73,6 @@ src/ui/
 - **性能与交互约束**：
   1. **主预览适配**：主预览画布在 CSS 中等比适配视口；
   2. **母版参数拖拽 LOD**：连续滑块拖拽触发草稿级 LOD 计算（`isDraft: true`，降低种子采样步长并截断流线最大步数），在拖拽释放后触发 `isDraft: false` 全精密度重算并持久化至 `StageCache`；
-  3. **铜版刻绘脏矩形提交**：在 `plate` 与 `depth` 视口模式下，笔刷刻绘仅在 `plateDirtyBounds` 包围盒内进行 CPU 像素循环，并通过 Canvas 7 参数形式 `putImageData(im, 0, 0, sx, sy, sw, sh)` 局部位块传输，杜绝全画幅重绘卡顿。
+  3. **铜版刻绘脏矩形提交**：在 `plate` 与 `depth` 视口模式下，笔刷刻绘仅在 `plateDirtyBounds` 包围盒内进行 CPU 像素循环，并通过 Canvas 7 参数形式 `putImageData(im, 0, 0, sx, sy, sw, sh)` 局部位块传输，杜绝全画幅重绘卡顿；
+  4. **专用 Web Worker 后台解耦**：`PipelineController` 优先使用独立工作线程执行五阶段管线，主线程仅负责状态防抖与事件监听。若环境不支持 `Worker`（如 Node.js 单测），平滑回退为同步微任务；
+  5. **胶片栏分块渐进渲染 (Progressive Chunk Streaming)**：`StepFlowGrid` 对数千条矢量流线分块切片，首屏帧立即呈现 0..600 条关键轮廓（<8ms），后续笔画通过 `requestAnimationFrame` 以 1,200 条/帧平滑追加，并在状态切换为 `COMPUTING` 时瞬时抢占取消。

@@ -23,6 +23,8 @@ src/orchestration/
 │   └── task-scheduler.js
 ├── cache/               # DAG 增量缓存 (StageCache: 32-bit DJB2 哈希比对与失效剪枝)
 │   └── stage-cache.js
+├── worker/              # 异步离线工作线程 (PipelineWorker: 承载 5 阶段算子后台解算)
+│   └── pipeline-worker.js
 ├── export/              # 多格式导出器 (Exporter: 分层 SVG、数控 G-Code、配方 JSON)
 │   └── exporter.js
 └── telemetry/           # 遥测探针 (TelemetrySink: 阶段耗时统计与执行指标汇总)
@@ -33,6 +35,7 @@ src/orchestration/
 - **`engine/orchestrator.js`**：负责调度流程整体串接，挂载事件监听，组织 `scheduleRecipe` 增量执行、`transferToPlate` 转刻并分发生命周期与遥测事件；
 - **`scheduler/task-scheduler.js`**：管理并发任务与微任务防抖队列，持有一个前置任务的 `AbortController`，并在新任务到达时执行抢占中止；
 - **`cache/stage-cache.js`**：管理 Stage 1 至 Stage 5 的中间产物，根据参数指纹快速裁剪无需重复计算的上游阶段；
+- **`worker/pipeline-worker.js`**：专用 Web Worker 工作线程，将 CPU 密集的增量管线从 UI 线程彻底剥离，通过事件总线进行非阻塞通信；
 - **`export/exporter.js`**：将 `masterPaths` 矢量路径与配方转换为标准矢量分层 SVG、数控雕刻 G-Code 指令集与格式化 JSON；
 - **`telemetry/telemetry-sink.js`**：轻量级内存指标汇聚器，收集阶段耗时并提供性能诊断日志。
 

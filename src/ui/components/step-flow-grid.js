@@ -38,6 +38,7 @@ class StepFlowGrid {
       timeEl: null,
       lastImage: null,
       lastPaths: null,
+      streamRaf: null,
       metaSpec: { key: idx === 0 ? 'card.pixelBase' : 'card.initMeta' }
     }));
 
@@ -248,10 +249,9 @@ class StepFlowGrid {
    */
   setStepStatus(stepIndex, status, meta = '', elapsedMs = null) {
     if (stepIndex < 0 || stepIndex > 6) return;
-    const card = this.container?.querySelector(`.step-${stepIndex}`);
-    if (!card) return;
-
     const state = this.stepStates[stepIndex];
+    if (!state) return;
+
     state.status = status;
     state.badgeEl?.removeAttribute?.('aria-label');
     state.badgeEl?.removeAttribute?.('role');
@@ -261,10 +261,22 @@ class StepFlowGrid {
       state.metaSpec = meta;
     }
 
+    if (status === 'COMPUTING' && state.streamRaf) {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(state.streamRaf);
+      state.streamRaf = null;
+    }
+
+    const card = this.container?.querySelector(`.step-${stepIndex}`);
+    if (!card) return;
+
     card.classList.remove('status-computing', 'status-cached', 'status-done', 'status-error');
 
     if (status === 'COMPUTING') {
       card.classList.add('status-computing');
+      if (state.streamRaf) {
+        if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(state.streamRaf);
+        state.streamRaf = null;
+      }
       if (state.badgeEl) {
         state.badgeEl.textContent = this.i18n ? this.i18n.t('card.computing') : '计算中...';
         state.badgeEl.className = 'card-badge badge-compute';
@@ -543,6 +555,14 @@ class StepFlowGrid {
     };
     const theme = getTheme();
 
+    // Cancel any in-flight progressive streaming for this card
+    if (this.stepStates[stepIndex].streamRaf) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.stepStates[stepIndex].streamRaf);
+      }
+      this.stepStates[stepIndex].streamRaf = null;
+    }
+
     if (stepIndex === 6) {
       // Step 6: flat transfer master; paper and ink effects appear only after plate printing.
       this.lastSrcWidth = sw;
@@ -577,50 +597,50 @@ class StepFlowGrid {
       ctx.restore();
 
       // 3. Artwork nesting area strictly inside the innermost frame clearance
-      // Guarantees artwork NEVER extends outside the frame rules (outer frame is strictly outside artwork)
       const { x: artX, y: artY, w: artW, h: artH } = geom.art;
-
       const scale = Math.min(artW / sw, artH / sh);
       const offX = artX + Math.round((artW - sw * scale) / 2);
       const offY = artY + Math.round((artH - sh * scale) / 2);
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(artX, artY, artW, artH);
-      ctx.clip();
-
-      ctx.strokeStyle = inkPrimary;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Batched stroke rendering for Step 6: eliminate thousands of independent beginPath/stroke state transitions
-      const buckets = new Map();
-      for (let i = 0; i < paths.length; i++) {
-        const path = paths[i];
-        const pts = path.points || path;
-        if (!pts || pts.length < 2) continue;
-        const strokeW = Math.round(Math.max(0.4, (path.width || 0.8) * scale) * 10) / 10;
-        let list = buckets.get(strokeW);
-        if (!list) {
-          list = [];
-          buckets.set(strokeW, list);
-        }
-        list.push(pts);
-      }
-
-      for (const [wVal, pathList] of buckets) {
-        ctx.lineWidth = wVal;
+      const renderStep6Chunk = (startIdx, endIdx) => {
+        ctx.save();
         ctx.beginPath();
-        for (let pIdx = 0; pIdx < pathList.length; pIdx++) {
-          const pts = pathList[pIdx];
-          ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
-          for (let j = 1; j < pts.length; j++) {
-            ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
-          }
-        }
-        ctx.stroke();
+        ctx.rect(artX, artY, artW, artH);
+        ctx.clip();
+        ctx.strokeStyle = inkPrimary;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        this._renderBatchedChunk(ctx, paths, startIdx, endIdx, scale, offX, offY);
+        ctx.restore();
+      };
+
+      const isProgressive = options.progressive !== false && paths.length > 600 && typeof requestAnimationFrame === 'function';
+      if (!isProgressive) {
+        renderStep6Chunk(0, paths.length);
+        return;
       }
-      ctx.restore();
+
+      // Initial visual chunk (0..600) rendered immediately for instant TTFVS
+      renderStep6Chunk(0, 600);
+      let curOffset = 600;
+      const CHUNK_SIZE = 1200;
+      const streamNext = () => {
+        if (curOffset >= paths.length) {
+          this.stepStates[stepIndex].streamRaf = null;
+          options.onComplete?.();
+          return;
+        }
+        const nextEnd = Math.min(paths.length, curOffset + CHUNK_SIZE);
+        renderStep6Chunk(curOffset, nextEnd);
+        curOffset = nextEnd;
+        if (curOffset < paths.length) {
+          this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
+        } else {
+          this.stepStates[stepIndex].streamRaf = null;
+          options.onComplete?.();
+        }
+      };
+      this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
       return;
     }
 
@@ -643,9 +663,41 @@ class StepFlowGrid {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Batched stroke rendering for Steps 3, 4, 5
+    const isProgressive = options.progressive !== false && paths.length > 600 && typeof requestAnimationFrame === 'function';
+    if (!isProgressive) {
+      this._renderBatchedChunk(ctx, paths, 0, paths.length, scale, offX, offY);
+      return;
+    }
+
+    // Initial visual chunk (0..600) rendered immediately for instant TTFVS
+    this._renderBatchedChunk(ctx, paths, 0, 600, scale, offX, offY);
+    let curOffset = 600;
+    const CHUNK_SIZE = 1200;
+    const streamNext = () => {
+      if (curOffset >= paths.length) {
+        this.stepStates[stepIndex].streamRaf = null;
+        options.onComplete?.();
+        return;
+      }
+      const nextEnd = Math.min(paths.length, curOffset + CHUNK_SIZE);
+      ctx.strokeStyle = stageColor;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      this._renderBatchedChunk(ctx, paths, curOffset, nextEnd, scale, offX, offY);
+      curOffset = nextEnd;
+      if (curOffset < paths.length) {
+        this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
+      } else {
+        this.stepStates[stepIndex].streamRaf = null;
+        options.onComplete?.();
+      }
+    };
+    this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
+  }
+
+  _renderBatchedChunk(ctx, paths, startIndex, endIndex, scale, offX, offY) {
     const buckets = new Map();
-    for (let i = 0; i < paths.length; i++) {
+    for (let i = startIndex; i < endIndex; i++) {
       const path = paths[i];
       const pts = path.points || path;
       if (!pts || pts.length < 2) continue;

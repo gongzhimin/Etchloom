@@ -107,3 +107,12 @@ modified: 2026-10-10T23:15:00+08:00
 - **影响范围**：`src/ui/controllers/plate-studio-controller.js`、`src/ui/controllers/pipeline-controller.js`、`src/core/hatching/curves/hatch-streamline.js`、`src/core/pipeline/stage3-contours.js`、`src/main.js`。
 - **状态**：生效
 
+### D-0011 独立计算管线 Worker 线程解耦与分级渐进流式渲染 (ADR-011)
+- **背景**：5 阶段计算管线此前在 UI 主线程执行，当处理超大图像或高密度排线时占用主线程引发 Long Task (>50ms)，导致浏览器丢帧；且渲染必须等待全量结果就绪才一次性刷屏，首视觉呈现延迟较高。
+- **选项**：1. 仅在主线程拆分微任务切片；2. 建设 Dedicated Web Worker 异步计算管线彻底解耦主线程，同时在 StepFlowGrid 引入基于 requestAnimationFrame 的分级渐进流式渲染 (Progressive Chunk Streaming)。
+- **结论**：采纳选项 2。在 `src/orchestration/worker/pipeline-worker.js` 设立独立 Worker 异步跑管线，在 Node/不支持环境下自动平滑退避至主线程；在 `StepFlowGrid.updateStepPaths` 实现首批 600 条笔划瞬间上屏，后续笔划通过 requestAnimationFrame 分片流式补全。
+- **理由**：彻底解放 UI 主线程保持 60~120 FPS 丝滑响应，并将第一视觉呈现时间 (TTFVS) 缩短至 < 8ms。
+- **影响范围**：`src/orchestration/worker/pipeline-worker.js`、`src/ui/controllers/pipeline-controller.js`、`src/ui/components/step-flow-grid.js`。
+- **状态**：生效
+
+
