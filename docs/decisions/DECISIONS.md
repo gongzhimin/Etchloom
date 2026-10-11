@@ -4,7 +4,7 @@ status: Active
 doc-id: DEC-SYS
 owner-module: root
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T23:15:00+08:00
+modified: 2026-10-11T09:40:00+08:00
 ---
 
 # 系统重大架构决策记录
@@ -22,6 +22,12 @@ modified: 2026-10-10T23:15:00+08:00
 | **`D-0007`** | 2026-10-09 | 几何排线与物理计算的对抗免疫与零 NaN 容忍 | 双态坐标解构与 `Number.isFinite` 屏障防毒化 | 生效 |
 | **`D-0008`** | 2026-10-10 | 核心物理速率统一校准、环境沙箱化与导出鲁棒屏障 | 统一 0.4x 物理反应速率定标，消除本地环境硬编码，SVG 坐标严格过滤 | 生效 |
 | **`D-0009`** | 2026-10-10 | 交互渲染高频瓶颈攻坚：矢量批处理与 PDE 脏包围盒加速 | 消除 7000+ 次 Canvas 状态切换，局部 AABB 稀疏化酸液解算 | 生效 |
+| **`D-0010`** | 2026-10-10 | 铜版局部脏矩形渲染与母版参数拖拽 LOD 草稿机制 | 笔刷局部 7 参数 putImageData 提交，连续滑动低精度流线，松开全量重算 | 生效 |
+| **`D-0011`** | 2026-10-10 | 独立计算管线 Worker 线程解耦与分级渐进流式渲染 | Web Worker 异步计算彻底解耦主线程，StepFlowGrid 首批 600 条极速上屏 | 生效 |
+| **`D-0012`** | 2026-10-10 | 空间网格视锥裁剪、WebGL2 硬件压印加速与工艺上版流水线 | MasterSpatialGrid 视锥裁剪，GPU WebGL2 片元压印着色，紧凑位块上版 | 生效 |
+| **`D-0013`** | 2026-10-10 | 算法热点查表化、几何种子队列常数级解构与物理场内存零分配 | 256阶 LUT，Jobard-Lefer O(1) 队列，SDF 原地求根，稀疏毛刺快照 | 生效 |
+| **`D-0014`** | 2026-10-11 | 独立纯函数 renderEngravedMaster 渲染解耦与外部母版画布同步 | 抽离无状态母版压印函数，彻底消除渐进流式 RAF 竞争与母稿残缺缺陷 | 生效 |
+| **`D-0015`** | 2026-10-11 | 阶段 1 神经网络模型耗时前置度量与步骤流状态精确同步 | 计时起点提前至 AI 网关推断之前，规范计算过渡期时间角标重置 | 生效 |
 
 ---
 
@@ -129,6 +135,22 @@ modified: 2026-10-10T23:15:00+08:00
 - **结论**：采纳选项 2。在 `photo-pro.js` 引入 256 阶 `Uint8Array` LUT，将校正耗时由 66ms 降至 1.8ms；内联展开局部对比度 5 点模板；移除经典生成分支对未读 `computeStages` 的冗余同步调用；在 `hatch-streamline.js` 采用读指针实现 $O(1)$ 种子出队；在 `hatch-distance.js` 原地计算 `Math.sqrt` 消除冗余 Float32Array 分配；在 `hatch-field.js` 引入 `CrossFieldArena` 复用积分图；在 `virtual-plate-engine.js` 引入 `hasBurr` 按需状态标记，未产生毛刺时历史快照不分配毛刺层。
 - **理由**：基准测试耗时从 811ms 骤降至 426ms (降低 47.5%)，进程峰值 RSS 从 236.8 MiB 降至 206 MiB；大图排线生成与多次刻板 Undo 内存压力大幅缓解，彻底消除不必要的密集计算与长周期堆内存膨胀。
 - **影响范围**：`src/core/image/photo-pro.js`、`src/core/hatching/curves/hatch-streamline.js`、`src/core/hatching/curves/hatch-distance.js`、`src/core/hatching/fields/hatch-field.js`、`src/core/plate/engine/virtual-plate-engine.js`、`BENCHMARK.json`。
+- **状态**：生效
+
+### D-0014 独立纯函数 renderEngravedMaster 渲染解耦与外部母版画布同步 (ADR-014)
+- **背景**：此前主工作区母稿画布 (`masterHeroCanvas`) 通过 `drawImage` 间接从 `stepStates[6].canvas` 复制画面。在启用渐进流式分片渲染后，因异步 RAF 竞争、卡片不可见时尺寸异常或分块流未完成，导致外部工作台上的母版预览经常残缺、缺失线条或出现空白。
+- **选项**：1. 强制主工作台等待 StepFlowGrid 的 RAF 完全结束再复制；2. 彻底解耦母版渲染能力，抽离独立的无状态纯函数 `renderEngravedMaster(canvas, paths, srcW, srcH, options)`，让 `masterHeroCanvas` 与 `stepStates[6]` 共享底层矢量渲染管道并直接由全量矢量数据驱动。
+- **结论**：采纳选项 2。在 `src/ui/components/step-flow-grid.js` 中抽离并导出 `renderEngravedMaster` 纯函数；在 `PipelineController.syncHeroMasterPreview` 中优先调用 `renderEngravedMaster` 将全量矢量数据直接绘制至 `masterHeroCanvas`，彻底阻断对胶片卡片渲染进度的脆弱依赖。
+- **理由**：彻底根除外部母版画面残缺与竞态缺陷，确保无论是初始化示范还是管线重新运算，中央母稿预览始终与全量矢量线条保持 100% 同步和最高精细度。
+- **影响范围**：`src/ui/components/step-flow-grid.js`、`src/ui/controllers/pipeline-controller.js`、`src/ui/docs/design/INTERFACES.md`。
+- **状态**：生效
+
+### D-0015 阶段 1 神经网络模型耗时前置度量与步骤流状态精确同步 (ADR-015)
+- **背景**：在胶片卡片栏中，`[01] 线描感知` 卡片的耗时统计长期显示为 `0.0ms`。经排查，由于 Informative Drawings 神经网络推断是在 `PipelineRunner.run` 之前由 `aiGateway.requestParallelPipeline` 独立异步执行，`PipelineRunner` 的计时起点未涵盖该推断过程；在 `initBrowserDemo` 启动时亦未传入实际测量耗时，且卡片在过渡为 `COMPUTING` 状态时未清空历史时间角标。
+- **选项**：1. 仅在显示层提供硬编码的估算耗时；2. 在控制器中将 Stage 1 计时起点前移至模型推断之前，真实度量端到端耗时；示范模式采集毫秒级实际运算耗时；在卡片转入计算中时主动隐藏时间角标。
+- **结论**：采纳选项 2。在 `PipelineController.runPipelineOnLoadedPhoto` 中将 `stage1Start` 提前至 `aiGateway` 调用前，并将实际耗时 `s1Elapsed` 传递给 `stepGrid.setStepStatus(1, ...)`；在 `initBrowserDemo` 中补齐各步真实绘制测量耗时；在 `StepFlowGrid.setStepStatus` 的 `COMPUTING` 分支显式隐藏 `timeEl`。
+- **理由**：忠实反映神经网络与几何算法的真实系统开销，消除 0.0ms 统计失真，提升系统可观测性与用户感知质量。
+- **影响范围**：`src/ui/controllers/pipeline-controller.js`、`src/ui/components/step-flow-grid.js`。
 - **状态**：生效
 
 

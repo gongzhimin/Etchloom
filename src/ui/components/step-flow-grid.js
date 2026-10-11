@@ -283,6 +283,9 @@ class StepFlowGrid {
         state.badgeEl.textContent = this.i18n ? this.i18n.t('card.computing') : '计算中...';
         state.badgeEl.className = 'card-badge badge-compute';
       }
+      if (state.timeEl) {
+        state.timeEl.style.display = 'none';
+      }
       // Purge previous image/paths immediately so no stale canvas is shown
       const cv = state.canvas;
       if (cv) {

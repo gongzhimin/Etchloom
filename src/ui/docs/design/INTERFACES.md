@@ -4,7 +4,7 @@ status: Active
 doc-id: IF-UI
 owner-module: ui
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-11T01:21:00+08:00
+modified: 2026-10-11T09:40:00+08:00
 ---
 
 # UI 模块对外接口与状态契约 (IF-UI)
@@ -137,6 +137,45 @@ class PipelineController {
   syncHeroMasterPreview(paths, w, h)
 }
 
+### 2.5 StepFlowGrid 步骤流视口网格组件与压印母版渲染
+
+源码位置：`src/ui/components/step-flow-grid.js`
+
+```javascript
+class StepFlowGrid {
+  /**
+   * @param {HTMLElement} container - 挂载父容器
+   * @param {Object} [options={}] - 回调与国际化配置
+   */
+  constructor(container, options = {})
+
+  /**
+   * 设置各阶段卡片画面的自适应显示宽高比
+   * @param {number} width
+   * @param {number} height
+   */
+  setAspectRatio(width, height)
+
+  /**
+   * 更新指定阶段卡片的状态、标记与实测耗时 (毫秒)
+   * @param {number} stepIndex - 0..6
+   * @param {'IDLE'|'COMPUTING'|'CACHED'|'DONE'|'ERROR'} status
+   * @param {string|Object} [meta=''] - 描述元数据键值
+   * @param {number|null} [elapsedMs=null] - 阶段实测执行耗时 (ms)
+   */
+  setStepStatus(stepIndex, status, meta = '', elapsedMs = null)
+
+  /**
+   * 更新指定步骤的矢量笔画路径并执行离散分桶批渲染
+   * @param {number} stepIndex - 3..6
+   * @param {Array<Object>} paths - 矢量路径集合
+   * @param {number} srcWidth - 源坐标系宽度
+   * @param {number} srcHeight - 源坐标系高度
+   * @param {Object} [options={}]
+   */
+  updateStepPaths(stepIndex, paths, srcWidth, srcHeight, options = {})
+}
+
 /**
  * 纯函数：独立高质量压印母版渲染函数（纸基、压痕、边框、矢量笔划）
  * @param {HTMLCanvasElement} canvas - 目标渲染画布
@@ -148,7 +187,7 @@ class PipelineController {
 export function renderEngravedMaster(canvas, paths, srcWidth, srcHeight, options = {})
 ```
 
-### 2.5 MasterSpatialGrid 与 LoupeMagnifier 空间网格与放大镜
+### 2.6 MasterSpatialGrid 与 LoupeMagnifier 空间网格与放大镜
 
 源码位置：`src/ui/components/loupe.js`
 

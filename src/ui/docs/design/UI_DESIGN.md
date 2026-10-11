@@ -4,7 +4,7 @@ status: Active
 doc-id: UI-DESIGN-UI
 owner-module: ui
 created: 2026-10-08T19:31:17+08:00
-modified: 2026-10-10T20:43:00+08:00
+modified: 2026-10-11T09:40:00+08:00
 ---
 
 # UI 页面布局与交互设计方案 (UI-DESIGN-UI)
@@ -53,7 +53,7 @@ modified: 2026-10-10T20:43:00+08:00
 
 | 组件名称 | 对应源文件 | 核心职责与属性规范 |
 | :--- | :--- | :--- |
-| **`StepFlowGrid`** | `src/ui/components/step-flow-grid.js` | 七阶段横向胶片卡片栏；支持宽高比自适应 (`setAspectRatio`)、三语实时切换 (`updateLocale`) 与展开/折叠切换。 |
+| **`StepFlowGrid`** | `src/ui/components/step-flow-grid.js` | 七阶段横向胶片卡片栏；支持宽高比自适应 (`setAspectRatio`)、三语实时切换 (`updateLocale`)、执行耗时状态跟踪 (`setStepStatus`)、分桶批渲染与独立压印纯函数 (`renderEngravedMaster`)。 |
 | **`Loupe`** | `src/ui/components/loupe.js` | 局部高倍率放大镜，支持浮动跟踪与双击全屏特写。 |
 | **`AboutModal`** | `src/ui/templates/layout-templates.js` | 独立弹窗对话框，展示两步工坊使用指南与代码仓库安全链接。 |
 

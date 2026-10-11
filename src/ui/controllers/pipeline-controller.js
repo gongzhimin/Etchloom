@@ -318,6 +318,10 @@ export class PipelineController {
 
       let fetchedDepthMap = null;
 
+      const _now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const stage1Start = _now();
+      let stage1Duration = null;
+
       // Check AI Engine Mode (Remote Python / Online Browser Model / Offline Analytical)
       if (inferBlob) {
         const health = await this.aiGateway.checkHealth();
@@ -340,6 +344,9 @@ export class PipelineController {
         } catch (mErr) {
           this.log('模型', `AI 推理异常 (${mErr.message})，自动降级至基础离线几何算法。`, 'warn');
         }
+      }
+      if (neuralLineUsed) {
+        stage1Duration = parseFloat(Math.max(0.1, _now() - stage1Start).toFixed(1));
       }
 
       await new Promise(r => setTimeout(r, 20));
@@ -364,7 +371,6 @@ export class PipelineController {
 
       const Runner = (typeof PipelineRunner !== 'undefined' ? PipelineRunner : (typeof window !== 'undefined' ? window.PipelineRunner : null));
       if (Runner) {
-        const _now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
         let stageStart = _now();
         const outputs = await Runner.run(recipe, {
           signal,
@@ -375,7 +381,8 @@ export class PipelineController {
             if (stage === 1 && artifact) {
               this.lastStage1LineMap = artifact;
               this.stepGrid.updateStepPreview(1, artifact);
-              this.stepGrid.setStepStatus(1, 'DONE', { key: neuralLineUsed ? 'card.aiLine' : 'card.lineReady' }, stageElapsed);
+              const s1Elapsed = stage1Duration != null ? stage1Duration : stageElapsed;
+              this.stepGrid.setStepStatus(1, 'DONE', { key: neuralLineUsed ? 'card.aiLine' : 'card.lineReady' }, s1Elapsed);
               this.log('管线', `阶段 1 完成: 线描感知抽取 (${neuralLineUsed ? engineTag : '几何退避'})`, 'done');
             } else if (stage === 2 && artifact) {
               this.lastStage2Artifact = artifact;
@@ -868,6 +875,7 @@ export class PipelineController {
       this.stepGrid.setStepStatus(0, 'DONE', { key: 'card.sourceSize', args: [w, h] });
     }
 
+    const s1Start = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const lineCanvas = document.createElement('canvas');
     lineCanvas.width = w; lineCanvas.height = h;
     const lctx = lineCanvas.getContext('2d');
@@ -901,11 +909,13 @@ export class PipelineController {
     }
     this.lastStage1LineMap = { width: w, height: h, pixels: linePixels };
 
+    const s1Elapsed = parseFloat((Math.max(0.1, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - s1Start)).toFixed(1));
     if (this.stepGrid) {
       this.stepGrid.updateStepPreview(1, lineCanvas);
-      this.stepGrid.setStepStatus(1, 'DONE', { key: 'card.lineReady' });
+      this.stepGrid.setStepStatus(1, 'DONE', { key: 'card.lineReady' }, s1Elapsed);
     }
 
+    const s2Start = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const toneField = { width: w, height: h, tone: Float32Array.from(pixels, v => 1.0 - v / 255) };
     const flowField = {
       width: w, height: h,
@@ -921,11 +931,13 @@ export class PipelineController {
         flowField.coherence[i] = (x > 200 && x < 700 && y > 100 && y < 550) ? 0.8 : 0.1;
       }
     }
+    const s2Elapsed = parseFloat((Math.max(0.1, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - s2Start)).toFixed(1));
     if (this.stepGrid) {
       this.stepGrid.updateStepPreview(2, { toneField, flowField });
-      this.stepGrid.setStepStatus(2, 'DONE', { key: 'card.flowReady' });
+      this.stepGrid.setStepStatus(2, 'DONE', { key: 'card.flowReady' }, s2Elapsed);
     }
 
+    const s3Start = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const contours = [];
     const hatchings = [];
 
@@ -949,7 +961,9 @@ export class PipelineController {
     }
     jarContour.push(jarContour[0]);
     contours.push({ width: 1.3, points: jarContour });
+    const s3Elapsed = parseFloat((Math.max(0.1, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - s3Start)).toFixed(1));
 
+    const s4Start = typeof performance !== 'undefined' ? performance.now() : Date.now();
     for (let x = 245; x < 315; x += 6) {
       hatchings.push({ width: 0.8, points: [[x, 200], [x + 2, 470]] });
     }
@@ -962,6 +976,7 @@ export class PipelineController {
     for (let k = 0; k < 35; k++) {
       hatchings.push({ width: 0.8, points: [[150 + k * 16, 490], [190 + k * 16, 530]] });
     }
+    const s4Elapsed = parseFloat((Math.max(0.1, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - s4Start)).toFixed(1));
 
     const allPaths = [...contours, ...hatchings];
     this.lastContours = contours;
@@ -978,14 +993,17 @@ export class PipelineController {
 
     if (this.stepGrid) {
       this.stepGrid.updateStepPaths(3, contours, w, h);
-      this.stepGrid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [contours.length] });
+      this.stepGrid.setStepStatus(3, 'DONE', { key: 'card.contourCount', args: [contours.length] }, s3Elapsed);
 
       this.stepGrid.updateStepPaths(4, hatchings, w, h);
-      this.stepGrid.setStepStatus(4, 'DONE', { key: 'card.hatchingCount', args: [hatchings.length] });
+      this.stepGrid.setStepStatus(4, 'DONE', { key: 'card.hatchingCount', args: [hatchings.length] }, s4Elapsed);
 
+      const s5Start = typeof performance !== 'undefined' ? performance.now() : Date.now();
       this.stepGrid.updateStepPaths(5, allPaths, w, h);
-      this.stepGrid.setStepStatus(5, 'DONE', { key: 'card.masterCount', args: [allPaths.length] });
+      const s5Elapsed = parseFloat((Math.max(0.1, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - s5Start)).toFixed(1));
+      this.stepGrid.setStepStatus(5, 'DONE', { key: 'card.masterCount', args: [allPaths.length] }, s5Elapsed);
 
+      const s6Start = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const theme = (typeof ThemeBridge !== 'undefined' && ThemeBridge.getRenderTheme)
         ? ThemeBridge.getRenderTheme()
         : (globalThis.ThemeBridge?.getRenderTheme ? globalThis.ThemeBridge.getRenderTheme() : null);
@@ -995,7 +1013,8 @@ export class PipelineController {
         onChunkRendered: () => this.syncHeroMasterPreview(allPaths, w, h),
         onComplete: () => this.syncHeroMasterPreview(allPaths, w, h)
       });
-      this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' });
+      const s6Elapsed = parseFloat((Math.max(0.1, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - s6Start)).toFixed(1));
+      this.stepGrid.setStepStatus(6, 'DONE', { key: 'card.transferReady' }, s6Elapsed);
       this.syncHeroMasterPreview(allPaths, w, h);
     }
 

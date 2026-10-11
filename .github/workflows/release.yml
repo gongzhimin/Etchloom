@@ -29,7 +29,7 @@ jobs:
             if (!tag && context.ref && context.ref.startsWith('refs/tags/')) {
               tag = context.ref.replace('refs/tags/', '');
             }
-            tag = tag || 'v0.1.8';
+            tag = tag || 'v0.1.9';
             console.log('Resolving release for tag:', tag);
             try {
               const existing = await github.rest.repos.getReleaseByTag({
@@ -46,7 +46,7 @@ jobs:
                 repo: context.repo.repo,
                 tag_name: tag,
                 name: `Etchloom ${tag}`,
-                body: `## What's New in v0.1.8\n\n- **Reset Etch**: Easily restart the acid bath if lines bite too deep, without losing your plate drawing.\n- **Plate Protection**: Warns and backs up before overwriting existing needle marks or stop-out varnish.\n- **Bug Fixes**: Fixed simulation timer resets, undo state sync, and status translations.\n\n---\n\n### Downloads\n- **Windows**: \`.exe\` (installer) or \`.msi\`\n- **macOS**: \`.dmg\`\n- **Android**: \`.apk\` (ARM64)\n\n---\n\n> **macOS Note**: If prompted that the app is damaged, open Terminal and run:\n> \`sudo xattr -rd com.apple.quarantine /Applications/Etchloom.app\``,
+                body: `## What's New in v0.1.9\n\n- **Master Hero Direct Vector Render**: Decoupled hero master preview rendering via pure stateless \`renderEngravedMaster\`, eliminating progressive streaming race conditions and preventing blank or incomplete preview states on the external workbench.\n- **Accurate Model Inference Timing**: Fixed Stage 1 execution time measurement by benchmarking the Informative Drawings model upfront, ensuring step timing badges accurately reflect real computation rather than 0.0ms.\n- **Interactive Performance Engine**: Completed 256-entry tone LUT, O(1) Jobard-Lefer streamline queue, in-place distance transforms, spatial grid frustum culling, and WebGL2 press shading pipeline.\n- **Documentation Integrity**: Fully aligned all design decisions, architecture models, and component interfaces with code changes under RULE-DOC standards.\n\n---\n\n### Downloads\n- **Windows**: \`.exe\` (installer) or \`.msi\`\n- **macOS**: \`.dmg\`\n- **Android**: \`.apk\` (ARM64)\n\n---\n\n> **macOS Note**: If prompted that the app is damaged, open Terminal and run:\n> \`sudo xattr -rd com.apple.quarantine /Applications/Etchloom.app\``,
                 draft: false,
                 prerelease: false
               });
