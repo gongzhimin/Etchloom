@@ -583,73 +583,29 @@ class StepFlowGrid {
       this.lastSrcHeight = sh;
 
       const frameStyle = options.frameStyle || this.frameStyle || 'double';
-      const geom = getFrameGeometry(cw, ch, frameStyle);
-      const paperGround = '#f4f7f7';
-      const inkPrimary = '#253a3d';
-
-      // 1. Paper ground
-      ctx.fillStyle = paperGround;
-      ctx.fillRect(0, 0, cw, ch);
-
-      // 2. Draw impressed paper depression, plate bevel, and chosen frame style (outer, fine, rough)
-      drawEngravedFrame(ctx, cw, ch, geom, inkPrimary);
-      const markInset = Math.max(12, Math.round(geom.pm / 2));
-      const markLength = Math.max(5, Math.round(geom.pm / 5));
-      ctx.save();
-      ctx.strokeStyle = '#8a9b9d';
-      ctx.lineWidth = 1;
-      for (const x of [markInset, cw - markInset]) {
-        for (const y of [markInset, ch - markInset]) {
-          ctx.beginPath();
-          ctx.moveTo(x - markLength, y);
-          ctx.lineTo(x + markLength, y);
-          ctx.moveTo(x, y - markLength);
-          ctx.lineTo(x, y + markLength);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-
-      // 3. Artwork nesting area strictly inside the innermost frame clearance
-      const { x: artX, y: artY, w: artW, h: artH } = geom.art;
-      const scale = Math.min(artW / sw, artH / sh);
-      const offX = artX + Math.round((artW - sw * scale) / 2);
-      const offY = artY + Math.round((artH - sh * scale) / 2);
-
-      const renderStep6Chunk = (startIdx, endIdx) => {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(artX, artY, artW, artH);
-        ctx.clip();
-        ctx.strokeStyle = inkPrimary;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        this._renderBatchedChunk(ctx, paths, startIdx, endIdx, scale, offX, offY);
-        ctx.restore();
-      };
-
       const isProgressive = options.progressive === true && paths.length > 600 && typeof requestAnimationFrame === 'function';
+
       if (!isProgressive) {
-        renderStep6Chunk(0, paths.length);
-        options.onChunkRendered?.();
-        options.onComplete?.();
+        renderEngravedMaster(canvas, paths, sw, sh, {
+          frameStyle,
+          onComplete: () => {
+            options.onChunkRendered?.();
+            options.onComplete?.();
+          }
+        });
         return;
       }
 
-      // Initial visual chunk (0..600) rendered immediately for instant TTFVS
-      renderStep6Chunk(0, 600);
-      options.onChunkRendered?.();
-      let curOffset = 600;
+      // Progressive chunk streaming for Step 6 if explicitly requested
+      let curOffset = 0;
       const CHUNK_SIZE = 1200;
       const streamNext = () => {
-        if (curOffset >= paths.length) {
-          this.stepStates[stepIndex].streamRaf = null;
-          options.onChunkRendered?.();
-          options.onComplete?.();
-          return;
-        }
-        const nextEnd = Math.min(paths.length, curOffset + CHUNK_SIZE);
-        renderStep6Chunk(curOffset, nextEnd);
+        const nextEnd = Math.min(paths.length, curOffset === 0 ? 600 : curOffset + CHUNK_SIZE);
+        renderEngravedMaster(canvas, paths, sw, sh, {
+          frameStyle,
+          startIndex: curOffset,
+          endIndex: nextEnd
+        });
         curOffset = nextEnd;
         options.onChunkRendered?.();
         if (curOffset < paths.length) {
@@ -659,7 +615,7 @@ class StepFlowGrid {
           options.onComplete?.();
         }
       };
-      this.stepStates[stepIndex].streamRaf = requestAnimationFrame(streamNext);
+      streamNext();
       return;
     }
 
@@ -1069,6 +1025,105 @@ function drawEngravedFrame(ctx, cw, ch, geom, strokeColor = '#1a1918') {
 }
 
 /**
+ * Pure helper function to render complete Classical Engraved Plate Artwork
+ * with paper ground, registration marks, frame, and clipped batched vector strokes.
+ * Used identically by Step 6 in the filmstrip and masterHeroCanvas in the workbench.
+ * @param {HTMLCanvasElement} canvas
+ * @param {Array<Object>} paths
+ * @param {number} srcWidth
+ * @param {number} srcHeight
+ * @param {Object} [options={}]
+ */
+function renderEngravedMaster(canvas, paths, srcWidth, srcHeight, options = {}) {
+  if (!canvas || !paths) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const cw = canvas.width;
+  const ch = canvas.height;
+  const sw = srcWidth || cw;
+  const sh = srcHeight || ch;
+
+  const frameStyle = options.frameStyle || 'double';
+  const geom = getFrameGeometry(cw, ch, frameStyle);
+  const paperGround = options.paperGround || '#f4f7f7';
+  const inkPrimary = options.inkPrimary || '#253a3d';
+  const startIndex = options.startIndex ?? 0;
+  const endIndex = options.endIndex ?? paths.length;
+
+  // On first chunk (or full render), paint archival paper ground, bevel depression, and frame
+  if (startIndex === 0) {
+    ctx.fillStyle = paperGround;
+    ctx.fillRect(0, 0, cw, ch);
+
+    drawEngravedFrame(ctx, cw, ch, geom, inkPrimary);
+
+    const markInset = Math.max(12, Math.round(geom.pm / 2));
+    const markLength = Math.max(5, Math.round(geom.pm / 5));
+    ctx.save();
+    ctx.strokeStyle = '#8a9b9d';
+    ctx.lineWidth = 1;
+    for (const x of [markInset, cw - markInset]) {
+      for (const y of [markInset, ch - markInset]) {
+        ctx.beginPath();
+        ctx.moveTo(x - markLength, y);
+        ctx.lineTo(x + markLength, y);
+        ctx.moveTo(x, y - markLength);
+        ctx.lineTo(x, y + markLength);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Artwork nesting area strictly inside the innermost frame clearance
+  const { x: artX, y: artY, w: artW, h: artH } = geom.art;
+  const scale = Math.min(artW / sw, artH / sh);
+  const offX = artX + Math.round((artW - sw * scale) / 2);
+  const offY = artY + Math.round((artH - sh * scale) / 2);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(artX, artY, artW, artH);
+  ctx.clip();
+  ctx.strokeStyle = inkPrimary;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const buckets = new Map();
+  for (let i = startIndex; i < endIndex; i++) {
+    const path = paths[i];
+    const pts = path?.points || path;
+    if (!pts || pts.length < 2) continue;
+    const strokeW = Math.round(Math.max(0.4, (path.width || 0.8) * scale) * 10) / 10;
+    let list = buckets.get(strokeW);
+    if (!list) {
+      list = [];
+      buckets.set(strokeW, list);
+    }
+    list.push(pts);
+  }
+
+  for (const [wVal, pathList] of buckets) {
+    ctx.lineWidth = wVal;
+    ctx.beginPath();
+    for (let pIdx = 0; pIdx < pathList.length; pIdx++) {
+      const pts = pathList[pIdx];
+      ctx.moveTo(offX + pts[0][0] * scale, offY + pts[0][1] * scale);
+      for (let j = 1; j < pts.length; j++) {
+        ctx.lineTo(offX + pts[j][0] * scale, offY + pts[j][1] * scale);
+      }
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  if (endIndex >= paths.length) {
+    options.onComplete?.();
+  }
+}
+
+/**
  * Converts path objects to SVG <path> elements with coordinates scaled and offset.
  * @param {Array<Object>} paths
  * @param {number} [scale=1.0]
@@ -1183,7 +1238,7 @@ function generateFrameSvg(cw, ch, geom, strokeColor = '#1a1918') {
   return '';
 }
 
-  const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame, generateFrameSvg, pathsToSvgXml };
+  const api = { StepFlowGrid, getFrameGeometry, drawEngravedFrame, renderEngravedMaster, generateFrameSvg, pathsToSvgXml };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
@@ -1193,11 +1248,13 @@ function generateFrameSvg(cw, ch, geom, strokeColor = '#1a1918') {
     globalThis.StepFlowGridModule = api;
     globalThis.getFrameGeometry = getFrameGeometry;
     globalThis.drawEngravedFrame = drawEngravedFrame;
+    globalThis.renderEngravedMaster = renderEngravedMaster;
     globalThis.generateFrameSvg = generateFrameSvg;
     globalThis.pathsToSvgXml = pathsToSvgXml;
   }
   if (typeof root !== 'undefined') {
     root.StepFlowGridModule = api;
     root.StepFlowGrid = StepFlowGrid;
+    root.renderEngravedMaster = renderEngravedMaster;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

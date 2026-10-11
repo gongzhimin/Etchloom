@@ -127,7 +127,25 @@ class PipelineController {
    * 释放底层 AI 网关与图像临时内存
    */
   releaseMemory()
+
+  /**
+   * 同步或直接渲染外部工作台上的上版母稿 (masterHeroCanvas)
+   * @param {Array<Object>} [paths] - 矢量笔划路径集合
+   * @param {number} [w] - 原始或处理宽度
+   * @param {number} [h] - 原始或处理高度
+   */
+  syncHeroMasterPreview(paths, w, h)
 }
+
+/**
+ * 纯函数：独立高质量压印母版渲染函数（纸基、压痕、边框、矢量笔划）
+ * @param {HTMLCanvasElement} canvas - 目标渲染画布
+ * @param {Array<Object>} paths - 矢量路径数组
+ * @param {number} srcWidth - 源坐标系宽度
+ * @param {number} srcHeight - 源坐标系高度
+ * @param {Object} [options] - 包含 frameStyle、paperGround、inkPrimary 等
+ */
+export function renderEngravedMaster(canvas, paths, srcWidth, srcHeight, options = {})
 ```
 
 ### 2.5 MasterSpatialGrid 与 LoupeMagnifier 空间网格与放大镜

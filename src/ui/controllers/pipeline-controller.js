@@ -1017,41 +1017,56 @@ export class PipelineController {
     const heroCanvas = document.getElementById('masterHeroCanvas');
     const heroResMeta = document.getElementById('heroResolutionMeta');
     const heroBadge = document.getElementById('masterStrokesBadge');
-    if (heroResMeta && w && h) {
-      heroResMeta.textContent = `${w} × ${h} px`;
+
+    const curW = w || this.currentLoadedImage?.width || 900;
+    const curH = h || this.currentLoadedImage?.height || 660;
+    const masterPaths = paths || this.lastMasterPaths;
+
+    if (heroResMeta && curW && curH) {
+      heroResMeta.textContent = `${curW} × ${curH} px`;
     }
-    if (heroBadge && paths) {
+    if (heroBadge && masterPaths) {
       const i18n = (typeof window !== 'undefined' && window.i18nManager) || null;
       const unit = i18n ? i18n.t('telemetry.strokesUnit') : '条矢量线条';
-      heroBadge.textContent = `${paths.length.toLocaleString()} ${unit}`;
+      heroBadge.textContent = `${masterPaths.length.toLocaleString()} ${unit}`;
     }
     if (!heroCanvas) return;
+
     const srcCanvas = this.stepGrid?.stepStates[6]?.canvas || this.stepGrid?.stepStates[5]?.canvas;
-    if (srcCanvas) {
-      if (heroCanvas.width !== srcCanvas.width || heroCanvas.height !== srcCanvas.height) {
-        heroCanvas.width = srcCanvas.width;
-        heroCanvas.height = srcCanvas.height;
-      }
-      const aspectStr = `${srcCanvas.width} / ${srcCanvas.height}`;
-      heroCanvas.style.aspectRatio = aspectStr;
-      const heroViewport = document.getElementById('masterHeroViewport');
-      if (heroViewport) {
-        heroViewport.style.setProperty('--source-aspect-ratio', aspectStr);
-      }
-      const ctx = heroCanvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
-        ctx.drawImage(srcCanvas, 0, 0);
-      }
-    } else if (w && h) {
-      const aspectStr = `${w} / ${h}`;
-      heroCanvas.style.aspectRatio = aspectStr;
-      const heroViewport = document.getElementById('masterHeroViewport');
-      if (heroViewport) {
-        heroViewport.style.setProperty('--source-aspect-ratio', aspectStr);
+    const aspect = curW / curH;
+    const targetW = srcCanvas ? srcCanvas.width : 1400;
+    const targetH = srcCanvas ? srcCanvas.height : Math.max(1, Math.round(1400 / aspect));
+
+    if (heroCanvas.width !== targetW || heroCanvas.height !== targetH) {
+      heroCanvas.width = targetW;
+      heroCanvas.height = targetH;
+    }
+    const aspectStr = `${curW} / ${curH}`;
+    heroCanvas.style.aspectRatio = aspectStr;
+    const heroViewport = document.getElementById('masterHeroViewport');
+    if (heroViewport) {
+      heroViewport.style.setProperty('--source-aspect-ratio', aspectStr);
+    }
+
+    const renderMasterFn = (typeof renderEngravedMaster === 'function' ? renderEngravedMaster : globalThis.renderEngravedMaster);
+    const recipeParams = this.getRecipeParams ? this.getRecipeParams() : {};
+
+    if (typeof renderMasterFn === 'function' && masterPaths?.length) {
+      renderMasterFn(heroCanvas, masterPaths, curW, curH, {
+        frameStyle: recipeParams.frameStyle || this.stepGrid?.frameStyle || 'double'
+      });
+    } else {
+      const srcCanvas = this.stepGrid?.stepStates[6]?.canvas || this.stepGrid?.stepStates[5]?.canvas;
+      if (srcCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
+        const ctx = heroCanvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+          ctx.drawImage(srcCanvas, 0, 0, heroCanvas.width, heroCanvas.height);
+        }
       }
     }
-    if (paths?.length && typeof this.onMasterReady === 'function') {
+
+    if (masterPaths?.length && typeof this.onMasterReady === 'function') {
       this.onMasterReady();
     }
   }
